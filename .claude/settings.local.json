@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter:*)",
+      "Bash(timeout:*)",
+      "Bash(adb:*)",
+      "Bash(pkill:*)",
+      "Bash(taskkill:*)",
+      "Bash(R)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(python:*)",
+      "Bash(rm:*)",
+      "Bash(pip install:*)",
+      "Bash(cmd /c:*)"
+    ],
+    "deny": []
+  }
+}

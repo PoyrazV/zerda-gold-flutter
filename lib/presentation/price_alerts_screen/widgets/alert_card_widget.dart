@@ -1,0 +1,365 @@
+import 'package:flutter/material.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../../core/app_export.dart';
+
+class AlertCardWidget extends StatelessWidget {
+  final Map<String, dynamic> alertData;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDuplicate;
+  final VoidCallback? onDelete;
+  final VoidCallback? onToggle;
+  final VoidCallback? onTap;
+
+  const AlertCardWidget({
+    Key? key,
+    required this.alertData,
+    this.onEdit,
+    this.onDuplicate,
+    this.onDelete,
+    this.onToggle,
+    this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final String status = alertData['status'] as String;
+    final String assetName = alertData['assetName'] as String;
+    final double targetPrice = (alertData['targetPrice'] as num).toDouble();
+    final double currentPrice = (alertData['currentPrice'] as num).toDouble();
+    final String alertType = alertData['alertType'] as String;
+    final bool isEnabled = alertData['isEnabled'] as bool;
+
+    Color statusColor = _getStatusColor(status);
+    Color priceChangeColor = currentPrice >= targetPrice
+        ? AppTheme.positiveGreen
+        : AppTheme.negativeRed;
+
+    double proximityPercentage =
+        ((currentPrice - targetPrice).abs() / targetPrice * 100);
+
+    return Dismissible(
+      key: Key(alertData['id'].toString()),
+      background: Container(
+        margin: EdgeInsets.symmetric(vertical: 1.h),
+        decoration: BoxDecoration(
+          color: AppTheme.lightTheme.colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: EdgeInsets.only(left: 5.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CustomIconWidget(
+              iconName: 'edit',
+              color: Colors.white,
+              size: 24,
+            ),
+            SizedBox(height: 0.5.h),
+            Text(
+              'Düzenle',
+              style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
+                color: Colors.white,
+                fontSize: 10.sp,
+              ),
+            ),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        margin: EdgeInsets.symmetric(vertical: 1.h),
+        decoration: BoxDecoration(
+          color: AppTheme.negativeRed,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 5.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CustomIconWidget(
+              iconName: 'delete',
+              color: Colors.white,
+              size: 24,
+            ),
+            SizedBox(height: 0.5.h),
+            Text(
+              'Sil',
+              style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
+                color: Colors.white,
+                fontSize: 10.sp,
+              ),
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          onEdit?.call();
+          return false;
+        } else if (direction == DismissDirection.endToStart) {
+          return await _showDeleteConfirmation(context);
+        }
+        return false;
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          onDelete?.call();
+        }
+      },
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+          padding: EdgeInsets.all(4.w),
+          decoration: BoxDecoration(
+            color: AppTheme.lightTheme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: statusColor.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.shadowLight,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 3.w,
+                              height: 3.w,
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            SizedBox(width: 2.w),
+                            Expanded(
+                              child: Text(
+                                assetName,
+                                style: AppTheme.lightTheme.textTheme.titleMedium
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16.sp,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 1.h),
+                        Text(
+                          _getStatusText(status),
+                          style:
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: statusColor,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: isEnabled,
+                    onChanged: (value) => onToggle?.call(),
+                    activeColor: AppTheme.lightTheme.colorScheme.primary,
+                  ),
+                ],
+              ),
+              SizedBox(height: 2.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hedef Fiyat',
+                          style:
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 11.sp,
+                          ),
+                        ),
+                        SizedBox(height: 0.5.h),
+                        Text(
+                          CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
+                          style: AppTheme.dataTextStyle(
+                            isLight: true,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mevcut Fiyat',
+                          style:
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 11.sp,
+                          ),
+                        ),
+                        SizedBox(height: 0.5.h),
+                        Text(
+                          CurrencyFormatter.formatTRY(currentPrice, decimalPlaces: 4),
+                          style: AppTheme.dataTextStyle(
+                            isLight: true,
+                            fontSize: 14.sp,
+                          ).copyWith(color: priceChangeColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Yakınlık',
+                        style:
+                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryLight,
+                          fontSize: 11.sp,
+                        ),
+                      ),
+                      SizedBox(height: 0.5.h),
+                      Text(
+                        CurrencyFormatter.formatPercentage(proximityPercentage, decimalPlaces: 1),
+                        style:
+                            AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                          color: proximityPercentage < 5
+                              ? AppTheme.alertOrange
+                              : AppTheme.textPrimaryLight,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 2.h),
+              Row(
+                children: [
+                  CustomIconWidget(
+                    iconName:
+                        alertType == 'above' ? 'trending_up' : 'trending_down',
+                    color: alertType == 'above'
+                        ? AppTheme.positiveGreen
+                        : AppTheme.negativeRed,
+                    size: 16,
+                  ),
+                  SizedBox(width: 2.w),
+                  Text(
+                    alertType == 'above'
+                        ? 'Fiyat Üstü Alarmı'
+                        : 'Fiyat Altı Alarmı',
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _formatDate(alertData['createdAt'] as DateTime),
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryLight,
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'active':
+        return AppTheme.lightTheme.colorScheme.primary;
+      case 'triggered':
+        return AppTheme.positiveGreen;
+      case 'disabled':
+        return AppTheme.textSecondaryLight;
+      default:
+        return AppTheme.textSecondaryLight;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'active':
+        return 'Aktif';
+      case 'triggered':
+        return 'Tetiklendi';
+      case 'disabled':
+        return 'Devre Dışı';
+      default:
+        return 'Bilinmiyor';
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  Future<bool> _showDeleteConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(
+                'Alarmı Sil',
+                style: AppTheme.lightTheme.textTheme.titleLarge,
+              ),
+              content: Text(
+                'Bu alarmı silmek istediğinizden emin misiniz?',
+                style: AppTheme.lightTheme.textTheme.bodyMedium,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(
+                    'İptal',
+                    style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                      color: AppTheme.textSecondaryLight,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(
+                    'Sil',
+                    style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                      color: AppTheme.negativeRed,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+}

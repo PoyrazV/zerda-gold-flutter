@@ -20,12 +20,11 @@ class AlertHistoryWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListView.separated(
+        ListView.builder(
           padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: historyAlerts.length,
-          separatorBuilder: (context, index) => SizedBox(height: 1.h),
           itemBuilder: (context, index) {
             final alert = historyAlerts[index];
             return _buildHistoryCard(alert);

@@ -27,7 +27,7 @@ class _ProfitLossCalculatorScreenState
 
   String _selectedPeriod = '30 Gün';
   String _selectedCurrency = 'USDTRY';
-  String _selectedAction = 'ALSAYDIM';
+  String _selectedAction = 'Alsaydım';
   bool _isCalculating = false;
   bool _showResults = false;
 
@@ -102,7 +102,7 @@ class _ProfitLossCalculatorScreenState
     double profitLoss = 0;
     double profitLossPercentage = 0;
 
-    if (_selectedAction == 'ALSAYDIM') {
+    if (_selectedAction == 'Alsaydım') {
       // If bought foreign currency with TRY
       pastValue = amount / pastRate;
       currentValue = pastValue * currentRate;
@@ -343,17 +343,20 @@ class _ProfitLossCalculatorScreenState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Back button
-              IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 24,
+              // Hamburger menu button
+              Builder(
+                builder: (context) => IconButton(
+                  onPressed: () {
+                    print('Kar/Zarar hamburger button tapped!');
+                    Scaffold.of(context).openDrawer();
+                  },
+                  icon: Icon(
+                    Icons.menu,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  padding: EdgeInsets.all(2.w),
                 ),
-                padding: EdgeInsets.all(2.w),
               ),
 
               // KAR/ZARAR title
@@ -368,7 +371,7 @@ class _ProfitLossCalculatorScreenState
               ),
 
               // Empty space to center the title
-              SizedBox(width: 48), // Same width as back button
+              SizedBox(width: 48), // Same width as menu button
             ],
           ),
         ),
@@ -415,7 +418,7 @@ class _ProfitLossCalculatorScreenState
           }).toList();
 
     return Container(
-      height: 9.h,
+      height: 10.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -478,14 +481,25 @@ class _ProfitLossCalculatorScreenState
           final data = tickerData[index]; // Remove the % operation
           final bool isPositive = (data['change'] as double) >= 0;
 
-          return Container(
-            margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
+          return GestureDetector(
+            onTap: () {
+              // Navigate to asset detail screen
+              Navigator.pushNamed(
+                context,
+                '/asset-detail-screen',
+                arguments: {
+                  'code': data['symbol'] as String,
+                },
+              );
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -529,6 +543,7 @@ class _ProfitLossCalculatorScreenState
                   ),
                 ),
               ],
+            ),
             ),
           );
         },

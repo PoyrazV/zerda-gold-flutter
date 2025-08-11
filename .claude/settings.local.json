@@ -12,7 +12,14 @@
       "Bash(python:*)",
       "Bash(rm:*)",
       "Bash(pip install:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(git config:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(del nul)"
     ],
     "deny": []
   }

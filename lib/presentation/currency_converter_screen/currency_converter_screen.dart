@@ -355,28 +355,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                 ),
               ),
 
-              // Refresh button
-              GestureDetector(
-                onTap: () {
-                  _updateExchangeRate();
-                  _calculateConversion();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Kurlar güncellendi'),
-                      backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.all(2.w),
-                  child: Icon(
-                    Icons.refresh,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
+              // Empty space for symmetry
+              SizedBox(width: 48),
             ],
           ),
         ),
@@ -493,57 +473,69 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
           final data = tickerData[index]; // Remove the % operation
           final bool isPositive = (data['change'] as double) >= 0;
 
-          return Container(
-            margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    data['symbol'] as String,
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w500,
+          return GestureDetector(
+            onTap: () {
+              // Navigate to asset detail screen
+              Navigator.pushNamed(
+                context,
+                '/asset-detail-screen',
+                arguments: {
+                  'code': data['symbol'] as String,
+                },
+              );
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      data['symbol'] as String,
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-                SizedBox(height: 0.2.h),
-                Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
-                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white,
-                            fontSize: 10.sp,
+                  SizedBox(height: 0.2.h),
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
+                            style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white,
+                              fontSize: 10.sp,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
                         ),
-                      ),
-                      SizedBox(width: 0.5.w),
-                      Icon(
-                        isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                        color: isPositive
-                            ? AppTheme.positiveGreen
-                            : AppTheme.negativeRed,
-                        size: 10,
-                      ),
-                    ],
+                        SizedBox(width: 0.5.w),
+                        Icon(
+                          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                          color: isPositive
+                              ? AppTheme.positiveGreen
+                              : AppTheme.negativeRed,
+                          size: 10,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

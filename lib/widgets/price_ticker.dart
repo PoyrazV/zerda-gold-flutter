@@ -57,7 +57,7 @@ class PriceTicker extends StatelessWidget {
               final data = tickerData[index];
               final bool isPositive = (data['change'] as double? ?? 0) >= 0;
 
-              return _buildTickerItem(data, isPositive);
+              return _buildTickerItem(context, data, isPositive);
             },
           ),
         ),
@@ -107,58 +107,70 @@ class PriceTicker extends StatelessWidget {
     );
   }
 
-  Widget _buildTickerItem(Map<String, dynamic> data, bool isPositive) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-      padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              data['symbol'] as String? ?? '',
-              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                color: Colors.white,
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w500,
+  Widget _buildTickerItem(BuildContext context, Map<String, dynamic> data, bool isPositive) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to asset detail screen
+        Navigator.pushNamed(
+          context,
+          '/asset-detail-screen',
+          arguments: {
+            'code': data['symbol'] as String? ?? '',
+          },
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                data['symbol'] as String? ?? '',
+                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
-          ),
-          SizedBox(height: 0.2.h),
-          Flexible(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    CurrencyFormatter.formatTRY(data['price'] as double? ?? 0.0, decimalPlaces: 4),
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: 10.sp,
+            SizedBox(height: 0.2.h),
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      CurrencyFormatter.formatTRY(data['price'] as double? ?? 0.0, decimalPlaces: 4),
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-                SizedBox(width: 0.5.w),
-                Icon(
-                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: isPositive
-                      ? AppTheme.positiveGreen
-                      : AppTheme.negativeRed,
-                  size: 10,
-                ),
-              ],
+                  SizedBox(width: 0.5.w),
+                  Icon(
+                    isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                    color: isPositive
+                        ? AppTheme.positiveGreen
+                        : AppTheme.negativeRed,
+                    size: 10,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

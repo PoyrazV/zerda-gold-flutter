@@ -5,6 +5,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/price_ticker.dart';
 import './widgets/alert_card_widget.dart';
 import './widgets/alert_history_widget.dart';
 import './widgets/create_alert_bottom_sheet.dart';
@@ -252,34 +253,22 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   }
 
   Widget _buildPriceTicker() {
-    // Show watchlist items in ticker
+    // Use shared PriceTicker widget
+    return PriceTicker();
+  }
+
+  // Removed old ticker implementation - using shared PriceTicker widget instead
+  /*
+  Widget _buildPriceTickerOld() {
+    // Old implementation moved to shared PriceTicker widget
     final watchlistItems = WatchlistService.getWatchlistItems();
     final tickerData = watchlistItems.isEmpty 
         ? [
-            // Default ticker data when watchlist is empty
             {
               'symbol': 'USD/TRY',
               'price': 34.2156,
               'change': 0.0234,
               'changePercent': 0.068
-            },
-            {
-              'symbol': 'EUR/TRY',  
-              'price': 37.1234,
-              'change': -0.0456,
-              'changePercent': -0.123
-            },
-            {
-              'symbol': 'GBP/TRY',
-              'price': 43.5678,
-              'change': 0.1234,
-              'changePercent': 0.284
-            },
-            {
-              'symbol': 'GOLD',
-              'price': 2847.50,
-              'change': -12.50,
-              'changePercent': -0.437
             },
           ]
         : watchlistItems.map((item) => {
@@ -288,7 +277,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
             'change': item['change'], 
             'changePercent': item['changePercent']
           }).toList();
-
+          
     return Column(
       children: [
         Container(
@@ -414,6 +403,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
       ],
     );
   }
+  */
 
   Widget _buildTabBar() {
     return Container(

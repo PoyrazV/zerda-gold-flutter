@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 import '../../core/app_export.dart';
 import '../../theme/app_theme.dart';
 import '../../services/watchlist_service.dart';
+import '../../widgets/price_ticker.dart';
 import './widgets/interactive_chart_widget.dart';
 import './widgets/key_metrics_widget.dart';
 
@@ -390,6 +391,11 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 
   Widget _buildPriceTicker() {
+    // Use shared PriceTicker widget
+    return PriceTicker();
+  }
+
+  Widget _buildPriceTickerOld() {
     // Show watchlist items in ticker
     final watchlistItems = WatchlistService.getWatchlistItems();
     final tickerData = watchlistItems.isEmpty 

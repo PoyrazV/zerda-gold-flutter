@@ -15,7 +15,7 @@ class ActionTypeDropdownWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actions = ['ALSAYDIM', 'SATSAYDIM'];
+    final actions = ['Alsaydım', 'Satsaydım'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

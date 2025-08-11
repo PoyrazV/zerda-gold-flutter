@@ -26,70 +26,130 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
       1; // 0: KAZANANLAR, 1: KAYBEDENLER (Losers selected by default)
   int _selectedTimeframe = 1; // 0: GÜN, 1: HAFTA (Week selected by default)
 
-  // Mock data for winners
+  // Mock data for winners - using real currency and gold data
   final List<Map<String, dynamic>> _winnersData = [
     {
-      "name": "ALTIN/USD",
-      "absoluteChange": "+12.50",
+      "name": "GRAM",
+      "description": "Gram Altın",
       "percentageChange": 8.45,
       "isPositive": true,
     },
     {
-      "name": "GÜMÜŞ/USD",
-      "absoluteChange": "+2.30",
+      "name": "EURTRY",
+      "description": "Euro",
       "percentageChange": 6.21,
       "isPositive": true,
     },
     {
-      "name": "BAKIR/USD",
-      "absoluteChange": "+0.85",
+      "name": "YÇEYREK",
+      "description": "Yeni Çeyrek Altın",
       "percentageChange": 4.15,
       "isPositive": true,
     },
     {
-      "name": "EUR/USD",
-      "absoluteChange": "+0.012",
+      "name": "GBPTRY",
+      "description": "İngiliz Sterlini",
       "percentageChange": 3.76,
       "isPositive": true,
     },
     {
-      "name": "GBP/USD",
-      "absoluteChange": "+0.021",
+      "name": "22AYAR",
+      "description": "22 Ayar Bilezik",
       "percentageChange": 2.89,
+      "isPositive": true,
+    },
+    {
+      "name": "AUDTRY",
+      "description": "Avustralya Doları",
+      "percentageChange": 2.45,
+      "isPositive": true,
+    },
+    {
+      "name": "YTAM",
+      "description": "Yeni Tam Altın",
+      "percentageChange": 1.98,
+      "isPositive": true,
+    },
+    {
+      "name": "CADTRY",
+      "description": "Kanada Doları",
+      "percentageChange": 1.67,
+      "isPositive": true,
+    },
+    {
+      "name": "CUMHUR",
+      "description": "Cumhuriyet Altını",
+      "percentageChange": 1.34,
+      "isPositive": true,
+    },
+    {
+      "name": "SEKTRY",
+      "description": "İsveç Kronu",
+      "percentageChange": 0.98,
       "isPositive": true,
     },
   ];
 
-  // Mock data for losers
+  // Mock data for losers - using real currency and gold data
   final List<Map<String, dynamic>> _losersData = [
     {
-      "name": "PLATIN/USD",
-      "absoluteChange": "-3.100",
+      "name": "USDTRY",
+      "description": "Amerikan Doları",
       "percentageChange": -7.68,
       "isPositive": false,
     },
     {
-      "name": "GÜMÜŞ ONS",
-      "absoluteChange": "-97,00",
+      "name": "GUMUS",
+      "description": "Gümüş (Gram)",
       "percentageChange": -5.23,
       "isPositive": false,
     },
     {
-      "name": "PETROL",
-      "absoluteChange": "-2.45",
+      "name": "CHFTRY",
+      "description": "İsviçre Frangı",
       "percentageChange": -4.12,
       "isPositive": false,
     },
     {
-      "name": "GAZ NATURAL",
-      "absoluteChange": "-0.89",
+      "name": "14AYAR",
+      "description": "14 Ayar Bilezik",
       "percentageChange": -3.67,
       "isPositive": false,
     },
     {
-      "name": "USD/TRY",
-      "absoluteChange": "-0.156",
+      "name": "RUBTRY",
+      "description": "Rus Rublesi",
       "percentageChange": -2.94,
+      "isPositive": false,
+    },
+    {
+      "name": "JPYTRY",
+      "description": "Japon Yeni",
+      "percentageChange": -2.45,
+      "isPositive": false,
+    },
+    {
+      "name": "EÇEYREK",
+      "description": "Eski Çeyrek Altın",
+      "percentageChange": -1.89,
+      "isPositive": false,
+    },
+    {
+      "name": "DKKTRY",
+      "description": "Danimarka Kronu",
+      "percentageChange": -1.56,
+      "isPositive": false,
+    },
+    {
+      "name": "18AYAR",
+      "description": "18 Ayar Bilezik",
+      "percentageChange": -1.23,
+      "isPositive": false,
+    },
+    {
+      "name": "ONSALTIN",
+      "description": "Ons Altın (USD)",
+      "percentageChange": -0.87,
       "isPositive": false,
     },
   ];
@@ -275,47 +335,42 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Stack(
             children: [
               // Menu button (hamburger)
-              Builder(
-                builder: (context) => IconButton(
-                  onPressed: () {
-                    print('Winners Losers hamburger button tapped!');
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: Icon(
-                    Icons.menu,
-                    color: Colors.white,
-                    size: 24,
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Builder(
+                  builder: (context) => IconButton(
+                    onPressed: () {
+                      print('Winners Losers hamburger button tapped!');
+                      Scaffold.of(context).openDrawer();
+                    },
+                    icon: Icon(
+                      Icons.menu,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    padding: EdgeInsets.all(2.w),
                   ),
-                  padding: EdgeInsets.all(2.w),
                 ),
               ),
 
-              // ZERDA title
-              Text(
-                'ZERDA',
-                style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20.sp,
-                  letterSpacing: 1.2,
+              // KAZANANLAR/KAYBEDENLER title - perfectly centered
+              Center(
+                child: Text(
+                  'KAZANANLAR/KAYBEDENLER',
+                  textAlign: TextAlign.center,
+                  style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14.sp,
+                    letterSpacing: 0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-
-              // Back button
-              IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                padding: EdgeInsets.all(2.w),
               ),
             ],
           ),
@@ -363,7 +418,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
           }).toList();
 
     return Container(
-      height: 9.h,
+      height: 10.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -426,14 +481,25 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
           final data = tickerData[index]; // Remove the % operation
           final bool isPositive = (data['change'] as double) >= 0;
 
-          return Container(
-            margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
+          return GestureDetector(
+            onTap: () {
+              // Navigate to asset detail screen
+              Navigator.pushNamed(
+                context,
+                '/asset-detail-screen',
+                arguments: {
+                  'code': data['symbol'] as String,
+                },
+              );
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -477,6 +543,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
                   ),
                 ),
               ],
+            ),
             ),
           );
         },

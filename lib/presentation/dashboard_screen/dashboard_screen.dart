@@ -413,7 +413,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: Container(
                 alignment: Alignment.center,
                 child: Text(
-                  CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
+                  '₺${CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double)}',
                   style: AppTheme.dataTextStyle(
                     isLight: true,
                     fontSize: 12.sp,
@@ -437,7 +437,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   children: [
                     SizedBox(height: 2.0.h), // Push sell price down even more
                     Text(
-                      CurrencyFormatter.formatExchangeRate(currency['sellPrice'] as double),
+                      '₺${CurrencyFormatter.formatExchangeRate(currency['sellPrice'] as double)}',
                       style: AppTheme.dataTextStyle(
                         isLight: true,
                         fontSize: 12.sp,

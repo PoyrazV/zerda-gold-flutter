@@ -18,66 +18,75 @@ class FinancialInstrumentsListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: 4.w),
+    return ListView.builder(
+      padding: EdgeInsets.zero,
       itemCount: data.length,
-      separatorBuilder: (context, index) => Divider(
-        color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.3),
-        height: 1,
-        thickness: 0.5,
-      ),
       itemBuilder: (context, index) {
         final item = data[index];
         final percentage = item['percentageChange'] as double;
         final Color changeColor = isWinners
             ? AppTheme.positiveGreen // Green for winners
             : AppTheme.negativeRed; // Red for losers
+        final isLastItem = index == data.length - 1;
 
         return Container(
-          padding: EdgeInsets.symmetric(vertical: 2.h),
-          child: Row(
-            children: [
-              // Left Column: Instrument name
-              Expanded(
-                flex: 3,
-                child: Text(
-                  item['name'] as String,
-                  style: GoogleFonts.inter(
-                    color: AppTheme.lightTheme.colorScheme.onSurface,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
+          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          decoration: BoxDecoration(
+            border: isLastItem ? null : Border(
+              bottom: BorderSide(
+                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 1.2.h),
+            child: Row(
+              children: [
+                // Left Column: Instrument name and description
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item['name'] as String,
+                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (item['description'] != null) ...[
+                        SizedBox(height: 0.2.h),
+                        Text(
+                          item['description'] as String,
+                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-              ),
 
-              // Center Column: Absolute change
-              Expanded(
-                flex: 2,
-                child: Text(
-                  item['absoluteChange'] as String,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.robotoMono(
-                    color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w500,
+                // Right Column: Percentage change
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    CurrencyFormatter.formatPercentage(percentage),
+                    textAlign: TextAlign.right,
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: changeColor,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-
-              // Right Column: Percentage change
-              Expanded(
-                flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatPercentage(percentage),
-                  textAlign: TextAlign.right,
-                  style: GoogleFonts.robotoMono(
-                    color: changeColor,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

@@ -107,9 +107,20 @@ class _PriceTickerWidgetState extends State<PriceTickerWidget>
     final Color changeColor =
         isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      child: Row(
+    return GestureDetector(
+      onTap: () {
+        // Navigate to asset detail screen
+        Navigator.pushNamed(
+          context,
+          '/asset-detail-screen',
+          arguments: {
+            'code': data['pair'] as String,
+          },
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+        child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -156,6 +167,7 @@ class _PriceTickerWidgetState extends State<PriceTickerWidget>
           ),
           SizedBox(width: 6.w),
         ],
+      ),
       ),
     );
   }

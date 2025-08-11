@@ -43,14 +43,14 @@ class SegmentedControlWidget extends StatelessWidget {
                 child: Center(
                   child: Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
                       color: isSelected
                           ? Colors.white
-                          : AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          : AppTheme.textSecondaryLight,
                       fontSize: 14.sp,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
-                      letterSpacing: 0.1,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),

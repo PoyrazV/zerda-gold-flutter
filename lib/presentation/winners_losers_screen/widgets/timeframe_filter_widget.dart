@@ -47,11 +47,11 @@ class TimeframeFilterWidget extends StatelessWidget {
               child: Center(
                 child: Text(
                   timeframe,
-                  style: GoogleFonts.inter(
+                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                     color: isSelected
                         ? Colors.white
-                        : AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 12.sp,
+                        : AppTheme.textSecondaryLight,
+                    fontSize: 10.sp,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     letterSpacing: 0.1,
                   ),

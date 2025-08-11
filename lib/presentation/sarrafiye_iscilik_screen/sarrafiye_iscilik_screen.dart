@@ -271,7 +271,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
           }).toList();
 
     return Container(
-      height: 9.h,
+      height: 10.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -334,14 +334,25 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
           final data = tickerData[index]; // Remove the % operation
           final bool isPositive = (data['change'] as double) >= 0;
 
-          return Container(
-            margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
+          return GestureDetector(
+            onTap: () {
+              // Navigate to asset detail screen
+              Navigator.pushNamed(
+                context,
+                '/asset-detail-screen',
+                arguments: {
+                  'code': data['symbol'] as String,
+                },
+              );
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -386,6 +397,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
                 ),
               ],
             ),
+            ),
           );
         },
       ),
@@ -394,21 +406,18 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.w),
-      padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.3.h),
       child: Row(
         children: [
           Expanded(
             flex: 3,
             child: Text(
               'Birim',
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+              textAlign: TextAlign.left,
+              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondaryLight,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -417,20 +426,25 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
             child: Text(
               'Alış',
               textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondaryLight,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              'Satış',
-              textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+            child: Padding(
+              padding: EdgeInsets.only(left: 6.5.w),
+              child: Text(
+                'Satış',
+                textAlign: TextAlign.center,
+                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryLight,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -440,56 +454,65 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
   }
 
   Widget _buildSarrafiyeList() {
-    return ListView.separated(
+    return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      padding: EdgeInsets.zero,
       itemCount: _iscilikData.length,
-      separatorBuilder: (context, index) => Divider(
-        color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
-        height: 1,
-      ),
       itemBuilder: (context, index) {
         final item = _iscilikData[index];
+        final isLastItem = index == _iscilikData.length - 1;
+
         return Container(
-          padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-          child: Row(
-            children: [
-              // Name
-              Expanded(
-                flex: 3,
-                child: Text(
-                  item['name'] as String,
-                  style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
+          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          decoration: BoxDecoration(
+            border: isLastItem ? null : Border(
+              bottom: BorderSide(
+                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
+            child: Row(
+              children: [
+                // Name
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    item['name'] as String,
+                    style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-              // Buy price
-              Expanded(
-                flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: 4),
-                  textAlign: TextAlign.center,
-                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14.sp,
+                // Buy price
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: 4),
+                    textAlign: TextAlign.center,
+                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14.sp,
+                    ),
                   ),
                 ),
-              ),
-              // Sell price
-              Expanded(
-                flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: 4),
-                  textAlign: TextAlign.center,
-                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14.sp,
+                // Sell price
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: 4),
+                    textAlign: TextAlign.center,
+                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14.sp,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

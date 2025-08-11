@@ -27,46 +27,55 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     'DOVIZ': [
       {
         'code': 'USDTRY',
+        'name': 'Amerikan Doları',
         'buyPrice': 40.503,
         'sellPrice': 40.596,
       },
       {
         'code': 'EURTRY',
+        'name': 'Euro',
         'buyPrice': 46.096,
         'sellPrice': 46.285,
       },
       {
         'code': 'EURUSD',
+        'name': 'Euro / Dolar',
         'buyPrice': 1.1381,
         'sellPrice': 1.1401,
       },
       {
         'code': 'GBPTRY',
+        'name': 'İngiliz Sterlini',
         'buyPrice': 53.258,
         'sellPrice': 53.655,
       },
       {
         'code': 'CHFTRY',
+        'name': 'İsviçre Frangı',
         'buyPrice': 49.190,
         'sellPrice': 49.707,
       },
       {
         'code': 'AUDTRY',
+        'name': 'Avustralya Doları',
         'buyPrice': 25.246,
         'sellPrice': 26.042,
       },
       {
         'code': 'CADTRY',
+        'name': 'Kanada Doları',
         'buyPrice': 28.752,
         'sellPrice': 29.589,
       },
       {
         'code': 'SARTRY',
+        'name': 'Suudi Riyali',
         'buyPrice': 10.645,
         'sellPrice': 10.972,
       },
       {
         'code': 'JPYTRY',
+        'name': 'Japon Yeni',
         'buyPrice': 0.2670,
         'sellPrice': 0.2710,
       },
@@ -74,36 +83,43 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     'ALTIN': [
       {
         'code': 'GRAM',
+        'name': 'Gram Altın',
         'buyPrice': 2847.50,
         'sellPrice': 2849.20,
       },
       {
         'code': 'YÇEYREK',
+        'name': 'Yeni Çeyrek Altın',
         'buyPrice': 2891.75,
         'sellPrice': 2893.45,
       },
       {
         'code': 'EÇEYREK',
+        'name': 'Eski Çeyrek Altın',
         'buyPrice': 2860.40,
         'sellPrice': 2862.10,
       },
       {
         'code': 'YYARIM',
+        'name': 'Yeni Yarım Altın',
         'buyPrice': 5783.50,
         'sellPrice': 5786.90,
       },
       {
         'code': 'EYARIM',
+        'name': 'Eski Yarım Altın',
         'buyPrice': 5720.80,
         'sellPrice': 5724.20,
       },
       {
         'code': 'YTAM',
+        'name': 'Yeni Tam Altın',
         'buyPrice': 11567.00,
         'sellPrice': 11573.80,
       },
       {
         'code': 'ETAM',
+        'name': 'Eski Tam Altın',
         'buyPrice': 11441.60,
         'sellPrice': 11448.40,
       },
@@ -325,7 +341,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
           }).toList();
 
     return Container(
-      height: 9.h,
+      height: 10.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -388,57 +404,69 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
           final data = tickerData[index]; // Remove the % operation
           final bool isPositive = (data['change'] as double) >= 0;
 
-          return Container(
-            margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    data['symbol'] as String,
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w500,
+          return GestureDetector(
+            onTap: () {
+              // Navigate to asset detail screen
+              Navigator.pushNamed(
+                context,
+                '/asset-detail-screen',
+                arguments: {
+                  'code': data['symbol'] as String,
+                },
+              );
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      data['symbol'] as String,
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
-                SizedBox(height: 0.2.h),
-                Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
-                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white,
-                            fontSize: 10.sp,
+                  SizedBox(height: 0.2.h),
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
+                            style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white,
+                              fontSize: 10.sp,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
                         ),
-                      ),
-                      SizedBox(width: 0.5.w),
-                      Icon(
-                        isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                        color: isPositive
-                            ? AppTheme.positiveGreen
-                            : AppTheme.negativeRed,
-                        size: 10,
-                      ),
-                    ],
+                        SizedBox(width: 0.5.w),
+                        Icon(
+                          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                          color: isPositive
+                              ? AppTheme.positiveGreen
+                              : AppTheme.negativeRed,
+                          size: 10,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -551,21 +579,18 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.w),
-      padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
       child: Row(
         children: [
           Expanded(
             flex: 3,
             child: Text(
               'Birim',
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+              textAlign: TextAlign.left,
+              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondaryLight,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -574,20 +599,25 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
             child: Text(
               'Alış',
               textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                color: AppTheme.textSecondaryLight,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              'Satış',
-              textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+            child: Padding(
+              padding: EdgeInsets.only(left: 6.5.w),
+              child: Text(
+                'Satış',
+                textAlign: TextAlign.center,
+                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryLight,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -599,58 +629,96 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   Widget _buildHistoricalRatesList() {
     final data = _historicalData[_selectedType] ?? [];
     
-    return ListView.separated(
+    return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      padding: EdgeInsets.zero,
       itemCount: data.length,
-      separatorBuilder: (context, index) => Divider(
-        color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
-        height: 1,
-      ),
       itemBuilder: (context, index) {
         final item = data[index];
-        final displayPrice = _selectedType == 'DOVIZ' ? 2 : 2;
+        final displayPrice = _selectedType == 'DOVIZ' ? 4 : 2;
+        final isLastItem = index == data.length - 1;
         
         return Container(
-          padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-          child: Row(
-            children: [
-              // Code
-              Expanded(
-                flex: 3,
-                child: Text(
-                  item['code'] as String,
-                  style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
+          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          decoration: BoxDecoration(
+            border: isLastItem ? null : Border(
+              bottom: BorderSide(
+                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 1.2.h, horizontal: 0.w),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Code and name
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item['code'] as String,
+                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: 0.1.h),
+                      Text(
+                        item['name'] as String,
+                        style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textSecondaryLight,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              // Buy price
-              Expanded(
-                flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: displayPrice),
-                  textAlign: TextAlign.center,
-                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14.sp,
+                // Buy price
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: Text(
+                      '₺${CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: displayPrice)}',
+                      style: AppTheme.dataTextStyle(
+                        isLight: true,
+                        fontSize: 12.sp,
+                      ).copyWith(fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ),
-              ),
-              // Sell price
-              Expanded(
-                flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: displayPrice),
-                  textAlign: TextAlign.center,
-                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14.sp,
+                // Sell price
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 2.w),
+                    child: Text(
+                      '₺${CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: displayPrice)}',
+                      style: AppTheme.dataTextStyle(
+                        isLight: true,
+                        fontSize: 12.sp,
+                      ).copyWith(fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

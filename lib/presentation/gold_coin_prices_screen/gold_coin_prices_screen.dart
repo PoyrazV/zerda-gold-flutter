@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../theme/app_theme.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
@@ -392,7 +391,6 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
               Builder(
                 builder: (context) => IconButton(
                   onPressed: () {
-                    print('Gold page hamburger button tapped!');
                     Scaffold.of(context).openDrawer();
                   },
                   icon: Icon(

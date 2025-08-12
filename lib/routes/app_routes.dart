@@ -22,7 +22,6 @@ import '../presentation/change_password_screen/change_password_screen.dart';
 import '../presentation/email_preferences_screen/email_preferences_screen.dart';
 
 class AppRoutes {
-  // TODO: Add your routes here
   static const String initial = '/';
   static const String assetDetail = '/asset-detail-screen';
   static const String priceAlerts = '/price-alerts-screen';
@@ -69,6 +68,5 @@ class AppRoutes {
     editProfile: (context) => const EditProfileScreen(),
     changePassword: (context) => const ChangePasswordScreen(),
     emailPreferences: (context) => const EmailPreferencesScreen(),
-    // TODO: Add your other routes here
   };
 }

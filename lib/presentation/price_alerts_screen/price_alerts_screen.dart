@@ -204,7 +204,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                 child: Builder(
                   builder: (context) => IconButton(
                     onPressed: () {
-                      print('Alerts page hamburger button tapped!');
                       Scaffold.of(context).openDrawer();
                     },
                     icon: Icon(

@@ -332,7 +332,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               Builder(
                 builder: (context) => IconButton(
                   onPressed: () {
-                    print('Converter page hamburger button tapped!');
                     Scaffold.of(context).openDrawer();
                   },
                   icon: Icon(

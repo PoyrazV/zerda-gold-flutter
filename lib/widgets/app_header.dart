@@ -13,6 +13,8 @@ class AppHeader extends StatelessWidget {
   final VoidCallback? onMenuPressed;
   final VoidCallback? onBackPressed;
   final double? textTopPadding;
+  final double? titleVerticalOffset;
+  final double? menuButtonVerticalOffset;
   
   const AppHeader({
     Key? key,
@@ -26,6 +28,8 @@ class AppHeader extends StatelessWidget {
     this.onMenuPressed,
     this.onBackPressed,
     this.textTopPadding,
+    this.titleVerticalOffset,
+    this.menuButtonVerticalOffset,
   }) : super(key: key);
 
   @override
@@ -51,9 +55,11 @@ class AppHeader extends StatelessWidget {
             children: [
               // Leading widget (menu button or custom leading)
               leading ?? (showMenuButton 
-                ? Padding(
-                    padding: EdgeInsets.only(top: textTopPadding ?? 0),
-                    child: Builder(
+                ? Transform.translate(
+                    offset: Offset(0, menuButtonVerticalOffset ?? 0),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: textTopPadding ?? 0),
+                      child: Builder(
                       builder: (context) => IconButton(
                         onPressed: onMenuPressed ?? () {
                           Scaffold.of(context).openDrawer();
@@ -65,12 +71,15 @@ class AppHeader extends StatelessWidget {
                         ),
                         padding: EdgeInsets.all(2.w),
                       ),
+                      ),
                     ),
                   )
                 : showBackButton
-                  ? Padding(
-                      padding: EdgeInsets.only(top: textTopPadding ?? 0),
-                      child: IconButton(
+                  ? Transform.translate(
+                      offset: Offset(0, menuButtonVerticalOffset ?? 0),
+                      child: Padding(
+                        padding: EdgeInsets.only(top: textTopPadding ?? 0),
+                        child: IconButton(
                         onPressed: onBackPressed ?? () {
                           Navigator.pop(context);
                         },
@@ -80,14 +89,17 @@ class AppHeader extends StatelessWidget {
                           size: 24,
                         ),
                         padding: EdgeInsets.all(2.w),
+                        ),
                       ),
                     )
                   : SizedBox(width: 48)),
 
               // Title and subtitle
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(top: textTopPadding ?? 0),
+                child: Transform.translate(
+                  offset: Offset(0, titleVerticalOffset ?? 0),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: textTopPadding ?? 0),
                   child: subtitle != null
                     ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -134,6 +146,7 @@ class AppHeader extends StatelessWidget {
                       maxLines: 1,
                     ),
                 ),
+                  ),
               ),
 
               // Actions or placeholder

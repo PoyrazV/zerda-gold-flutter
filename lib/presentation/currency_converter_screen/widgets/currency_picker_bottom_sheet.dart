@@ -83,6 +83,37 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
       "flag": "https://flagcdn.com/w320/ru.png",
       "symbol": "₽"
     },
+    // Gold types
+    {
+      "code": "GOLD_GRAM",
+      "name": "Gram Altın",
+      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
+      "symbol": "gr"
+    },
+    {
+      "code": "GOLD_QUARTER",
+      "name": "Çeyrek Altın",
+      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
+      "symbol": "çyr"
+    },
+    {
+      "code": "GOLD_HALF",
+      "name": "Yarım Altın",
+      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
+      "symbol": "1/2"
+    },
+    {
+      "code": "GOLD_FULL",
+      "name": "Tam Altın",
+      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
+      "symbol": "tam"
+    },
+    {
+      "code": "GOLD_OUNCE",
+      "name": "Ons Altın",
+      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
+      "symbol": "oz"
+    },
   ];
 
   @override
@@ -138,7 +169,7 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Para Birimi Seçin',
+                  'Kıymet Seçin',
                   style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.lightTheme.colorScheme.onSurface,
@@ -163,7 +194,7 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Para birimi ara...',
+                hintText: 'Kıymet ara...',
                 prefixIcon: Padding(
                   padding: EdgeInsets.all(3.w),
                   child: CustomIconWidget(

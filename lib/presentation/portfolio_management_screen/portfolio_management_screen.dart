@@ -21,12 +21,9 @@ class PortfolioManagementScreen extends StatefulWidget {
       _PortfolioManagementScreenState();
 }
 
-class _PortfolioManagementScreenState extends State<PortfolioManagementScreen>
-    with TickerProviderStateMixin {
+class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
-  late AnimationController _fabAnimationController;
-  late Animation<double> _fabAnimation;
 
   List<Map<String, dynamic>> _positions = [
     {
@@ -87,15 +84,6 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen>
   @override
   void initState() {
     super.initState();
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fabAnimation = CurvedAnimation(
-      parent: _fabAnimationController,
-      curve: Curves.easeInOut,
-    );
-    _fabAnimationController.forward();
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
@@ -110,7 +98,6 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen>
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
-    _fabAnimationController.dispose();
     super.dispose();
   }
 
@@ -161,17 +148,14 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen>
           ),
         ],
       ),
-      floatingActionButton: ScaleTransition(
-        scale: _fabAnimation,
-        child: FloatingActionButton(
-          onPressed: _showAddPositionBottomSheet,
-          backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-          foregroundColor: Colors.white,
-          child: CustomIconWidget(
-            iconName: 'add',
-            color: Colors.white,
-            size: 24,
-          ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddPositionBottomSheet,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        foregroundColor: Colors.white,
+        child: CustomIconWidget(
+          iconName: 'add',
+          color: Colors.white,
+          size: 24,
         ),
       ),
       bottomNavigationBar: _buildBottomNavigation(),

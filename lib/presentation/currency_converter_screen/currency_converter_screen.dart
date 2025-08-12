@@ -38,14 +38,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   };
 
   Map<String, dynamic> _toCurrency = {
-    "code": "TRY",
-    "name": "Türk Lirası",
-    "flag": "https://flagcdn.com/w320/tr.png",
-    "symbol": "₺"
+    "code": "GOLD_GRAM",
+    "name": "Gram Altın",
+    "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
+    "symbol": "gr"
   };
 
-  double _exchangeRate = 32.4567;
-  double _changePercentage = 0.45;
+  double _exchangeRate = 32.4567 / 2654.30; // USD to Gold Gram
+  double _changePercentage = 1.10;
   DateTime _lastUpdate = DateTime.now().subtract(const Duration(minutes: 2));
 
 
@@ -146,6 +146,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     final fromCode = _fromCurrency['code'] as String;
     final toCode = _toCurrency['code'] as String;
 
+    // Currency to Currency rates
     if (fromCode == 'USD' && toCode == 'TRY') {
       _exchangeRate = 32.4567;
       _changePercentage = 0.45;
@@ -158,7 +159,59 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     } else if (fromCode == 'EUR' && toCode == 'USD') {
       _exchangeRate = 1.0856;
       _changePercentage = 0.12;
-    } else {
+    }
+    // Currency to Gold rates (TRY to Gold)
+    else if (fromCode == 'TRY' && toCode == 'GOLD_GRAM') {
+      _exchangeRate = 1 / 2654.30; // 1 TRY = ? gram gold
+      _changePercentage = 0.65;
+    } else if (fromCode == 'TRY' && toCode == 'GOLD_QUARTER') {
+      _exchangeRate = 1 / 2891.75; // 1 TRY = ? quarter gold
+      _changePercentage = 0.85;
+    } else if (fromCode == 'TRY' && toCode == 'GOLD_HALF') {
+      _exchangeRate = 1 / 5783.50; // 1 TRY = ? half gold
+      _changePercentage = 1.12;
+    } else if (fromCode == 'TRY' && toCode == 'GOLD_FULL') {
+      _exchangeRate = 1 / 11567.00; // 1 TRY = ? full gold
+      _changePercentage = 0.95;
+    } else if (fromCode == 'TRY' && toCode == 'GOLD_OUNCE') {
+      _exchangeRate = 1 / 2746.85; // 1 TRY = ? ounce gold (USD)
+      _changePercentage = -0.25;
+    }
+    // Gold to Currency rates (Gold to TRY)
+    else if (fromCode == 'GOLD_GRAM' && toCode == 'TRY') {
+      _exchangeRate = 2654.30; // 1 gram gold = ? TRY
+      _changePercentage = 0.65;
+    } else if (fromCode == 'GOLD_QUARTER' && toCode == 'TRY') {
+      _exchangeRate = 2891.75; // 1 quarter gold = ? TRY
+      _changePercentage = 0.85;
+    } else if (fromCode == 'GOLD_HALF' && toCode == 'TRY') {
+      _exchangeRate = 5783.50; // 1 half gold = ? TRY
+      _changePercentage = 1.12;
+    } else if (fromCode == 'GOLD_FULL' && toCode == 'TRY') {
+      _exchangeRate = 11567.00; // 1 full gold = ? TRY
+      _changePercentage = 0.95;
+    } else if (fromCode == 'GOLD_OUNCE' && toCode == 'TRY') {
+      _exchangeRate = 2746.85 * 32.4567; // 1 ounce gold = ? TRY (via USD)
+      _changePercentage = -0.25;
+    }
+    // Gold to Gold conversions
+    else if (fromCode == 'GOLD_GRAM' && toCode == 'GOLD_QUARTER') {
+      _exchangeRate = 2654.30 / 2891.75;
+      _changePercentage = 0.20;
+    } else if (fromCode == 'GOLD_QUARTER' && toCode == 'GOLD_GRAM') {
+      _exchangeRate = 2891.75 / 2654.30;
+      _changePercentage = -0.20;
+    }
+    // USD to Gold rates
+    else if (fromCode == 'USD' && toCode == 'GOLD_GRAM') {
+      _exchangeRate = 32.4567 / 2654.30; // USD to TRY to Gold
+      _changePercentage = 1.10;
+    } else if (fromCode == 'USD' && toCode == 'GOLD_OUNCE') {
+      _exchangeRate = 1 / 2746.85; // 1 USD = ? ounce gold
+      _changePercentage = 0.70;
+    }
+    // Default fallback
+    else {
       _exchangeRate = 1.0;
       _changePercentage = 0.0;
     }
@@ -207,11 +260,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
           // Main content
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(4.w),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.4.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                     // From amount input
                     AmountInputWidget(
                       controller: _fromAmountController,

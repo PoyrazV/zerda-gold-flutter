@@ -135,6 +135,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
           ],
         ),
       ),
+      floatingActionButton: _buildFloatingActionButton(),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
@@ -196,23 +197,72 @@ class _WatchlistScreenState extends State<WatchlistScreen>
         final isPositive = item['isPositive'] as bool;
         final changeColor = isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed;
 
-        return Container(
-          padding: EdgeInsets.all(4.w),
-          decoration: BoxDecoration(
-            color: AppTheme.lightTheme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
-              width: 1,
+        return Dismissible(
+          key: Key(item['code'].toString()),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: EdgeInsets.symmetric(vertical: 1.h),
+            decoration: BoxDecoration(
+              color: AppTheme.negativeRed,
+              borderRadius: BorderRadius.circular(12),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.shadowLight,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(right: 5.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                SizedBox(height: 0.5.h),
+                Text(
+                  'Sil',
+                  style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white,
+                    fontSize: 10.sp,
+                  ),
+                ),
+              ],
+            ),
           ),
+          onDismissed: (direction) {
+            final item = _watchlistItems[index];
+            WatchlistService.removeFromWatchlist(item['code']);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${item['name']} takip listesinden çıkarıldı'),
+                backgroundColor: AppTheme.negativeRed,
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'Geri Al',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    // Re-add to watchlist
+                    WatchlistService.addToWatchlist(item);
+                  },
+                ),
+              ),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(4.w),
+            decoration: BoxDecoration(
+              color: AppTheme.lightTheme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.shadowLight,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
           child: InkWell(
             onTap: () {
               // Navigate to asset detail screen
@@ -284,19 +334,9 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                   ),
                 ),
 
-                // Remove button
-                SizedBox(width: 2.w),
-                IconButton(
-                  onPressed: () => _removeFromWatchlist(item),
-                  icon: Icon(
-                    Icons.remove_circle_outline,
-                    color: AppTheme.negativeRed,
-                    size: 24,
-                  ),
-                  padding: EdgeInsets.all(1.w),
-                ),
               ],
             ),
+          ),
           ),
         );
       },
@@ -348,18 +388,8 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                 ),
               ),
 
-              // Add button
-              IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/asset-selection-screen');
-                },
-                icon: Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                padding: EdgeInsets.all(2.w),
-              ),
+              // Empty space for symmetry
+              SizedBox(width: 48),
             ],
           ),
         ),
@@ -534,6 +564,20 @@ class _WatchlistScreenState extends State<WatchlistScreen>
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    return FloatingActionButton(
+      onPressed: () {
+        Navigator.pushNamed(context, '/asset-selection-screen');
+      },
+      backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+      child: Icon(
+        Icons.add,
+        color: Colors.white,
+        size: 24,
       ),
     );
   }

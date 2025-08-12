@@ -97,7 +97,7 @@ class AppDrawer extends StatelessWidget {
             
             _buildMenuItem(
               Icons.swap_horiz, 
-              'Döviz Çevirici', 
+              'Döviz/Altın Çevirici', 
               () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/currency-converter-screen');
@@ -147,7 +147,7 @@ class AppDrawer extends StatelessWidget {
             
             _buildMenuItem(
               Icons.receipt_long, 
-              'Kazananlar Kaybedenler', 
+              'Performans Geçmişi', 
               () {
                 Navigator.of(context).pop();
                 Navigator.pushNamed(context, '/winners-losers-screen');

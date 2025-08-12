@@ -68,8 +68,6 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
     return FinancialScreenTemplate(
       title: 'Sarrafiye İşçilikleri',
       currentRoute: '/sarrafiye-iscilik-screen',
-      onRefresh: _handleRefresh,
-      isRefreshing: _isRefreshing,
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.lightTheme.scaffoldBackgroundColor,
@@ -138,13 +136,16 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              'Satış',
-              textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: EdgeInsets.only(left: 6.5.w),
+              child: Text(
+                'Satış',
+                textAlign: TextAlign.center,
+                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                  color: Colors.white,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

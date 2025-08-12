@@ -51,30 +51,36 @@ class AppHeader extends StatelessWidget {
             children: [
               // Leading widget (menu button or custom leading)
               leading ?? (showMenuButton 
-                ? Builder(
-                    builder: (context) => IconButton(
-                      onPressed: onMenuPressed ?? () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                      icon: const Icon(
-                        Icons.menu,
-                        color: Colors.white,
-                        size: 24,
+                ? Padding(
+                    padding: EdgeInsets.only(top: textTopPadding ?? 0),
+                    child: Builder(
+                      builder: (context) => IconButton(
+                        onPressed: onMenuPressed ?? () {
+                          Scaffold.of(context).openDrawer();
+                        },
+                        icon: const Icon(
+                          Icons.menu,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        padding: EdgeInsets.all(2.w),
                       ),
-                      padding: EdgeInsets.all(2.w),
                     ),
                   )
                 : showBackButton
-                  ? IconButton(
-                      onPressed: onBackPressed ?? () {
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 24,
+                  ? Padding(
+                      padding: EdgeInsets.only(top: textTopPadding ?? 0),
+                      child: IconButton(
+                        onPressed: onBackPressed ?? () {
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        padding: EdgeInsets.all(2.w),
                       ),
-                      padding: EdgeInsets.all(2.w),
                     )
                   : SizedBox(width: 48)),
 

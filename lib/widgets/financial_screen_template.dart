@@ -95,7 +95,7 @@ class _FinancialScreenTemplateState extends State<FinancialScreenTemplate> {
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 20.sp,
-                  letterSpacing: 1.2,
+                  letterSpacing: 0.5,
                 ),
               ),
 

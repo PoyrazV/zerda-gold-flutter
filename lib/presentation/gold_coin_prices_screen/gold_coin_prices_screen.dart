@@ -6,6 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_header.dart';
 
 class GoldCoinPricesScreen extends StatefulWidget {
   const GoldCoinPricesScreen({Key? key}) : super(key: key);
@@ -284,20 +285,17 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     return Scaffold(
       backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: AppTheme.lightTheme.colorScheme.primary,
-        child: Column(
-          children: [
-            // Header with ZERDA branding
-            _buildHeader(),
+      body: Column(
+        children: [
+          // Header with ZERDA branding
+          AppHeader(textTopPadding: 1.0.h),
 
-            // Price ticker
-            _buildPriceTicker(),
+          // Price ticker
+          _buildPriceTicker(),
 
-            // Main content with table
-            Expanded(
-              child: Container(
+          // Main content with table
+          Expanded(
+            child: Container(
                 decoration: BoxDecoration(
                   color: AppTheme.lightTheme.scaffoldBackgroundColor,
                 ),
@@ -305,7 +303,17 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                   children: [
                     // Table header
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.3.h),
+                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.lightTheme.colorScheme.primary,
+                            AppTheme.lightTheme.colorScheme.primaryContainer,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -314,7 +322,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               'Birim',
                               textAlign: TextAlign.left,
                               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                color: AppTheme.textSecondaryLight,
+                                color: Colors.white,
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -326,7 +334,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               'Alış',
                               textAlign: TextAlign.center,
                               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                color: AppTheme.textSecondaryLight,
+                                color: Colors.white,
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -340,7 +348,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                                 'Satış',
                                 textAlign: TextAlign.center,
                                 style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                  color: AppTheme.textSecondaryLight,
+                                  color: Colors.white,
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -353,17 +361,19 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
 
                     // Gold table
                     Expanded(
-                      child: _buildGoldTable(),
+                      child: Container(
+                        color: AppTheme.lightTheme.scaffoldBackgroundColor,
+                        child: _buildGoldTable(),
+                      ),
                     ),
                   ],
                 ),
-              ),
             ),
+          ),
 
-            // Bottom navigation
-            _buildBottomNavigation(),
-          ],
-        ),
+          // Bottom navigation
+          _buildBottomNavigation(),
+        ],
       ),
     );
   }
@@ -423,9 +433,13 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
   }
 
   Widget _buildGoldTable() {
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: _goldCoinData.length,
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      color: AppTheme.lightTheme.colorScheme.primary,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: 0.5.h),
+        itemCount: _goldCoinData.length,
       itemBuilder: (context, index) {
         final gold = _goldCoinData[index];
         final isLastItem = index == _goldCoinData.length - 1;
@@ -433,6 +447,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 4.w),
           decoration: BoxDecoration(
+            color: AppTheme.lightTheme.scaffoldBackgroundColor,
             border: isLastItem ? null : Border(
               bottom: BorderSide(
                 color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
@@ -443,6 +458,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
           child: _buildGoldRow(gold),
         );
       },
+      ),
     );
   }
 
@@ -742,7 +758,6 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
         },
           ),
         ),
-        SizedBox(height: 0.5.h),
       ],
     );
   }

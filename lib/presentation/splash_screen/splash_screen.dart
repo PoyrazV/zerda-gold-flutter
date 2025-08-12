@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../../core/app_export.dart';
+import '../../core/app_export.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -240,7 +240,6 @@ class _SplashScreenState extends State<SplashScreen>
           ),
           child: SafeArea(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Spacer to push content to center
                 const Spacer(flex: 2),
@@ -259,7 +258,7 @@ class _SplashScreenState extends State<SplashScreen>
                   },
                 ),
 
-                SizedBox(height: 8.h),
+                SizedBox(height: 4.h),
 
                 // Loading Section
                 AnimatedBuilder(
@@ -278,7 +277,7 @@ class _SplashScreenState extends State<SplashScreen>
                 // App Version and Copyright
                 _buildFooterSection(),
 
-                SizedBox(height: 4.h),
+                SizedBox(height: 2.h),
               ],
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'gold_bars_icon.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({Key? key}) : super(key: key);
@@ -79,8 +80,13 @@ class AppDrawer extends StatelessWidget {
               currentRoute == '/dashboard-screen'
             ),
             
-            _buildMenuItem(
-              Icons.star_rounded, 
+            _buildMenuItemCustomIcon(
+              GoldBarsIcon(
+                color: currentRoute == '/gold-coin-prices-screen' 
+                    ? Colors.white 
+                    : Colors.white.withOpacity(0.9),
+                size: 22,
+              ), 
               'Altın', 
               () {
                 Navigator.of(context).pop();
@@ -197,6 +203,34 @@ class AppDrawer extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  Widget _buildMenuItemCustomIcon(Widget icon, String title, VoidCallback onTap, [bool isActive = false]) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      decoration: isActive ? BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ) : null,
+      child: ListTile(
+        leading: icon,
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+        visualDensity: VisualDensity.compact,
+        dense: true,
       ),
     );
   }

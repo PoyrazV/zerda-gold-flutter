@@ -6,6 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/app_header.dart';
 import '../../widgets/price_ticker.dart';
 import './widgets/add_position_bottom_sheet.dart';
 import './widgets/empty_portfolio_state.dart';
@@ -149,7 +150,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          _buildHeader(),
+          const AppHeader(),
 
           // Price ticker
           _buildPriceTicker(),

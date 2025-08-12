@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../../../core/app_export.dart';
+import '../../../core/app_export.dart';
 
 class PositionCard extends StatefulWidget {
   final Map<String, dynamic> position;

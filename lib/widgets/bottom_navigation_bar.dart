@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../theme/app_theme.dart';
+import 'gold_bars_icon.dart';
 import '../presentation/dashboard_screen/dashboard_screen.dart';
 import '../presentation/gold_coin_prices_screen/gold_coin_prices_screen.dart';
 import '../presentation/currency_converter_screen/currency_converter_screen.dart';
@@ -23,7 +24,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
     },
     {
       'title': 'Altın',
-      'icon': Icons.star,
+      'icon': Icons.diamond,
       'route': '/gold-coin-prices-screen',
     },
     {
@@ -83,17 +84,16 @@ class CustomBottomNavigationBar extends StatelessWidget {
         top: false,
         child: SizedBox(
           height: 8.h,
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 0.5.h, horizontal: 1.w),
-            child: Row(
-              children: _navItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                final isActive = currentRoute == item['route'];
+          child: Row(
+            children: _navItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              final isActive = currentRoute == item['route'];
 
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
                       if (currentRoute != item['route']) {
                         Navigator.pushReplacement(
                           context,
@@ -102,20 +102,9 @@ class CustomBottomNavigationBar extends StatelessWidget {
                               return _getPageForRoute(item['route'] as String);
                             },
                             transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              const begin = Offset(0.0, 0.0);
-                              const end = Offset.zero;
-                              const curve = Curves.ease;
-
-                              var tween = Tween(begin: begin, end: end).chain(
-                                CurveTween(curve: curve),
-                              );
-
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
+                              return child;
                             },
-                            transitionDuration: const Duration(milliseconds: 200),
+                            transitionDuration: Duration.zero,
                             settings: RouteSettings(name: item['route'] as String),
                           ),
                         );
@@ -123,20 +112,26 @@ class CustomBottomNavigationBar extends StatelessWidget {
                     },
                     child: Container(
                       height: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 0.5.w),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Flexible(
                             flex: 3,
-                            child: Icon(
-                              item['icon'] as IconData,
-                              color: isActive
-                                  ? const Color(0xFF1976D2) // Material Blue
-                                  : Colors.grey[600],
-                              size: 20,
-                            ),
+                            child: item['title'] == 'Altın' 
+                              ? GoldBarsIcon(
+                                  color: isActive
+                                      ? const Color(0xFF1976D2) // Material Blue
+                                      : Colors.grey[600]!,
+                                  size: 20,
+                                )
+                              : Icon(
+                                  item['icon'] as IconData,
+                                  color: isActive
+                                      ? const Color(0xFF1976D2) // Material Blue
+                                      : Colors.grey[600],
+                                  size: 20,
+                                ),
                           ),
                           SizedBox(height: 0.2.h),
                           Flexible(
@@ -163,7 +158,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
               }).toList(),
             ),
           ),
-        ),
       ),
     );
   }

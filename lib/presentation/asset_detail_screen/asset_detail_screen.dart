@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../theme/app_theme.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/price_ticker.dart';
 import './widgets/interactive_chart_widget.dart';

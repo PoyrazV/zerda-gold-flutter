@@ -12,6 +12,7 @@ class AppHeader extends StatelessWidget {
   final double? height;
   final VoidCallback? onMenuPressed;
   final VoidCallback? onBackPressed;
+  final double? textTopPadding;
   
   const AppHeader({
     Key? key,
@@ -24,6 +25,7 @@ class AppHeader extends StatelessWidget {
     this.height,
     this.onMenuPressed,
     this.onBackPressed,
+    this.textTopPadding,
   }) : super(key: key);
 
   @override
@@ -78,8 +80,10 @@ class AppHeader extends StatelessWidget {
 
               // Title and subtitle
               Expanded(
-                child: subtitle != null
-                  ? Column(
+                child: Padding(
+                  padding: EdgeInsets.only(top: textTopPadding ?? 0),
+                  child: subtitle != null
+                    ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -123,6 +127,7 @@ class AppHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
+                ),
               ),
 
               // Actions or placeholder

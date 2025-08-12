@@ -2,8 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
-import '../../../../core/app_export.dart';
-import '../../../theme/app_theme.dart';
+import '../../../core/app_export.dart';
 
 class InteractiveChartWidget extends StatefulWidget {
   final String assetSymbol;

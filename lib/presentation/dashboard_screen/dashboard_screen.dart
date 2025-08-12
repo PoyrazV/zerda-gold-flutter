@@ -236,20 +236,17 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Scaffold(
       backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: AppTheme.lightTheme.colorScheme.primary,
-        child: Column(
-          children: [
-            // Header with ZERDA branding
-            const AppHeader(),
+      body: Column(
+        children: [
+          // Header with ZERDA branding
+          AppHeader(textTopPadding: 1.0.h),
 
-            // Price ticker
-            const PriceTicker(),
+          // Price ticker
+          const PriceTicker(),
 
-            // Main content with table
-            Expanded(
-              child: Container(
+          // Main content with table
+          Expanded(
+            child: Container(
                 decoration: BoxDecoration(
                   color: AppTheme.lightTheme.scaffoldBackgroundColor,
                 ),
@@ -257,7 +254,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                   children: [
                     // Table header
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.lightTheme.colorScheme.primary,
+                            AppTheme.lightTheme.colorScheme.primaryContainer,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -266,7 +273,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               'Birim',
                               textAlign: TextAlign.left,
                               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                color: AppTheme.textSecondaryLight,
+                                color: Colors.white,
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -278,7 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               'Alış',
                               textAlign: TextAlign.center,
                               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                color: AppTheme.textSecondaryLight,
+                                color: Colors.white,
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -292,7 +299,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 'Satış',
                                 textAlign: TextAlign.center,
                                 style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                  color: AppTheme.textSecondaryLight,
+                                  color: Colors.white,
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -309,22 +316,25 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                   ],
                 ),
-              ),
             ),
+          ),
 
-            // Bottom navigation
-            _buildBottomNavigation(),
-          ],
-        ),
+          // Bottom navigation
+          _buildBottomNavigation(),
+        ],
       ),
     );
   }
 
 
   Widget _buildCurrencyTable() {
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: _currencyData.length,
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      color: AppTheme.lightTheme.colorScheme.primary,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: 0.5.h),
+        itemCount: _currencyData.length,
       itemBuilder: (context, index) {
         final currency = _currencyData[index];
         final isLastItem = index == _currencyData.length - 1;
@@ -342,6 +352,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: _buildCurrencyRow(currency),
         );
       },
+      ),
     );
   }
 

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../theme/app_theme.dart';
+import '../presentation/dashboard_screen/dashboard_screen.dart';
+import '../presentation/gold_coin_prices_screen/gold_coin_prices_screen.dart';
+import '../presentation/currency_converter_screen/currency_converter_screen.dart';
+import '../presentation/price_alerts_screen/price_alerts_screen.dart';
+import '../presentation/portfolio_management_screen/portfolio_management_screen.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final String currentRoute;
@@ -38,6 +43,23 @@ class CustomBottomNavigationBar extends StatelessWidget {
     },
   ];
 
+  Widget _getPageForRoute(String route) {
+    switch (route) {
+      case '/dashboard-screen':
+        return const DashboardScreen();
+      case '/gold-coin-prices-screen':
+        return const GoldCoinPricesScreen();
+      case '/currency-converter-screen':
+        return const CurrencyConverterScreen();
+      case '/price-alerts-screen':
+        return const PriceAlertsScreen();
+      case '/portfolio-management-screen':
+        return const PortfolioManagementScreen();
+      default:
+        return const DashboardScreen();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -73,7 +95,30 @@ class CustomBottomNavigationBar extends StatelessWidget {
                   child: GestureDetector(
                     onTap: () {
                       if (currentRoute != item['route']) {
-                        Navigator.pushReplacementNamed(context, item['route'] as String);
+                        Navigator.pushReplacement(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) {
+                              return _getPageForRoute(item['route'] as String);
+                            },
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 0.0);
+                              const end = Offset.zero;
+                              const curve = Curves.ease;
+
+                              var tween = Tween(begin: begin, end: end).chain(
+                                CurveTween(curve: curve),
+                              );
+
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            transitionDuration: const Duration(milliseconds: 200),
+                            settings: RouteSettings(name: item['route'] as String),
+                          ),
+                        );
                       }
                     },
                     child: Container(

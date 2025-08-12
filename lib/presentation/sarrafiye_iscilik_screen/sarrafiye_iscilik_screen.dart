@@ -154,19 +154,27 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
 
             // Main content
             Expanded(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.lightTheme.scaffoldBackgroundColor,
+                ),
                 child: Column(
                   children: [
-                    SizedBox(height: 2.h),
-                    
-                    // Header section with table headers
+                    // Table header
                     _buildTableHeader(),
 
                     // Sarrafiye işçilik list
-                    _buildSarrafiyeList(),
-
-                    SizedBox(height: 2.h),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          children: [
+                            _buildSarrafiyeList(),
+                            SizedBox(height: 2.h),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -406,7 +414,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.3.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
       child: Row(
         children: [
           Expanded(
@@ -474,7 +482,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
             ),
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
+            padding: EdgeInsets.symmetric(vertical: 1.6.h, horizontal: 0.w),
             child: Row(
               children: [
                 // Name
@@ -482,9 +490,10 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
                   flex: 3,
                   child: Text(
                     item['name'] as String,
-                    style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTheme.dataTextStyle(
+                      isLight: true,
+                      fontSize: 12.sp,
+                    ).copyWith(fontWeight: FontWeight.w500),
                   ),
                 ),
                 // Buy price
@@ -493,21 +502,24 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
                   child: Text(
                     CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: 4),
                     textAlign: TextAlign.center,
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14.sp,
-                    ),
+                    style: AppTheme.dataTextStyle(
+                      isLight: true,
+                      fontSize: 12.sp,
+                    ).copyWith(fontWeight: FontWeight.w500),
                   ),
                 ),
                 // Sell price
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: 4),
-                    textAlign: TextAlign.center,
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14.sp,
+                  child: Container(
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 4.w),
+                    child: Text(
+                      CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: 4),
+                      style: AppTheme.dataTextStyle(
+                        isLight: true,
+                        fontSize: 12.sp,
+                      ).copyWith(fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),

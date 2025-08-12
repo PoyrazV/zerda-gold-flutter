@@ -288,7 +288,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          AppHeader(textTopPadding: 1.0.h),
+          AppHeader(textTopPadding: 3.0.h),
 
           // Price ticker
           _buildPriceTicker(),

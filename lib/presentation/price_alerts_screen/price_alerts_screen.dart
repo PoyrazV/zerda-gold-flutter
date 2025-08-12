@@ -154,7 +154,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          const AppHeader(),
+          AppHeader(textTopPadding: 1.0.h),
           
           // Price ticker
           _buildPriceTicker(),

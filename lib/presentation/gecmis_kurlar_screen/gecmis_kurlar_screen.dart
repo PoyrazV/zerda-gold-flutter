@@ -216,6 +216,9 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
             // Price ticker
             _buildPriceTicker(),
 
+            // Table header
+            _buildTableHeader(),
+
             // Main content
             Expanded(
               child: SingleChildScrollView(
@@ -228,9 +231,6 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                     _buildControls(),
 
                     SizedBox(height: 2.h),
-
-                    // Header section with table headers
-                    _buildTableHeader(),
 
                     // Historical rates list
                     _buildHistoricalRatesList(),
@@ -578,7 +578,17 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.lightTheme.colorScheme.primary,
+            AppTheme.lightTheme.colorScheme.primaryContainer,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -587,7 +597,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               'Birim',
               textAlign: TextAlign.left,
               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.textSecondaryLight,
+                color: Colors.white,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -599,7 +609,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               'Alış',
               textAlign: TextAlign.center,
               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.textSecondaryLight,
+                color: Colors.white,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -613,7 +623,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                 'Satış',
                 textAlign: TextAlign.center,
                 style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondaryLight,
+                  color: Colors.white,
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                 ),

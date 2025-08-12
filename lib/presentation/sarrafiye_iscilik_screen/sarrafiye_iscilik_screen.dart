@@ -99,7 +99,17 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.lightTheme.colorScheme.primary,
+            AppTheme.lightTheme.colorScheme.primaryContainer,
+          ],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -108,7 +118,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               'Birim',
               textAlign: TextAlign.left,
               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.textSecondaryLight,
+                color: Colors.white,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -120,7 +130,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               'Alış',
               textAlign: TextAlign.center,
               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.textSecondaryLight,
+                color: Colors.white,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -132,7 +142,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               'Satış',
               textAlign: TextAlign.center,
               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.textSecondaryLight,
+                color: Colors.white,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
               ),

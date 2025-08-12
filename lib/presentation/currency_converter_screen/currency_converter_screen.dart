@@ -199,7 +199,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          const AppHeader(),
+          AppHeader(textTopPadding: 1.0.h),
 
           // Price ticker
           _buildPriceTicker(),

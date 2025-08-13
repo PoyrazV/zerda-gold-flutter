@@ -4,6 +4,8 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/currency_api_service.dart';
+import '../../services/datshop_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/price_ticker.dart';
@@ -11,8 +13,6 @@ import '../../widgets/app_header.dart';
 import './widgets/amount_input_widget.dart';
 import './widgets/currency_picker_bottom_sheet.dart';
 import './widgets/currency_selector_widget.dart';
-import './widgets/exchange_rate_widget.dart';
-import './widgets/price_ticker_widget.dart';
 import './widgets/quick_converter_widget.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
@@ -30,6 +30,15 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
 
   late AnimationController _swapAnimationController;
   late Animation<double> _swapAnimation;
+  
+  // API Services
+  final CurrencyApiService _currencyApiService = CurrencyApiService();
+  final DatShopApiService _goldApiService = DatShopApiService();
+  
+  // API Data Storage
+  Map<String, dynamic> _currencyRates = {};
+  List<Map<String, dynamic>> _goldPrices = [];
+  bool _isLoadingRates = false;
 
   Map<String, dynamic> _fromCurrency = {
     "code": "USD",
@@ -67,7 +76,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
 
     _fromAmountController.addListener(_onFromAmountChanged);
     _fromAmountController.text = '1';
-    _calculateConversion();
+    
+    // Load API data
+    _loadApiData();
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
@@ -79,9 +90,50 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     }
   }
 
+  Future<void> _loadApiData() async {
+    setState(() {
+      _isLoadingRates = true;
+    });
+
+    try {
+      // Load currency rates
+      final currencyData = await _currencyApiService.getLatestRates();
+      if (currencyData != null && currencyData['rates'] != null) {
+        _currencyRates = Map<String, dynamic>.from(currencyData['rates']);
+      }
+
+      // Load gold prices and connect to WebSocket
+      await _goldApiService.connect();
+      _goldPrices = _goldApiService.getFormattedGoldData();
+      
+      // Listen to gold price updates
+      _goldApiService.goldDataStream.listen((goldData) {
+        if (mounted) {
+          setState(() {
+            _goldPrices = _goldApiService.getFormattedGoldData();
+            _updateExchangeRate();
+            _calculateConversion();
+          });
+        }
+      });
+
+    } catch (e) {
+      print('Error loading API data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRates = false;
+          _updateExchangeRate();
+          _calculateConversion();
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    _goldApiService.dispose();
     _fromAmountController.dispose();
     _toAmountController.dispose();
     _swapAnimationController.dispose();
@@ -143,81 +195,153 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   }
 
   void _updateExchangeRate() {
-    // Mock exchange rate update based on currency pair
     final fromCode = _fromCurrency['code'] as String;
     final toCode = _toCurrency['code'] as String;
 
-    // Currency to Currency rates
-    if (fromCode == 'USD' && toCode == 'TRY') {
-      _exchangeRate = 32.4567;
-      _changePercentage = 0.45;
-    } else if (fromCode == 'EUR' && toCode == 'TRY') {
-      _exchangeRate = 35.2134;
-      _changePercentage = -0.23;
-    } else if (fromCode == 'TRY' && toCode == 'USD') {
-      _exchangeRate = 0.0308;
-      _changePercentage = -0.45;
-    } else if (fromCode == 'EUR' && toCode == 'USD') {
-      _exchangeRate = 1.0856;
-      _changePercentage = 0.12;
-    }
-    // Currency to Gold rates (TRY to Gold)
-    else if (fromCode == 'TRY' && toCode == 'GRAM') {
-      _exchangeRate = 1 / 2654.30; // 1 TRY = ? gram gold
-      _changePercentage = 0.65;
-    } else if (fromCode == 'TRY' && toCode == 'ÇEYREK') {
-      _exchangeRate = 1 / 2891.75; // 1 TRY = ? quarter gold
-      _changePercentage = 0.85;
-    } else if (fromCode == 'TRY' && toCode == 'YARIM') {
-      _exchangeRate = 1 / 5783.50; // 1 TRY = ? half gold
-      _changePercentage = 1.12;
-    } else if (fromCode == 'TRY' && toCode == 'TAM') {
-      _exchangeRate = 1 / 11567.00; // 1 TRY = ? full gold
-      _changePercentage = 0.95;
-    } else if (fromCode == 'TRY' && toCode == 'ONS') {
-      _exchangeRate = 1 / 2746.85; // 1 TRY = ? ounce gold (USD)
-      _changePercentage = -0.25;
-    }
-    // Gold to Currency rates (Gold to TRY)
-    else if (fromCode == 'GRAM' && toCode == 'TRY') {
-      _exchangeRate = 2654.30; // 1 gram gold = ? TRY
-      _changePercentage = 0.65;
-    } else if (fromCode == 'ÇEYREK' && toCode == 'TRY') {
-      _exchangeRate = 2891.75; // 1 quarter gold = ? TRY
-      _changePercentage = 0.85;
-    } else if (fromCode == 'YARIM' && toCode == 'TRY') {
-      _exchangeRate = 5783.50; // 1 half gold = ? TRY
-      _changePercentage = 1.12;
-    } else if (fromCode == 'TAM' && toCode == 'TRY') {
-      _exchangeRate = 11567.00; // 1 full gold = ? TRY
-      _changePercentage = 0.95;
-    } else if (fromCode == 'ONS' && toCode == 'TRY') {
-      _exchangeRate = 2746.85 * 32.4567; // 1 ounce gold = ? TRY (via USD)
-      _changePercentage = -0.25;
-    }
-    // Gold to Gold conversions
-    else if (fromCode == 'GRAM' && toCode == 'ÇEYREK') {
-      _exchangeRate = 2654.30 / 2891.75;
-      _changePercentage = 0.20;
-    } else if (fromCode == 'ÇEYREK' && toCode == 'GRAM') {
-      _exchangeRate = 2891.75 / 2654.30;
-      _changePercentage = -0.20;
-    }
-    // USD to Gold rates
-    else if (fromCode == 'USD' && toCode == 'GRAM') {
-      _exchangeRate = 32.4567 / 2654.30; // USD to TRY to Gold
-      _changePercentage = 1.10;
-    } else if (fromCode == 'USD' && toCode == 'ONS') {
-      _exchangeRate = 1 / 2746.85; // 1 USD = ? ounce gold
-      _changePercentage = 0.70;
-    }
-    // Default fallback
-    else {
+    try {
+      _exchangeRate = _calculateRealExchangeRate(fromCode, toCode);
+      _changePercentage = _calculateChangePercentage(fromCode, toCode);
+    } catch (e) {
+      print('Error calculating exchange rate: $e');
+      // Fallback to default
       _exchangeRate = 1.0;
       _changePercentage = 0.0;
     }
 
     _lastUpdate = DateTime.now();
+  }
+
+  double _calculateRealExchangeRate(String fromCode, String toCode) {
+    // Handle gold currencies
+    final goldCodes = ['GRAM', 'ÇEYREK', 'YARIM', 'TAM', 'ONS'];
+    final isFromGold = goldCodes.contains(fromCode);
+    final isToGold = goldCodes.contains(toCode);
+
+    if (isFromGold && isToGold) {
+      // Gold to Gold conversions
+      final fromPrice = _getGoldPrice(fromCode);
+      final toPrice = _getGoldPrice(toCode);
+      if (fromPrice > 0 && toPrice > 0) {
+        return fromPrice / toPrice;
+      }
+    } else if (isFromGold && !isToGold) {
+      // Gold to Currency
+      final goldPrice = _getGoldPrice(fromCode);
+      if (goldPrice > 0) {
+        if (toCode == 'TRY') {
+          return goldPrice; // Gold price is already in TRY
+        } else {
+          // Convert gold to TRY, then TRY to target currency
+          final tryToTargetRate = _getCurrencyRate('TRY', toCode);
+          return goldPrice * tryToTargetRate;
+        }
+      }
+    } else if (!isFromGold && isToGold) {
+      // Currency to Gold
+      final goldPrice = _getGoldPrice(toCode);
+      if (goldPrice > 0) {
+        if (fromCode == 'TRY') {
+          return 1.0 / goldPrice; // 1 TRY = ? gold
+        } else {
+          // Convert source currency to TRY, then TRY to gold
+          final sourceToTryRate = _getCurrencyRate(fromCode, 'TRY');
+          return sourceToTryRate / goldPrice;
+        }
+      }
+    } else {
+      // Currency to Currency
+      return _getCurrencyRate(fromCode, toCode);
+    }
+
+    // Fallback
+    return 1.0;
+  }
+
+  double _getCurrencyRate(String fromCode, String toCode) {
+    if (fromCode == toCode) return 1.0;
+    
+    if (_currencyRates.isEmpty) {
+      // Fallback to hardcoded rates if API data not available
+      return _getFallbackCurrencyRate(fromCode, toCode);
+    }
+
+    // API provides rates with TRY as base (TRY to other currencies)
+    // So rates[USD] = how many USD for 1 TRY
+    
+    if (fromCode == 'TRY') {
+      // TRY to other currency
+      final rate = _currencyRates[toCode];
+      return rate?.toDouble() ?? 1.0;
+    } else if (toCode == 'TRY') {
+      // Other currency to TRY
+      final rate = _currencyRates[fromCode];
+      return rate != null ? 1.0 / rate.toDouble() : 1.0;
+    } else {
+      // Currency to Currency (via TRY)
+      final fromToTryRate = _currencyRates[fromCode];
+      final toToTryRate = _currencyRates[toCode];
+      if (fromToTryRate != null && toToTryRate != null) {
+        return toToTryRate.toDouble() / fromToTryRate.toDouble();
+      }
+    }
+
+    return _getFallbackCurrencyRate(fromCode, toCode);
+  }
+
+  double _getGoldPrice(String goldCode) {
+    // Map converter gold codes to API codes
+    final goldMapping = {
+      'GRAM': 'ALTIN',
+      'ÇEYREK': 'CEYREK_YENI',
+      'YARIM': 'YARIM_YENI',
+      'TAM': 'TAM_YENI',
+      'ONS': 'PLATIN', // Using platinum as ounce reference
+    };
+
+    final apiCode = goldMapping[goldCode];
+    if (apiCode == null) return 0.0;
+
+    final goldData = _goldPrices.firstWhere(
+      (item) => item['code'] == apiCode,
+      orElse: () => <String, dynamic>{},
+    );
+
+    // Use average of buy and sell price
+    final buyPrice = goldData['buyPrice']?.toDouble() ?? 0.0;
+    final sellPrice = goldData['sellPrice']?.toDouble() ?? 0.0;
+    return (buyPrice + sellPrice) / 2.0;
+  }
+
+  double _getFallbackCurrencyRate(String fromCode, String toCode) {
+    // Fallback hardcoded rates when API is not available
+    final fallbackRates = {
+      'USDTRY': 34.60,
+      'EURTRY': 37.50,
+      'GBPTRY': 43.80,
+      'CHFTRY': 39.20,
+      'AUDTRY': 22.90,
+      'CADTRY': 25.95,
+      'JPYTRY': 0.23,
+    };
+
+    final pairKey = '${fromCode}${toCode}';
+    if (fallbackRates.containsKey(pairKey)) {
+      return fallbackRates[pairKey]!;
+    }
+
+    final reversePairKey = '${toCode}${fromCode}';
+    if (fallbackRates.containsKey(reversePairKey)) {
+      return 1.0 / fallbackRates[reversePairKey]!;
+    }
+
+    return 1.0;
+  }
+
+  double _calculateChangePercentage(String fromCode, String toCode) {
+    // For now, return a small random change percentage
+    // In a real app, you would compare with previous rates
+    final seed = fromCode.hashCode + toCode.hashCode + DateTime.now().hour;
+    return ((seed % 200 - 100) / 100.0) * 2.0; // -2% to +2%
   }
 
   void _onQuickAmountSelected(double amount) {
@@ -267,6 +391,32 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                 children: [
                     // Add spacing between header/ticker and content
                     SizedBox(height: 1.5.h),
+                    
+                    // Loading indicator for API data
+                    if (_isLoadingRates)
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 1.h),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.lightTheme.colorScheme.primary,
+                              ),
+                            ),
+                            SizedBox(width: 2.w),
+                            Text(
+                              'Güncel kurlar yükleniyor...',
+                              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                                color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     
                     // From amount input
                     AmountInputWidget(

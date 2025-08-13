@@ -93,19 +93,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
         'soundType': 'chime',
         'createdAt': DateTime.now().subtract(const Duration(hours: 12)),
       },
-      {
-        'id': 4,
-        'assetName': 'BTC/USD',
-        'assetFullName': 'Bitcoin',
-        'targetPrice': 70000.00,
-        'currentPrice': 67234.50,
-        'alertType': 'above',
-        'status': 'active',
-        'isEnabled': true,
-        'enableNotification': false,
-        'soundType': 'alert',
-        'createdAt': DateTime.now().subtract(const Duration(hours: 6)),
-      },
     ];
 
     // Mock history alerts data

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/currency_api_service.dart';
 import '../../../widgets/gold_bars_icon.dart';
 
 class CurrencyPickerBottomSheet extends StatefulWidget {
@@ -23,6 +24,15 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredCurrencies = [];
   bool _showingCurrencies = true; // true for currencies, false for gold
+  
+  // API Service
+  final CurrencyApiService _currencyApiService = CurrencyApiService();
+  
+  // API Data Storage
+  List<Map<String, dynamic>> _allApiCurrencies = [];
+  bool _isLoadingCurrencies = false;
+  bool _isLoadingMore = false;
+  int _displayedCurrencyCount = 20;
 
   final List<Map<String, dynamic>> _currencyList = [
     {
@@ -120,14 +130,41 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     },
   ];
 
+  // Get the current currency list with pagination
+  List<Map<String, dynamic>> get _currentCurrencyList {
+    if (_showingCurrencies) {
+      // Use API data if available, otherwise fallback to hardcoded list
+      final sourceList = _allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList;
+      return sourceList.take(_displayedCurrencyCount).toList();
+    } else {
+      return _goldList; // Gold list doesn't need pagination (only 5 items)
+    }
+  }
+
+  bool get _hasMoreCurrencies {
+    if (_showingCurrencies) {
+      final sourceList = _allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList;
+      return _displayedCurrencyCount < sourceList.length;
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
     // Initialize based on the selected currency type
     final selectedCode = widget.selectedCurrency;
     _showingCurrencies = !_isGoldCurrency(selectedCode);
-    _filteredCurrencies = _showingCurrencies ? _currencyList : _goldList;
     _searchController.addListener(_filterCurrencies);
+    
+    // Load API data if showing currencies
+    if (_showingCurrencies) {
+      // Show fallback currencies immediately while loading API data
+      _filteredCurrencies = _currencyList.take(_displayedCurrencyCount).toList();
+      _loadApiCurrencies();
+    } else {
+      _filteredCurrencies = _goldList;
+    }
   }
 
   @override
@@ -136,16 +173,134 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     super.dispose();
   }
 
+  Future<void> _loadApiCurrencies() async {
+    setState(() {
+      _isLoadingCurrencies = true;
+    });
+
+    try {
+      final apiData = await _currencyApiService.getFormattedCurrencyData();
+      if (mounted && apiData.isNotEmpty) {
+        setState(() {
+          _allApiCurrencies = _convertApiDataToCurrencyFormat(apiData);
+          _filteredCurrencies = _currentCurrencyList;
+        });
+      }
+    } catch (e) {
+      print('Error loading API currencies: $e');
+      // Fallback to hardcoded currencies
+      if (mounted) {
+        setState(() {
+          _filteredCurrencies = _currencyList.take(_displayedCurrencyCount).toList();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingCurrencies = false;
+        });
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> _convertApiDataToCurrencyFormat(List<Map<String, dynamic>> apiData) {
+    // Currency symbols mapping
+    final currencySymbols = {
+      'USD': '\$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'CHF': 'CHF',
+      'CAD': 'C\$',
+      'AUD': 'A\$',
+      'CNY': '¥',
+      'RUB': '₽',
+      'TRY': '₺',
+      'INR': '₹',
+      'KRW': '₩',
+      'SEK': 'kr',
+      'NOK': 'kr',
+      'DKK': 'kr',
+      'PLN': 'zł',
+      'CZK': 'Kč',
+      'HUF': 'Ft',
+    };
+
+    // Flag URLs mapping (using flagcdn.com)
+    final flagUrls = {
+      'USD': 'https://flagcdn.com/w320/us.png',
+      'EUR': 'https://flagcdn.com/w320/eu.png',
+      'GBP': 'https://flagcdn.com/w320/gb.png',
+      'JPY': 'https://flagcdn.com/w320/jp.png',
+      'CHF': 'https://flagcdn.com/w320/ch.png',
+      'CAD': 'https://flagcdn.com/w320/ca.png',
+      'AUD': 'https://flagcdn.com/w320/au.png',
+      'CNY': 'https://flagcdn.com/w320/cn.png',
+      'RUB': 'https://flagcdn.com/w320/ru.png',
+      'TRY': 'https://flagcdn.com/w320/tr.png',
+      'INR': 'https://flagcdn.com/w320/in.png',
+      'KRW': 'https://flagcdn.com/w320/kr.png',
+      'SEK': 'https://flagcdn.com/w320/se.png',
+      'NOK': 'https://flagcdn.com/w320/no.png',
+      'DKK': 'https://flagcdn.com/w320/dk.png',
+      'PLN': 'https://flagcdn.com/w320/pl.png',
+      'CZK': 'https://flagcdn.com/w320/cz.png',
+      'HUF': 'https://flagcdn.com/w320/hu.png',
+    };
+
+    return apiData.map((currency) {
+      final code = currency['code'] as String;
+      // Extract base currency code (remove 'TRY' suffix)
+      final baseCurrency = code.replaceAll('TRY', '');
+      
+      return {
+        'code': baseCurrency,
+        'name': currency['name'] as String,
+        'flag': flagUrls[baseCurrency] ?? 'https://flagcdn.com/w320/us.png',
+        'symbol': currencySymbols[baseCurrency] ?? baseCurrency,
+      };
+    }).where((currency) => currency['code'] != '').toList(); // Filter out empty codes
+  }
+
+  void _loadMoreCurrencies() {
+    if (_isLoadingMore || !_hasMoreCurrencies) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    // Simulate loading delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          final sourceList = _allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList;
+          _displayedCurrencyCount = (_displayedCurrencyCount + 20).clamp(0, sourceList.length);
+          _filteredCurrencies = _currentCurrencyList;
+          _isLoadingMore = false;
+        });
+      }
+    });
+  }
+
   void _filterCurrencies() {
     final query = _searchController.text.toLowerCase();
-    final sourceList = _showingCurrencies ? _currencyList : _goldList;
     
     setState(() {
-      _filteredCurrencies = sourceList.where((currency) {
-        final code = (currency['code'] as String).toLowerCase();
-        final name = (currency['name'] as String).toLowerCase();
-        return code.contains(query) || name.contains(query);
-      }).toList();
+      if (query.isEmpty) {
+        // No search, show paginated list
+        _filteredCurrencies = _currentCurrencyList;
+      } else {
+        // Search across all data (no pagination when searching)
+        final sourceList = _showingCurrencies 
+            ? (_allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList)
+            : _goldList;
+        
+        _filteredCurrencies = sourceList.where((currency) {
+          final code = (currency['code'] as String).toLowerCase();
+          final name = (currency['name'] as String).toLowerCase();
+          return code.contains(query) || name.contains(query);
+        }).toList();
+      }
     });
   }
 
@@ -155,7 +310,18 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     setState(() {
       _showingCurrencies = showCurrencies;
       _searchController.clear(); // Clear search when switching sections
-      _filteredCurrencies = _showingCurrencies ? _currencyList : _goldList;
+      _displayedCurrencyCount = 20; // Reset pagination
+      
+      if (_showingCurrencies) {
+        // Load API currencies if not already loaded
+        if (_allApiCurrencies.isEmpty && !_isLoadingCurrencies) {
+          _loadApiCurrencies();
+        } else {
+          _filteredCurrencies = _currentCurrencyList;
+        }
+      } else {
+        _filteredCurrencies = _goldList;
+      }
     });
   }
 
@@ -319,12 +485,75 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
             ),
           ),
 
+          // Loading indicator
+          if (_isLoadingCurrencies && _showingCurrencies)
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 2.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.lightTheme.colorScheme.primary,
+                    ),
+                  ),
+                  SizedBox(width: 2.w),
+                  Text(
+                    'Dövizler yükleniyor...',
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Currency list
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 4.w),
-              itemCount: _filteredCurrencies.length,
+              itemCount: _filteredCurrencies.length + (_hasMoreCurrencies && _searchController.text.isEmpty ? 1 : 0),
               itemBuilder: (context, index) {
+                // "Daha Fazla Göster" button
+                if (index == _filteredCurrencies.length && _hasMoreCurrencies && _searchController.text.isEmpty) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(vertical: 2.h),
+                    child: ElevatedButton(
+                      onPressed: _isLoadingMore ? null : _loadMoreCurrencies,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: _isLoadingMore
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_circle_outline, size: 20),
+                                SizedBox(width: 2.w),
+                                Text(
+                                  'Daha Fazla Göster',
+                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                    ),
+                  );
+                }
                 final currency = _filteredCurrencies[index];
                 final isSelected = currency['code'] == widget.selectedCurrency;
 

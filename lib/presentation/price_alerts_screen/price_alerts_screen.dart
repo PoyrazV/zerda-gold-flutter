@@ -436,14 +436,22 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                   },
                 ),
                 SizedBox(width: 1.w),
-                Text(
-                  'Aktif',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                AnimatedBuilder(
+                  animation: _tabController.animation!,
+                  builder: (context, child) {
+                    return Text(
+                      'Aktif',
+                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: _tabController.index == 0
+                            ? AppTheme.lightTheme.colorScheme.primary
+                            : AppTheme.textSecondaryLight,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    );
+                  },
                 ),
               ],
             ),
@@ -470,14 +478,22 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                   },
                 ),
                 SizedBox(width: 1.w),
-                Text(
-                  'Geçmiş',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                AnimatedBuilder(
+                  animation: _tabController.animation!,
+                  builder: (context, child) {
+                    return Text(
+                      'Geçmiş',
+                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: _tabController.index == 1
+                            ? AppTheme.lightTheme.colorScheme.primary
+                            : AppTheme.textSecondaryLight,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    );
+                  },
                 ),
               ],
             ),

@@ -324,11 +324,14 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
               height: _showSearchBar ? null : 0,
               child: _showSearchBar 
                   ? _buildSearchBar()
-                  : SizedBox.shrink(),
+                  : Container(),
             ),
 
-            // Tab bar
-            _buildTabBar(),
+            // Tab bar (reduced top spacing)
+            Transform.translate(
+              offset: Offset(0, _showSearchBar ? 0 : 0.h),
+              child: _buildTabBar(),
+            ),
 
             // Main content
             Expanded(
@@ -350,7 +353,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
 
   Widget _buildHeader() {
     return Container(
-      height: 10.h,
+      height: 8.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -364,7 +367,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
+          padding: EdgeInsets.fromLTRB(4.w, 2.h, 4.w, 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

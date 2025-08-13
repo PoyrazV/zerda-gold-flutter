@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../widgets/gold_bars_icon.dart';
 
 class CurrencyPickerBottomSheet extends StatefulWidget {
   final String selectedCurrency;
@@ -85,31 +86,31 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     },
     // Gold types
     {
-      "code": "GOLD_GRAM",
+      "code": "GRAM",
       "name": "Gram Altın",
       "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
       "symbol": "gr"
     },
     {
-      "code": "GOLD_QUARTER",
+      "code": "ÇEYREK",
       "name": "Çeyrek Altın",
       "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
       "symbol": "çyr"
     },
     {
-      "code": "GOLD_HALF",
+      "code": "YARIM",
       "name": "Yarım Altın",
       "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
       "symbol": "1/2"
     },
     {
-      "code": "GOLD_FULL",
+      "code": "TAM",
       "name": "Tam Altın",
       "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
       "symbol": "tam"
     },
     {
-      "code": "GOLD_OUNCE",
+      "code": "ONS",
       "name": "Ons Altın",
       "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
       "symbol": "oz"
@@ -138,6 +139,10 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
         return code.contains(query) || name.contains(query);
       }).toList();
     });
+  }
+
+  bool _isGoldCurrency(String code) {
+    return ['GRAM', 'ÇEYREK', 'YARIM', 'TAM', 'ONS'].contains(code);
   }
 
   @override
@@ -264,14 +269,25 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
                     ),
                     child: Row(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: CustomImageWidget(
-                            imageUrl: currency['flag'] as String,
-                            width: 10.w,
-                            height: 7.w,
-                            fit: BoxFit.cover,
-                          ),
+                        Container(
+                          width: 10.w,
+                          height: 7.w,
+                          child: _isGoldCurrency(currency['code'] as String)
+                              ? Center(
+                                  child: GoldBarsIcon(
+                                    color: const Color(0xFFFFD700), // Gold color
+                                    size: 32,
+                                  ),
+                                )
+                              : ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: CustomImageWidget(
+                                    imageUrl: currency['flag'] as String,
+                                    width: 10.w,
+                                    height: 7.w,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                         ),
                         SizedBox(width: 4.w),
                         Expanded(

@@ -39,7 +39,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   };
 
   Map<String, dynamic> _toCurrency = {
-    "code": "GOLD_GRAM",
+    "code": "GRAM",
     "name": "Gram Altın",
     "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
     "symbol": "gr"
@@ -162,52 +162,52 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       _changePercentage = 0.12;
     }
     // Currency to Gold rates (TRY to Gold)
-    else if (fromCode == 'TRY' && toCode == 'GOLD_GRAM') {
+    else if (fromCode == 'TRY' && toCode == 'GRAM') {
       _exchangeRate = 1 / 2654.30; // 1 TRY = ? gram gold
       _changePercentage = 0.65;
-    } else if (fromCode == 'TRY' && toCode == 'GOLD_QUARTER') {
+    } else if (fromCode == 'TRY' && toCode == 'ÇEYREK') {
       _exchangeRate = 1 / 2891.75; // 1 TRY = ? quarter gold
       _changePercentage = 0.85;
-    } else if (fromCode == 'TRY' && toCode == 'GOLD_HALF') {
+    } else if (fromCode == 'TRY' && toCode == 'YARIM') {
       _exchangeRate = 1 / 5783.50; // 1 TRY = ? half gold
       _changePercentage = 1.12;
-    } else if (fromCode == 'TRY' && toCode == 'GOLD_FULL') {
+    } else if (fromCode == 'TRY' && toCode == 'TAM') {
       _exchangeRate = 1 / 11567.00; // 1 TRY = ? full gold
       _changePercentage = 0.95;
-    } else if (fromCode == 'TRY' && toCode == 'GOLD_OUNCE') {
+    } else if (fromCode == 'TRY' && toCode == 'ONS') {
       _exchangeRate = 1 / 2746.85; // 1 TRY = ? ounce gold (USD)
       _changePercentage = -0.25;
     }
     // Gold to Currency rates (Gold to TRY)
-    else if (fromCode == 'GOLD_GRAM' && toCode == 'TRY') {
+    else if (fromCode == 'GRAM' && toCode == 'TRY') {
       _exchangeRate = 2654.30; // 1 gram gold = ? TRY
       _changePercentage = 0.65;
-    } else if (fromCode == 'GOLD_QUARTER' && toCode == 'TRY') {
+    } else if (fromCode == 'ÇEYREK' && toCode == 'TRY') {
       _exchangeRate = 2891.75; // 1 quarter gold = ? TRY
       _changePercentage = 0.85;
-    } else if (fromCode == 'GOLD_HALF' && toCode == 'TRY') {
+    } else if (fromCode == 'YARIM' && toCode == 'TRY') {
       _exchangeRate = 5783.50; // 1 half gold = ? TRY
       _changePercentage = 1.12;
-    } else if (fromCode == 'GOLD_FULL' && toCode == 'TRY') {
+    } else if (fromCode == 'TAM' && toCode == 'TRY') {
       _exchangeRate = 11567.00; // 1 full gold = ? TRY
       _changePercentage = 0.95;
-    } else if (fromCode == 'GOLD_OUNCE' && toCode == 'TRY') {
+    } else if (fromCode == 'ONS' && toCode == 'TRY') {
       _exchangeRate = 2746.85 * 32.4567; // 1 ounce gold = ? TRY (via USD)
       _changePercentage = -0.25;
     }
     // Gold to Gold conversions
-    else if (fromCode == 'GOLD_GRAM' && toCode == 'GOLD_QUARTER') {
+    else if (fromCode == 'GRAM' && toCode == 'ÇEYREK') {
       _exchangeRate = 2654.30 / 2891.75;
       _changePercentage = 0.20;
-    } else if (fromCode == 'GOLD_QUARTER' && toCode == 'GOLD_GRAM') {
+    } else if (fromCode == 'ÇEYREK' && toCode == 'GRAM') {
       _exchangeRate = 2891.75 / 2654.30;
       _changePercentage = -0.20;
     }
     // USD to Gold rates
-    else if (fromCode == 'USD' && toCode == 'GOLD_GRAM') {
+    else if (fromCode == 'USD' && toCode == 'GRAM') {
       _exchangeRate = 32.4567 / 2654.30; // USD to TRY to Gold
       _changePercentage = 1.10;
-    } else if (fromCode == 'USD' && toCode == 'GOLD_OUNCE') {
+    } else if (fromCode == 'USD' && toCode == 'ONS') {
       _exchangeRate = 1 / 2746.85; // 1 USD = ? ounce gold
       _changePercentage = 0.70;
     }
@@ -265,6 +265,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                    // Add spacing between header/ticker and content
+                    SizedBox(height: 1.5.h),
+                    
                     // From amount input
                     AmountInputWidget(
                       controller: _fromAmountController,

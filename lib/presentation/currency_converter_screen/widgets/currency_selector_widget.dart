@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../widgets/gold_bars_icon.dart';
 
 class CurrencySelectorWidget extends StatelessWidget {
   final String currencyCode;
@@ -14,6 +15,10 @@ class CurrencySelectorWidget extends StatelessWidget {
     required this.flagUrl,
     required this.onTap,
   }) : super(key: key);
+
+  bool _isGoldCurrency(String code) {
+    return ['GRAM', 'ÇEYREK', 'YARIM', 'TAM', 'ONS'].contains(code);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,14 +45,25 @@ class CurrencySelectorWidget extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: CustomImageWidget(
-                imageUrl: flagUrl,
-                width: 6.w,
-                height: 4.w,
-                fit: BoxFit.cover,
-              ),
+            Container(
+              width: 6.w,
+              height: 4.w,
+              child: _isGoldCurrency(currencyCode)
+                  ? Center(
+                      child: GoldBarsIcon(
+                        color: const Color(0xFFFFD700), // Gold color
+                        size: 22,
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: CustomImageWidget(
+                        imageUrl: flagUrl,
+                        width: 6.w,
+                        height: 4.w,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
             ),
             SizedBox(width: 2.w),
             Text(

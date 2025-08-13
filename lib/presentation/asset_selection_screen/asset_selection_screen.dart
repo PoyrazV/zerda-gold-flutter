@@ -137,27 +137,37 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Future<void> _fetchCurrencyData() async {
+    print('AssetSelection: Starting to fetch currency data...');
     try {
       setState(() {
         _isLoading = true;
+        print('AssetSelection: Set loading state to true');
       });
       
       print('AssetSelection: Fetching currency data from API...');
       final apiData = await _currencyApiService.getFormattedCurrencyData();
       print('AssetSelection: Received ${apiData.length} currencies from API');
+      print('AssetSelection: First few currencies: ${apiData.take(3).toList()}');
       
-      if (apiData.isNotEmpty) {
-        _currencyData = apiData;
-        _filteredCurrencyData = List.from(_currencyData);
-        print('AssetSelection: Successfully loaded ${_currencyData.length} currencies');
-      }
+      setState(() {
+        if (apiData.isNotEmpty) {
+          _currencyData = apiData;
+          _filteredCurrencyData = List.from(_currencyData);
+          print('AssetSelection: Successfully loaded ${_currencyData.length} currencies');
+          print('AssetSelection: Filtered data length: ${_filteredCurrencyData.length}');
+        } else {
+          print('AssetSelection: API returned empty data');
+        }
+      });
     } catch (e) {
       print('AssetSelection: Error fetching currency data: $e');
+      print('AssetSelection: Stack trace: ${StackTrace.current}');
       // Keep empty lists on error
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          print('AssetSelection: Set loading state to false. Currency data length: ${_currencyData.length}');
         });
       }
     }
@@ -214,7 +224,24 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   void _addToWatchlist(Map<String, dynamic> asset) {
-    WatchlistService.addToWatchlist(asset);
+    print('AssetSelection: Adding to watchlist: $asset');
+    
+    // Ensure the asset has all required fields for WatchlistService
+    final watchlistAsset = {
+      'code': asset['code'] ?? '',
+      'name': asset['name'] ?? '',
+      'buyPrice': asset['buyPrice'] ?? 0.0,
+      'sellPrice': asset['sellPrice'] ?? (asset['buyPrice'] ?? 0.0) + 0.01,
+      'change': asset['change'] ?? 0.0,
+      'changePercent': asset['change'] ?? 0.0, // API has 'change' field, not 'changePercent'
+      'isPositive': asset['isPositive'] ?? true,
+    };
+    
+    print('AssetSelection: Formatted watchlist asset: $watchlistAsset');
+    
+    WatchlistService.addToWatchlist(watchlistAsset);
+    
+    print('AssetSelection: Current watchlist items: ${WatchlistService.getWatchlistItems().length}');
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -431,7 +458,10 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Widget _buildCurrencyTab() {
+    print('AssetSelection _buildCurrencyTab: Loading: $_isLoading, FilteredData: ${_filteredCurrencyData.length}');
+    
     if (_filteredCurrencyData.isEmpty && !_isLoading) {
+      print('AssetSelection: Showing empty state');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -443,9 +473,16 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             ),
             SizedBox(height: 2.h),
             Text(
-              'Aradığınız kıymet bulunamadı',
+              'Kıymet bulunamadı',
               style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: 1.h),
+            Text(
+              'API\'dan veri çekilemiyor olabilir',
+              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.5),
               ),
             ),
           ],
@@ -523,8 +560,8 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Widget _buildAssetRow(Map<String, dynamic> asset) {
-    final bool isPositive = asset['isPositive'] as bool;
-    final bool isInWatchlist = WatchlistService.isInWatchlist(asset['code'] as String);
+    final bool isPositive = (asset['isPositive'] as bool? ?? false);
+    final bool isInWatchlist = WatchlistService.isInWatchlist(asset['code'] as String? ?? '');
 
     return InkWell(
       onTap: () {
@@ -562,7 +599,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    asset['code'] as String,
+                    asset['code'] as String? ?? '',
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
@@ -572,7 +609,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                   ),
                   SizedBox(height: 0.2.h),
                   Text(
-                    asset['name'] as String,
+                    asset['name'] as String? ?? '',
                     style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondaryLight,
                       fontSize: 11.sp,
@@ -593,7 +630,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    CurrencyFormatter.formatTRY(asset['buyPrice'] as double, decimalPlaces: 4),
+                    CurrencyFormatter.formatTRY((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -613,7 +650,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                       ),
                       SizedBox(width: 0.5.w),
                       Text(
-                        CurrencyFormatter.formatPercentageChange(asset['changePercent'] as double),
+                        CurrencyFormatter.formatPercentageChange((asset['changePercent'] as double? ?? 0.0)),
                         style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                           color: isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed,
                           fontSize: 10.sp,

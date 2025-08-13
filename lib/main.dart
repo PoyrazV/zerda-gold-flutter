@@ -14,10 +14,7 @@ void main() async {
   // Initialize AuthService
   await AuthService().initialize();
 
-  // Initialize WatchlistService with API data
-  await WatchlistService.updateWatchlistData();
-
-  // Initialize GlobalTickerService
+  // Initialize GlobalTickerService (will use default currencies when watchlist is empty)
   await GlobalTickerService().initialize();
 
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE

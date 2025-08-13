@@ -36,6 +36,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
   }
 
   void _updateTicker() {
+    print('WatchlistScreen: Watchlist updated. Current items: ${WatchlistService.getWatchlistItems().length}');
     if (mounted) {
       setState(() {});
     }

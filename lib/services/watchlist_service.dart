@@ -4,35 +4,7 @@ import 'currency_api_service.dart';
 class WatchlistService {
   static final List<VoidCallback> _listeners = [];
   static final CurrencyApiService _currencyApiService = CurrencyApiService();
-  static List<Map<String, dynamic>> _watchlistItems = [
-    {
-      'code': 'USD/TRY',
-      'name': 'Amerikan Doları',
-      'buyPrice': 34.2156,
-      'sellPrice': 34.2389,
-      'change': 0.0234,
-      'changePercent': 0.068,
-      'isPositive': true,
-    },
-    {
-      'code': 'EUR/TRY', 
-      'name': 'Euro',
-      'buyPrice': 37.1234,
-      'sellPrice': 37.1456,
-      'change': -0.0456,
-      'changePercent': -0.123,
-      'isPositive': false,
-    },
-    {
-      'code': 'GOLD',
-      'name': 'Altın (Ons)',
-      'buyPrice': 2847.50,
-      'sellPrice': 2849.20,
-      'change': -12.50,
-      'changePercent': -0.437,
-      'isPositive': false,
-    },
-  ];
+  static List<Map<String, dynamic>> _watchlistItems = [];
 
   // Static method to get watchlist items for ticker
   static List<Map<String, dynamic>> getWatchlistItems() {

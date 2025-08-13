@@ -21,13 +21,24 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   bool _isRefreshing = false;
   
   final CurrencyApiService _currencyApiService = CurrencyApiService();
-  List<Map<String, dynamic>> _currencyData = [];
-  List<Map<String, dynamic>> _goldData = [];
+  
+  // All data from API
+  List<Map<String, dynamic>> _allCurrencyData = [];
+  List<Map<String, dynamic>> _allGoldData = [];
+  
+  // Pagination variables
+  int _displayedCurrencyCount = 20;
+  int _displayedGoldCount = 20;
+  bool _isLoadingMoreCurrencies = false;
+  bool _isLoadingMoreGold = false;
+  
+  // Search and filtered data
   List<Map<String, dynamic>> _filteredCurrencyData = [];
   List<Map<String, dynamic>> _filteredGoldData = [];
   
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
+  bool _isSearching = false;
 
   // Gold data - keeping static since API might not have gold prices
   final List<Map<String, dynamic>> _staticGoldData = [
@@ -122,8 +133,8 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _goldData = List.from(_staticGoldData);
-    _filteredGoldData = List.from(_goldData);
+    _allGoldData = List.from(_staticGoldData);
+    _filteredGoldData = List.from(_allGoldData);
     _searchController.addListener(_onSearchChanged);
     _fetchCurrencyData();
   }
@@ -151,10 +162,10 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       
       setState(() {
         if (apiData.isNotEmpty) {
-          _currencyData = apiData;
-          _filteredCurrencyData = List.from(_currencyData);
-          print('AssetSelection: Successfully loaded ${_currencyData.length} currencies');
-          print('AssetSelection: Filtered data length: ${_filteredCurrencyData.length}');
+          _allCurrencyData = apiData;
+          _displayedCurrencyCount = 20; // Reset pagination
+          print('AssetSelection: Successfully loaded ${_allCurrencyData.length} currencies');
+          print('AssetSelection: Will display first ${_displayedCurrencyCount} currencies');
         } else {
           print('AssetSelection: API returned empty data');
         }
@@ -167,7 +178,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       if (mounted) {
         setState(() {
           _isLoading = false;
-          print('AssetSelection: Set loading state to false. Currency data length: ${_currencyData.length}');
+          print('AssetSelection: Set loading state to false. Currency data length: ${_allCurrencyData.length}');
         });
       }
     }
@@ -176,17 +187,19 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
+      _isSearching = query.isNotEmpty;
+      
       if (query.isEmpty) {
-        _filteredCurrencyData = List.from(_currencyData);
-        _filteredGoldData = List.from(_goldData);
+        _filteredCurrencyData = [];
+        _filteredGoldData = [];
       } else {
-        _filteredCurrencyData = _currencyData.where((currency) {
+        _filteredCurrencyData = _allCurrencyData.where((currency) {
           final code = (currency['code'] as String).toLowerCase();
           final name = (currency['name'] as String).toLowerCase();
           return code.contains(query) || name.contains(query);
         }).toList();
         
-        _filteredGoldData = _goldData.where((gold) {
+        _filteredGoldData = _allGoldData.where((gold) {
           final code = (gold['code'] as String).toLowerCase();
           final name = (gold['name'] as String).toLowerCase();
           return code.contains(query) || name.contains(query);
@@ -221,6 +234,42 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _loadMoreCurrencies() {
+    if (_isLoadingMoreCurrencies) return;
+    
+    setState(() {
+      _isLoadingMoreCurrencies = true;
+    });
+    
+    // Simulate loading delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _displayedCurrencyCount = (_displayedCurrencyCount + 20).clamp(0, _allCurrencyData.length);
+          _isLoadingMoreCurrencies = false;
+        });
+      }
+    });
+  }
+
+  void _loadMoreGold() {
+    if (_isLoadingMoreGold) return;
+    
+    setState(() {
+      _isLoadingMoreGold = true;
+    });
+    
+    // Simulate loading delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _displayedGoldCount = (_displayedGoldCount + 20).clamp(0, _allGoldData.length);
+          _isLoadingMoreGold = false;
+        });
+      }
+    });
   }
 
   void _addToWatchlist(Map<String, dynamic> asset) {
@@ -458,9 +507,23 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Widget _buildCurrencyTab() {
-    print('AssetSelection _buildCurrencyTab: Loading: $_isLoading, FilteredData: ${_filteredCurrencyData.length}');
+    print('AssetSelection _buildCurrencyTab: Loading: $_isLoading, IsSearching: $_isSearching');
     
-    if (_filteredCurrencyData.isEmpty && !_isLoading) {
+    // Determine which data to show
+    final List<Map<String, dynamic>> currencyData;
+    final bool hasMoreToLoad;
+    
+    if (_isSearching) {
+      currencyData = _filteredCurrencyData;
+      hasMoreToLoad = false; // No pagination during search
+    } else {
+      currencyData = _allCurrencyData.take(_displayedCurrencyCount).toList();
+      hasMoreToLoad = _displayedCurrencyCount < _allCurrencyData.length;
+    }
+    
+    print('AssetSelection: Showing ${currencyData.length} currencies, HasMore: $hasMoreToLoad');
+    
+    if (currencyData.isEmpty && !_isLoading) {
       print('AssetSelection: Showing empty state');
       return Center(
         child: Column(
@@ -473,18 +536,20 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             ),
             SizedBox(height: 2.h),
             Text(
-              'Kıymet bulunamadı',
+              _isSearching ? 'Kıymet bulunamadı' : 'Veri yükleniyor...',
               style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
-            SizedBox(height: 1.h),
-            Text(
-              'API\'dan veri çekilemiyor olabilir',
-              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.5),
+            if (!_isSearching) ...[
+              SizedBox(height: 1.h),
+              Text(
+                'API\'dan veri çekilemiyor olabilir',
+                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                  color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.5),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       );
@@ -492,10 +557,48 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: _filteredCurrencyData.length,
+      itemCount: currencyData.length + (hasMoreToLoad ? 1 : 0),
       itemBuilder: (context, index) {
-        final currency = _filteredCurrencyData[index];
-        final isLastItem = index == _filteredCurrencyData.length - 1;
+        // Load More button
+        if (index == currencyData.length && hasMoreToLoad) {
+          return Container(
+            margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+            child: ElevatedButton(
+              onPressed: _isLoadingMoreCurrencies ? null : _loadMoreCurrencies,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: _isLoadingMoreCurrencies
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_circle_outline, size: 20),
+                        SizedBox(width: 2.w),
+                        Text(
+                          'Daha Fazla Göster',
+                          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        }
+
+        final currency = currencyData[index];
+        final isLastItem = index == currencyData.length - 1 && !hasMoreToLoad;
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -514,7 +617,19 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Widget _buildGoldTab() {
-    if (_filteredGoldData.isEmpty && !_isLoading) {
+    // Determine which data to show
+    final List<Map<String, dynamic>> goldData;
+    final bool hasMoreToLoad;
+    
+    if (_isSearching) {
+      goldData = _filteredGoldData;
+      hasMoreToLoad = false; // No pagination during search
+    } else {
+      goldData = _allGoldData.take(_displayedGoldCount).toList();
+      hasMoreToLoad = _displayedGoldCount < _allGoldData.length;
+    }
+
+    if (goldData.isEmpty && !_isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -526,7 +641,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             ),
             SizedBox(height: 2.h),
             Text(
-              'Aradığınız altın kıymeti bulunamadı',
+              _isSearching ? 'Aradığınız altın kıymeti bulunamadı' : 'Altın verileri yükleniyor...',
               style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                 color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -538,10 +653,48 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: _filteredGoldData.length,
+      itemCount: goldData.length + (hasMoreToLoad ? 1 : 0),
       itemBuilder: (context, index) {
-        final gold = _filteredGoldData[index];
-        final isLastItem = index == _filteredGoldData.length - 1;
+        // Load More button
+        if (index == goldData.length && hasMoreToLoad) {
+          return Container(
+            margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+            child: ElevatedButton(
+              onPressed: _isLoadingMoreGold ? null : _loadMoreGold,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: _isLoadingMoreGold
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_circle_outline, size: 20),
+                        SizedBox(width: 2.w),
+                        Text(
+                          'Daha Fazla Göster',
+                          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        }
+
+        final gold = goldData[index];
+        final isLastItem = index == goldData.length - 1 && !hasMoreToLoad;
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 4.w),

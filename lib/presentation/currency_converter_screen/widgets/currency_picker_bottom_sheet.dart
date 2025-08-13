@@ -22,8 +22,9 @@ class CurrencyPickerBottomSheet extends StatefulWidget {
 class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredCurrencies = [];
+  bool _showingCurrencies = true; // true for currencies, false for gold
 
-  final List<Map<String, dynamic>> _currencies = [
+  final List<Map<String, dynamic>> _currencyList = [
     {
       "code": "USD",
       "name": "Amerikan Doları",
@@ -84,7 +85,9 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
       "flag": "https://flagcdn.com/w320/ru.png",
       "symbol": "₽"
     },
-    // Gold types
+  ];
+
+  final List<Map<String, dynamic>> _goldList = [
     {
       "code": "GRAM",
       "name": "Gram Altın",
@@ -120,7 +123,10 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _filteredCurrencies = _currencies;
+    // Initialize based on the selected currency type
+    final selectedCode = widget.selectedCurrency;
+    _showingCurrencies = !_isGoldCurrency(selectedCode);
+    _filteredCurrencies = _showingCurrencies ? _currencyList : _goldList;
     _searchController.addListener(_filterCurrencies);
   }
 
@@ -132,12 +138,24 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
 
   void _filterCurrencies() {
     final query = _searchController.text.toLowerCase();
+    final sourceList = _showingCurrencies ? _currencyList : _goldList;
+    
     setState(() {
-      _filteredCurrencies = _currencies.where((currency) {
+      _filteredCurrencies = sourceList.where((currency) {
         final code = (currency['code'] as String).toLowerCase();
         final name = (currency['name'] as String).toLowerCase();
         return code.contains(query) || name.contains(query);
       }).toList();
+    });
+  }
+
+  void _toggleSection(bool showCurrencies) {
+    if (_showingCurrencies == showCurrencies) return;
+    
+    setState(() {
+      _showingCurrencies = showCurrencies;
+      _searchController.clear(); // Clear search when switching sections
+      _filteredCurrencies = _showingCurrencies ? _currencyList : _goldList;
     });
   }
 
@@ -193,13 +211,78 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
             ),
           ),
 
+          // Toggle buttons for Döviz/Altın
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+            decoration: BoxDecoration(
+              color: AppTheme.lightTheme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _toggleSection(true),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                      decoration: BoxDecoration(
+                        color: _showingCurrencies 
+                            ? AppTheme.lightTheme.colorScheme.primary 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        'Döviz',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: _showingCurrencies
+                              ? Colors.white
+                              : AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _toggleSection(false),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                      decoration: BoxDecoration(
+                        color: !_showingCurrencies 
+                            ? AppTheme.lightTheme.colorScheme.primary 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        'Altın',
+                        textAlign: TextAlign.center,
+                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: !_showingCurrencies
+                              ? Colors.white
+                              : AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Search field
           Padding(
             padding: EdgeInsets.all(4.w),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Kıymet ara...',
+                hintText: _showingCurrencies ? 'Döviz ara...' : 'Altın ara...',
                 prefixIcon: Padding(
                   padding: EdgeInsets.all(3.w),
                   child: CustomIconWidget(

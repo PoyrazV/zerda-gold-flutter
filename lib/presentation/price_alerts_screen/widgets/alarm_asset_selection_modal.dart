@@ -290,14 +290,20 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
   }
 
   void _selectAssetForAlarm(Map<String, dynamic> asset) {
-    // Format asset data for alarm creation
+    print('Asset selected: ${asset['code']}');
+    // Format asset data for asset detail modal
     final alarmAsset = {
       'code': asset['code'] ?? '',
       'name': asset['name'] ?? '',
       'currentPrice': asset['buyPrice'] ?? 0.0,
+      'changePercent': asset['changePercent'] ?? 0.0,
     };
     
+    print('Calling onAssetSelected with: $alarmAsset');
+    // First call the callback, then pop after a small delay
     widget.onAssetSelected(alarmAsset);
+    
+    // Pop immediately since parent will handle showing next modal after delay
     Navigator.pop(context);
   }
 

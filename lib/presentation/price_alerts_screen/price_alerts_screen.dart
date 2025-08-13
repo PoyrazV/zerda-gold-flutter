@@ -10,7 +10,7 @@ import '../../widgets/app_header.dart';
 import './widgets/alert_card_widget.dart';
 import './widgets/alert_history_widget.dart';
 import './widgets/alarm_asset_selection_modal.dart';
-import './widgets/alarm_price_input_modal.dart';
+import './widgets/asset_detail_modal.dart';
 import './widgets/empty_alerts_widget.dart';
 
 class PriceAlertsScreen extends StatefulWidget {
@@ -556,16 +556,37 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   }
 
   void _onAssetSelected(Map<String, dynamic> selectedAsset) {
-    // Show price input modal after asset selection
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AlarmPriceInputModal(
-        selectedAsset: selectedAsset,
-        onCreateAlert: _createAlert,
-      ),
-    );
+    print('_onAssetSelected called with: $selectedAsset');
+    // Wait a bit for the first modal to close, then show asset detail modal
+    Future.delayed(const Duration(milliseconds: 300), () {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => AssetDetailModal(
+          selectedAsset: selectedAsset,
+          onCreateAlarm: _createAlarmWithPrice,
+        ),
+      );
+    });
+  }
+
+  void _createAlarmWithPrice(Map<String, dynamic> selectedAsset, double targetPrice) {
+    final alertData = {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'assetName': selectedAsset['code'],
+      'assetFullName': selectedAsset['name'],
+      'targetPrice': targetPrice,
+      'currentPrice': selectedAsset['currentPrice'],
+      'alertType': 'above',
+      'status': 'active',
+      'isEnabled': true,
+      'enableNotification': true,
+      'soundType': 'default',
+      'createdAt': DateTime.now(),
+    };
+
+    _createAlert(alertData);
   }
 
   void _createAlert(Map<String, dynamic> alertData) {

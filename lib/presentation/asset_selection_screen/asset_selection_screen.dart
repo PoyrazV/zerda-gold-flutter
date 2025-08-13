@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/currency_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 
 class AssetSelectionScreen extends StatefulWidget {
@@ -18,85 +19,18 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   late TabController _tabController;
   late AnimationController _refreshController;
   bool _isRefreshing = false;
+  
+  final CurrencyApiService _currencyApiService = CurrencyApiService();
+  List<Map<String, dynamic>> _currencyData = [];
+  List<Map<String, dynamic>> _goldData = [];
+  List<Map<String, dynamic>> _filteredCurrencyData = [];
+  List<Map<String, dynamic>> _filteredGoldData = [];
+  
+  final TextEditingController _searchController = TextEditingController();
+  bool _isLoading = true;
 
-  // Döviz kıymetleri listesi
-  final List<Map<String, dynamic>> _currencyData = [
-    {
-      'code': 'USD/TRY',
-      'name': 'Amerikan Doları',
-      'buyPrice': 34.2156,
-      'sellPrice': 34.2456,
-      'change': 0.0234,
-      'changePercent': 0.068,
-      'isPositive': true,
-    },
-    {
-      'code': 'EUR/TRY',
-      'name': 'Euro',
-      'buyPrice': 37.1234,
-      'sellPrice': 37.1534,
-      'change': -0.0456,
-      'changePercent': -0.123,
-      'isPositive': false,
-    },
-    {
-      'code': 'GBP/TRY',
-      'name': 'İngiliz Sterlini',
-      'buyPrice': 43.5678,
-      'sellPrice': 43.5978,
-      'change': 0.1234,
-      'changePercent': 0.284,
-      'isPositive': true,
-    },
-    {
-      'code': 'CHF/TRY',
-      'name': 'İsviçre Frangı',
-      'buyPrice': 38.4567,
-      'sellPrice': 38.4867,
-      'change': -0.0234,
-      'changePercent': -0.061,
-      'isPositive': false,
-    },
-    {
-      'code': 'CAD/TRY',
-      'name': 'Kanada Doları',
-      'buyPrice': 25.1234,
-      'sellPrice': 25.1534,
-      'change': 0.0567,
-      'changePercent': 0.226,
-      'isPositive': true,
-    },
-    {
-      'code': 'AUD/TRY',
-      'name': 'Avustralya Doları',
-      'buyPrice': 22.7890,
-      'sellPrice': 22.8190,
-      'change': -0.0123,
-      'changePercent': -0.054,
-      'isPositive': false,
-    },
-    {
-      'code': 'JPY/TRY',
-      'name': 'Japon Yeni',
-      'buyPrice': 0.2345,
-      'sellPrice': 0.2365,
-      'change': 0.0012,
-      'changePercent': 0.515,
-      'isPositive': true,
-    },
-    {
-      'code': 'SEK/TRY',
-      'name': 'İsveç Kronu',
-      'buyPrice': 3.1234,
-      'sellPrice': 3.1334,
-      'change': -0.0045,
-      'changePercent': -0.144,
-      'isPositive': false,
-    },
-  ];
-
-  // Altın kıymetleri listesi
-  final List<Map<String, dynamic>> _goldData = [
+  // Gold data - keeping static since API might not have gold prices
+  final List<Map<String, dynamic>> _staticGoldData = [
     {
       'code': 'GRAM',
       'name': 'Gram Altın',
@@ -188,13 +122,67 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+    _goldData = List.from(_staticGoldData);
+    _filteredGoldData = List.from(_goldData);
+    _searchController.addListener(_onSearchChanged);
+    _fetchCurrencyData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _refreshController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchCurrencyData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      print('AssetSelection: Fetching currency data from API...');
+      final apiData = await _currencyApiService.getFormattedCurrencyData();
+      print('AssetSelection: Received ${apiData.length} currencies from API');
+      
+      if (apiData.isNotEmpty) {
+        _currencyData = apiData;
+        _filteredCurrencyData = List.from(_currencyData);
+        print('AssetSelection: Successfully loaded ${_currencyData.length} currencies');
+      }
+    } catch (e) {
+      print('AssetSelection: Error fetching currency data: $e');
+      // Keep empty lists on error
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCurrencyData = List.from(_currencyData);
+        _filteredGoldData = List.from(_goldData);
+      } else {
+        _filteredCurrencyData = _currencyData.where((currency) {
+          final code = (currency['code'] as String).toLowerCase();
+          final name = (currency['name'] as String).toLowerCase();
+          return code.contains(query) || name.contains(query);
+        }).toList();
+        
+        _filteredGoldData = _goldData.where((gold) {
+          final code = (gold['code'] as String).toLowerCase();
+          final name = (gold['name'] as String).toLowerCase();
+          return code.contains(query) || name.contains(query);
+        }).toList();
+      }
+    });
   }
 
   Future<void> _handleRefresh() async {
@@ -207,7 +195,8 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    await Future.delayed(const Duration(seconds: 1));
+    // Fetch fresh data from API
+    await _fetchCurrencyData();
 
     setState(() {
       _isRefreshing = false;
@@ -260,18 +249,23 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             // Header with ZERDA branding
             _buildHeader(),
 
+            // Search bar
+            _buildSearchBar(),
+
             // Tab bar
             _buildTabBar(),
 
             // Main content
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildCurrencyTab(),
-                  _buildGoldTab(),
-                ],
-              ),
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildCurrencyTab(),
+                      _buildGoldTab(),
+                    ],
+                  ),
             ),
           ],
         ),
@@ -332,6 +326,63 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     );
   }
 
+  Widget _buildSearchBar() {
+    return Container(
+      margin: EdgeInsets.all(4.w),
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      decoration: BoxDecoration(
+        color: AppTheme.lightTheme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.lightTheme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.shadowLight,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.search,
+            color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.6),
+            size: 20,
+          ),
+          SizedBox(width: 3.w),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Kıymet ara...',
+                hintStyle: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: AppTheme.lightTheme.textTheme.bodyMedium,
+            ),
+          ),
+          if (_searchController.text.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+              },
+              child: Icon(
+                Icons.clear,
+                color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.6),
+                size: 20,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTabBar() {
     return Container(
       color: AppTheme.lightTheme.colorScheme.surface,
@@ -380,12 +431,34 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Widget _buildCurrencyTab() {
+    if (_filteredCurrencyData.isEmpty && !_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 20.w,
+              color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              'Aradığınız kıymet bulunamadı',
+              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: _currencyData.length,
+      itemCount: _filteredCurrencyData.length,
       itemBuilder: (context, index) {
-        final currency = _currencyData[index];
-        final isLastItem = index == _currencyData.length - 1;
+        final currency = _filteredCurrencyData[index];
+        final isLastItem = index == _filteredCurrencyData.length - 1;
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -404,12 +477,34 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   }
 
   Widget _buildGoldTab() {
+    if (_filteredGoldData.isEmpty && !_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 20.w,
+              color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+            SizedBox(height: 2.h),
+            Text(
+              'Aradığınız altın kıymeti bulunamadı',
+              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                color: AppTheme.lightTheme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: _goldData.length,
+      itemCount: _filteredGoldData.length,
       itemBuilder: (context, index) {
-        final gold = _goldData[index];
-        final isLastItem = index == _goldData.length - 1;
+        final gold = _filteredGoldData[index];
+        final isLastItem = index == _filteredGoldData.length - 1;
 
         return Container(
           margin: EdgeInsets.symmetric(horizontal: 4.w),

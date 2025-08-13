@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'currency_api_service.dart';
+import 'watchlist_service.dart';
 
 class GlobalTickerService extends ChangeNotifier {
   static final GlobalTickerService _instance = GlobalTickerService._internal();
@@ -23,8 +24,16 @@ class GlobalTickerService extends ChangeNotifier {
   Future<void> initialize() async {
     if (_hasInitialData) return; // Already initialized
     
+    // Listen to watchlist changes
+    WatchlistService.addListener(_onWatchlistChanged);
+    
     await _fetchTickerData();
     _startPeriodicRefresh();
+  }
+
+  // Handle watchlist changes
+  void _onWatchlistChanged() {
+    _fetchTickerData();
   }
 
   // Fetch ticker data from API
@@ -35,29 +44,75 @@ class GlobalTickerService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print('GlobalTickerService: Fetching currency data from API...');
-      final data = await _currencyApiService.getFormattedCurrencyData();
-      print('GlobalTickerService: Received ${data.length} currencies from API');
-      
-      if (data.isNotEmpty) {
-        // Select major currencies for ticker
-        final majorCurrencies = ['USD', 'EUR', 'GBP', 'CHF'];
-        final tickerCurrencies = data.where((currency) {
-          final code = (currency['code'] as String).replaceAll('TRY', '');
-          return majorCurrencies.contains(code);
-        }).take(4).map((currency) => {
-          'symbol': currency['code'],
-          'price': ((currency['buyPrice'] as double? ?? 0.0) + (currency['sellPrice'] as double? ?? 0.0)) / 2,
-          'change': currency['change'] as double? ?? 0.0,
-          'changePercent': currency['change'] as double? ?? 0.0,
-        }).toList();
+      // Get watchlist items
+      final watchlistItems = WatchlistService.getWatchlistItems();
+      print('GlobalTickerService: Found ${watchlistItems.length} items in watchlist');
 
-        print('GlobalTickerService: Selected ${tickerCurrencies.length} major currencies for ticker');
-        _tickerData = tickerCurrencies;
+      if (watchlistItems.isNotEmpty) {
+        // Get API data and match with watchlist items
+        print('GlobalTickerService: Fetching API data for watchlist items...');
+        final apiData = await _currencyApiService.getFormattedCurrencyData();
+        print('GlobalTickerService: Received ${apiData.length} currencies from API');
+        
+        List<Map<String, dynamic>> updatedTickerData = [];
+        
+        for (var watchlistItem in watchlistItems) {
+          final itemCode = watchlistItem['code'] as String;
+          
+          // Find matching API data for this watchlist item
+          final matchingApiData = apiData.firstWhere(
+            (apiItem) => apiItem['code'] == itemCode,
+            orElse: () => <String, dynamic>{},
+          );
+          
+          if (matchingApiData.isNotEmpty) {
+            // Use API data for this watchlist item
+            updatedTickerData.add({
+              'symbol': matchingApiData['code'],
+              'price': ((matchingApiData['buyPrice'] as double? ?? 0.0) + (matchingApiData['sellPrice'] as double? ?? 0.0)) / 2,
+              'change': matchingApiData['change'] as double? ?? 0.0,
+              'changePercent': matchingApiData['change'] as double? ?? 0.0,
+            });
+          } else {
+            // Fallback to watchlist data if API doesn't have this item
+            updatedTickerData.add({
+              'symbol': itemCode,
+              'price': watchlistItem['buyPrice'],
+              'change': watchlistItem['change'],
+              'changePercent': watchlistItem['changePercent'],
+            });
+          }
+        }
+        
+        _tickerData = updatedTickerData;
+        print('GlobalTickerService: Updated ${_tickerData.length} watchlist items with API data for ticker');
         _hasInitialData = true;
+      } else {
+        // If watchlist is empty, fetch API data for major currencies as fallback
+        print('GlobalTickerService: Watchlist empty, fetching major currencies from API...');
+        final data = await _currencyApiService.getFormattedCurrencyData();
+        print('GlobalTickerService: Received ${data.length} currencies from API');
+        
+        if (data.isNotEmpty) {
+          // Select major currencies for ticker as fallback
+          final majorCurrencies = ['USD', 'EUR', 'GBP', 'CHF'];
+          final tickerCurrencies = data.where((currency) {
+            final code = (currency['code'] as String).replaceAll('TRY', '');
+            return majorCurrencies.contains(code);
+          }).take(4).map((currency) => {
+            'symbol': currency['code'],
+            'price': ((currency['buyPrice'] as double? ?? 0.0) + (currency['sellPrice'] as double? ?? 0.0)) / 2,
+            'change': currency['change'] as double? ?? 0.0,
+            'changePercent': currency['change'] as double? ?? 0.0,
+          }).toList();
+
+          print('GlobalTickerService: Selected ${tickerCurrencies.length} major currencies as fallback');
+          _tickerData = tickerCurrencies;
+          _hasInitialData = true;
+        }
       }
     } catch (e) {
-      print('GlobalTickerService API error: $e');
+      print('GlobalTickerService error: $e');
       // Don't update _hasInitialData if there was an error and we don't have any data yet
     } finally {
       _isLoading = false;
@@ -119,6 +174,7 @@ class GlobalTickerService extends ChangeNotifier {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    WatchlistService.removeListener(_onWatchlistChanged);
     super.dispose();
   }
 }

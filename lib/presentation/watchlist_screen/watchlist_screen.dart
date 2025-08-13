@@ -62,7 +62,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     await Future.delayed(const Duration(seconds: 1));
 
     // Update watchlist data through service
-    WatchlistService.updateWatchlistData();
+    await WatchlistService.updateWatchlistData();
     setState(() {});
 
     setState(() {

@@ -81,15 +81,15 @@ class AlertHistoryWidget extends StatelessWidget {
         : triggeredPrice <= targetPrice;
 
     Color statusColor = isSuccessful
-        ? AppTheme.positiveGreen
+        ? AppTheme.lightTheme.colorScheme.primary
         : AppTheme.alertOrange;
 
     double proximityPercentage =
         ((triggeredPrice - targetPrice).abs() / targetPrice * 100);
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      padding: EdgeInsets.all(4.w),
+      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+      padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
         color: AppTheme.lightTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -117,28 +117,28 @@ class AlertHistoryWidget extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          width: 3.w,
-                          height: 3.w,
+                          width: 2.5.w,
+                          height: 2.5.w,
                           decoration: BoxDecoration(
                             color: statusColor,
                             shape: BoxShape.circle,
                           ),
                         ),
-                        SizedBox(width: 2.w),
+                        SizedBox(width: 1.5.w),
                         Expanded(
                           child: Text(
                             assetName,
                             style: AppTheme.lightTheme.textTheme.titleMedium
                                 ?.copyWith(
                               fontWeight: FontWeight.w600,
-                              fontSize: 16.sp,
+                              fontSize: 12.sp,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 1.h),
+                    SizedBox(height: 0.3.h),
                     Text(
                       isSuccessful ? 'Başarıyla Tetiklendi' : 'Kısmi Tetiklendi',
                       style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
@@ -151,7 +151,7 @@ class AlertHistoryWidget extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: EdgeInsets.all(2.w),
+                padding: EdgeInsets.all(1.5.w),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -159,12 +159,12 @@ class AlertHistoryWidget extends StatelessWidget {
                 child: CustomIconWidget(
                   iconName: isSuccessful ? 'check_circle' : 'warning',
                   color: statusColor,
-                  size: 24,
+                  size: 20,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 1.h),
           Row(
             children: [
               Expanded(
@@ -175,15 +175,15 @@ class AlertHistoryWidget extends StatelessWidget {
                       'Hedef Fiyat',
                       style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.textSecondaryLight,
-                        fontSize: 11.sp,
+                        fontSize: 10.sp,
                       ),
                     ),
-                    SizedBox(height: 0.5.h),
+                    SizedBox(height: 0.3.h),
                     Text(
                       CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
                       style: AppTheme.dataTextStyle(
                         isLight: true,
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                       ),
                     ),
                   ],
@@ -197,15 +197,15 @@ class AlertHistoryWidget extends StatelessWidget {
                       'Tetiklenen Fiyat',
                       style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                         color: AppTheme.textSecondaryLight,
-                        fontSize: 11.sp,
+                        fontSize: 10.sp,
                       ),
                     ),
-                    SizedBox(height: 0.5.h),
+                    SizedBox(height: 0.3.h),
                     Text(
                       CurrencyFormatter.formatTRY(triggeredPrice, decimalPlaces: 4),
                       style: AppTheme.dataTextStyle(
                         isLight: true,
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                       ).copyWith(color: statusColor),
                     ),
                   ],
@@ -236,7 +236,7 @@ class AlertHistoryWidget extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 1.h),
           Row(
             children: [
               CustomIconWidget(
@@ -247,7 +247,7 @@ class AlertHistoryWidget extends StatelessWidget {
                     : AppTheme.negativeRed,
                 size: 16,
               ),
-              SizedBox(width: 2.w),
+              SizedBox(width: 1.5.w),
               Text(
                 alertType == 'above'
                     ? 'Fiyat Üstü Alarmı'

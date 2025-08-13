@@ -1,13 +1,43 @@
 import 'package:flutter/material.dart';
 import 'gold_bars_icon.dart';
+import '../services/auth_service.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   const AppDrawer({Key? key}) : super(key: key);
+
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  late AuthService _authService;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = AuthService();
+    _authService.addListener(_onAuthStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _authService.removeListener(_onAuthStateChanged);
+    super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     // Auto-detect current route
     final String? currentRoute = ModalRoute.of(context)?.settings.name;
+    
+    // Get auth state
+    final isLoggedIn = _authService.isLoggedIn;
     return Drawer(
       child: Container(
         decoration: const BoxDecoration(
@@ -27,44 +57,74 @@ class AppDrawer extends StatelessWidget {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-            // Header with login button
+            // Header with ZERDA and profile icon
             Container(
               padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'ZERDA',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'ZERDA',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      if (isLoggedIn) 
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.pushNamed(context, '/user-profile-screen');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(context, '/login-screen');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  // Show login button only if not logged in
+                  if (!isLoggedIn)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.pushNamed(context, '/login-screen');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Giriş Yap',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        child: const Text(
+                          'Giriş Yap',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -9,7 +9,8 @@ import '../../widgets/price_ticker.dart';
 import '../../widgets/app_header.dart';
 import './widgets/alert_card_widget.dart';
 import './widgets/alert_history_widget.dart';
-import './widgets/create_alert_bottom_sheet.dart';
+import './widgets/alarm_asset_selection_modal.dart';
+import './widgets/alarm_price_input_modal.dart';
 import './widgets/empty_alerts_widget.dart';
 
 class PriceAlertsScreen extends StatefulWidget {
@@ -493,7 +494,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   Widget _buildActiveAlertsTab() {
     if (_activeAlerts.isEmpty) {
       return EmptyAlertsWidget(
-        onCreateAlert: _showCreateAlertBottomSheet,
+        onCreateAlert: _showAssetSelectionModal,
       );
     }
 
@@ -533,7 +534,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
 
   Widget _buildFloatingActionButton() {
     return FloatingActionButton(
-      onPressed: _showCreateAlertBottomSheet,
+      onPressed: _showAssetSelectionModal,
       backgroundColor: AppTheme.lightTheme.colorScheme.primary,
       child: CustomIconWidget(
         iconName: 'add',
@@ -543,12 +544,25 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     );
   }
 
-  void _showCreateAlertBottomSheet() {
+  void _showAssetSelectionModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreateAlertBottomSheet(
+      builder: (context) => AlarmAssetSelectionModal(
+        onAssetSelected: _onAssetSelected,
+      ),
+    );
+  }
+
+  void _onAssetSelected(Map<String, dynamic> selectedAsset) {
+    // Show price input modal after asset selection
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AlarmPriceInputModal(
+        selectedAsset: selectedAsset,
         onCreateAlert: _createAlert,
       ),
     );

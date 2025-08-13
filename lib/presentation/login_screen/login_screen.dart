@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_service.dart';
 import './widgets/app_logo_widget.dart';
 import './widgets/login_form_widget.dart';
 import './widgets/social_login_widget.dart';
@@ -232,6 +233,13 @@ class _LoginScreenState extends State<LoginScreen> {
       // Check mock credentials
       if (_mockCredentials.containsKey(email) &&
           _mockCredentials[email] == password) {
+        // Update AuthService with successful login
+        await AuthService().login(
+          email: email,
+          password: password,
+          userName: email.split('@')[0],
+        );
+        
         // Success haptic feedback
         HapticFeedback.lightImpact();
 
@@ -269,6 +277,13 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Simulate social login process
       await Future.delayed(const Duration(seconds: 2));
+
+      // Update AuthService with successful social login
+      await AuthService().login(
+        email: 'social@$provider.com',
+        password: 'social123',
+        userName: '$provider User',
+      );
 
       // Success haptic feedback
       HapticFeedback.lightImpact();

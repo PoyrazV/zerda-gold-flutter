@@ -6,6 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/price_ticker.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({Key? key}) : super(key: key);
@@ -126,7 +127,8 @@ class _WatchlistScreenState extends State<WatchlistScreen>
             _buildHeader(),
 
             // Price ticker
-            _buildPriceTicker(),
+            // Price ticker with API data
+            const PriceTicker(),
 
             // Main content
             Expanded(

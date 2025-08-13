@@ -1,8 +1,12 @@
+import 'currency_api_service.dart';
+
 class FinancialDataService {
   // Singleton pattern
   static final FinancialDataService _instance = FinancialDataService._internal();
   factory FinancialDataService() => _instance;
   FinancialDataService._internal();
+
+  final CurrencyApiService _apiService = CurrencyApiService();
 
   // Currency data - tek merkezi kaynak
   static final List<Map<String, dynamic>> currencyData = [
@@ -233,6 +237,25 @@ class FinancialDataService {
   static List<Map<String, dynamic>> getCurrencies() => currencyData;
   static List<Map<String, dynamic>> getGoldData() => goldData;
   static List<Map<String, dynamic>> getSarrafiyeData() => sarrafiyeData;
+  
+  // Instance method for compatibility
+  List<Map<String, dynamic>> getMockCurrencies() => FinancialDataService.getCurrencies();
+
+  // API'den gerçek veri çekme
+  Future<List<Map<String, dynamic>>> getRealCurrencyData() async {
+    try {
+      final apiData = await _apiService.getFormattedCurrencyData();
+      if (apiData.isNotEmpty) {
+        print('API\'den ${apiData.length} döviz kuru alındı');
+        return apiData;
+      }
+    } catch (e) {
+      print('API veri çekme hatası: $e');
+    }
+    // API hatası durumunda mock data kullan
+    print('API hatası - mock data kullanılıyor');
+    return currencyData;
+  }
 
   // Update methods for real-time data
   static void updateCurrencyPrice(String code, double buyPrice, double sellPrice, double change) {
@@ -262,16 +285,42 @@ class FinancialDataService {
     return "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
   }
 
-  // Simulate data refresh (for demo purposes)
-  static Future<void> refreshData() async {
-    await Future.delayed(const Duration(seconds: 2));
-    // In real app, this would fetch from API
-    // For now, just update timestamps
-    for (var currency in currencyData) {
-      currency['timestamp'] = _getCurrentTime();
+  // Gerçek API ile veri yenileme
+  Future<List<Map<String, dynamic>>> refreshCurrencyData() async {
+    try {
+      final realData = await getRealCurrencyData();
+      // Mock datayı gerçek veri ile güncelle
+      currencyData.clear();
+      currencyData.addAll(realData);
+      return realData;
+    } catch (e) {
+      print('Veri yenileme hatası: $e');
+      // Hata durumunda sadece timestamp güncelle
+      for (var currency in currencyData) {
+        currency['timestamp'] = _getCurrentTime();
+      }
+      return currencyData;
     }
+  }
+
+  // Gold data için mock refresh (API yok)
+  static Future<void> refreshGoldData() async {
+    await Future.delayed(const Duration(seconds: 1));
     for (var gold in goldData) {
       gold['timestamp'] = _getCurrentTime();
+    }
+  }
+
+  // Chart data için API entegrasyonu
+  Future<List<Map<String, dynamic>>> getChartData({
+    required String symbol,
+    int days = 30,
+  }) async {
+    try {
+      return await _apiService.getChartData(symbol: symbol, days: days);
+    } catch (e) {
+      print('Chart data service hatası: $e');
+      return [];
     }
   }
 }

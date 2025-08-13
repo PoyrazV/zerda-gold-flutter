@@ -177,13 +177,10 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
                 reservedSize: 30,
                 interval: spots.length > 1 ? spots.last.x / 4 : 1,
                 getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      _getBottomTitle(value.toInt()),
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                      ),
+                  return Text(
+                    _getBottomTitle(value.toInt()),
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
                     ),
                   );
                 },
@@ -195,13 +192,10 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
                 interval: (maxY - minY) / 4,
                 reservedSize: 50,
                 getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      CurrencyFormatter.formatNumber(value),
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                      ),
+                  return Text(
+                    CurrencyFormatter.formatNumber(value),
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
                     ),
                   );
                 },

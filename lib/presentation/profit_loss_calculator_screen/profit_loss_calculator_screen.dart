@@ -6,6 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/price_ticker.dart';
 import './widgets/time_period_dropdown_widget.dart';
 import './widgets/amount_input_widget.dart';
 import './widgets/currency_dropdown_widget.dart';
@@ -144,7 +145,8 @@ class _ProfitLossCalculatorScreenState
           _buildCompactHeader(),
 
           // Price ticker
-          _buildPriceTicker(),
+          // Price ticker with API data
+          const PriceTicker(),
 
           // Main content with table
           Expanded(

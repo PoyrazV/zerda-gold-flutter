@@ -241,7 +241,8 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
           _buildHeader(),
 
           // Price ticker
-          _buildPriceTicker(),
+          // Price ticker with API data
+          const PriceTicker(),
 
           // Main content
           Expanded(

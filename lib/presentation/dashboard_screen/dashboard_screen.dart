@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/currency_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_header.dart';
@@ -22,12 +23,28 @@ class _DashboardScreenState extends State<DashboardScreen>
     with TickerProviderStateMixin {
   late AnimationController _refreshController;
   bool _isRefreshing = false;
+  final CurrencyApiService _currencyApiService = CurrencyApiService();
+  
+  // Pagination variables
+  List<Map<String, dynamic>> _allCurrencyData = [];
+  int _displayedItemCount = 20;
+  bool _isLoadingMore = false;
+  
+  // Search variables
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _filteredCurrencyData = [];
 
   // Use centralized mock data
   List<Map<String, dynamic>> get _featuredCurrencies => MockData.currencies;
 
-  // Mock currency data
-  final List<Map<String, dynamic>> _currencyData = [
+  // Currency data from API - initialized with default values
+  List<Map<String, dynamic>> get _currencyData => 
+      _isSearching && _searchController.text.isNotEmpty 
+          ? _filteredCurrencyData 
+          : _allCurrencyData.take(_displayedItemCount).toList();
+  
+  List<Map<String, dynamic>> _defaultCurrencyData = [
     {
       "code": "USDTRY",
       "name": "Amerikan Doları",
@@ -174,6 +191,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    // Fetch initial currency data from API
+    _fetchCurrencyData();
   }
 
   void _updateTicker() {
@@ -182,9 +201,65 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
+  Future<void> _fetchCurrencyData() async {
+    try {
+      print('Fetching currency data from API...');
+      final data = await _currencyApiService.getFormattedCurrencyData();
+      print('Received ${data.length} currencies from API');
+      if (mounted && data.isNotEmpty) {
+        setState(() {
+          // Store all currencies
+          _allCurrencyData = data;
+          _displayedItemCount = 20; // Reset to initial count
+          print('Showing ${_currencyData.length} currencies in dashboard');
+        });
+      }
+    } catch (e) {
+      print('Error fetching currency data: $e');
+      // Use default data if API fails
+      setState(() {
+        _allCurrencyData = _defaultCurrencyData;
+      });
+    }
+  }
+  
+  void _loadMoreCurrencies() {
+    if (_isLoadingMore) return;
+    
+    setState(() {
+      _isLoadingMore = true;
+    });
+    
+    // Simulate loading delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _displayedItemCount = (_displayedItemCount + 20).clamp(0, _allCurrencyData.length);
+          _isLoadingMore = false;
+        });
+      }
+    });
+  }
+  
+  void _filterCurrencies(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCurrencyData = [];
+      } else {
+        _filteredCurrencyData = _allCurrencyData.where((currency) {
+          final code = (currency['code'] as String).toLowerCase();
+          final name = (currency['name'] as String).toLowerCase();
+          final searchQuery = query.toLowerCase();
+          return code.contains(searchQuery) || name.contains(searchQuery);
+        }).toList();
+      }
+    });
+  }
+
   @override
   void dispose() {
     _refreshController.dispose();
+    _searchController.dispose();
     WatchlistService.removeListener(_updateTicker);
     super.dispose();
   }
@@ -199,22 +274,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Mock data update
-    setState(() {
-      for (var currency in _currencyData) {
-        currency['buyPrice'] = (currency['buyPrice'] as double) +
-            (DateTime.now().millisecond % 10 - 5) * 0.001;
-        currency['sellPrice'] = (currency['sellPrice'] as double) +
-            (DateTime.now().millisecond % 10 - 5) * 0.001;
-        currency['change'] = (DateTime.now().millisecond % 200 - 100) * 0.01;
-        currency['isPositive'] = currency['change'] > 0;
-      }
-
-      // Featured currencies now use centralized data - no separate update needed
-    });
+    // Fetch fresh data from API
+    await _fetchCurrencyData();
 
     setState(() {
       _isRefreshing = false;
@@ -222,13 +283,15 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     _refreshController.reverse();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Döviz kurları güncellendi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Döviz kurları güncellendi'),
+          backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -238,8 +301,37 @@ class _DashboardScreenState extends State<DashboardScreen>
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Header with ZERDA branding
-          AppHeader(textTopPadding: 1.0.h, titleVerticalOffset: 12.0, menuButtonVerticalOffset: 12.0),
+          // Header with ZERDA branding and search icon
+          AppHeader(
+            textTopPadding: 1.0.h, 
+            titleVerticalOffset: 12.0, 
+            menuButtonVerticalOffset: 12.0,
+            actions: [
+              Transform.translate(
+                offset: Offset(0, 12.0), // Same offset as menu button (menuButtonVerticalOffset)
+                child: Padding(
+                  padding: EdgeInsets.only(top: 1.0.h), // Same textTopPadding as menu button
+                  child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = !_isSearching;
+                      if (!_isSearching) {
+                        _searchController.clear();
+                        _filterCurrencies('');
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _isSearching ? Icons.close : Icons.search,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  padding: EdgeInsets.all(2.w),
+                  ),
+                ),
+              ),
+            ],
+          ),
 
           // Price ticker
           const PriceTicker(),
@@ -309,6 +401,58 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ],
                       ),
                     ),
+                    
+                    // Search bar (shown when searching)
+                    if (_isSearching)
+                      Container(
+                        height: 7.h,
+                        decoration: BoxDecoration(
+                          color: AppTheme.lightTheme.colorScheme.surface,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          style: TextStyle(
+                            color: AppTheme.lightTheme.colorScheme.onSurface,
+                            fontSize: 14.sp,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Döviz ara (USD, Euro, Dolar...)',
+                            hintStyle: TextStyle(
+                              color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              fontSize: 14.sp,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: AppTheme.lightTheme.colorScheme.primary,
+                              size: 20,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(
+                                color: AppTheme.lightTheme.colorScheme.primary,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: AppTheme.lightTheme.colorScheme.surface,
+                            contentPadding: EdgeInsets.symmetric(vertical: 1.h),
+                          ),
+                          onChanged: _filterCurrencies,
+                        ),
+                      ),
 
                     // Currency table
                     Expanded(
@@ -328,30 +472,70 @@ class _DashboardScreenState extends State<DashboardScreen>
 
 
   Widget _buildCurrencyTable() {
+    final hasMoreToLoad = !_isSearching && _displayedItemCount < _allCurrencyData.length;
+    
     return RefreshIndicator(
       onRefresh: _handleRefresh,
       color: AppTheme.lightTheme.colorScheme.primary,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(top: 0.5.h),
-        itemCount: _currencyData.length,
-      itemBuilder: (context, index) {
-        final currency = _currencyData[index];
-        final isLastItem = index == _currencyData.length - 1;
+        padding: EdgeInsets.only(top: 0.5.h, bottom: 2.h),
+        itemCount: _currencyData.length + (hasMoreToLoad ? 1 : 0),
+        itemBuilder: (context, index) {
+          // Load More button
+          if (index == _currencyData.length && hasMoreToLoad) {
+            return Container(
+              margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+              child: ElevatedButton(
+                onPressed: _isLoadingMore ? null : _loadMoreCurrencies,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: _isLoadingMore
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_circle_outline, size: 20),
+                          SizedBox(width: 2.w),
+                          Text(
+                            'Daha Fazla Göster',
+                            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+              ),
+            );
+          }
+          
+          final currency = _currencyData[index];
+          final isLastItem = index == _currencyData.length - 1 && !hasMoreToLoad;
 
-        return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
-          decoration: BoxDecoration(
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
+          return Container(
+            margin: EdgeInsets.symmetric(horizontal: 4.w),
+            decoration: BoxDecoration(
+              border: isLastItem ? null : Border(
+                bottom: BorderSide(
+                  color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
+                  width: 1.5,
+                ),
               ),
             ),
-          ),
-          child: _buildCurrencyRow(currency),
-        );
-      },
+            child: _buildCurrencyRow(currency),
+          );
+        },
       ),
     );
   }

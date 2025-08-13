@@ -19,7 +19,20 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(git ls-tree:*)",
+      "Bash(tasklist:*)",
+      "Bash(sed:*)",
+      "Bash(mv:*)",
+      "Bash(git rm:*)",
+      "Bash(git reset:*)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:datshop.com.tr)",
+      "WebFetch(domain:metals-api.com)",
+      "Bash(powershell:*)",
+      "Bash(del fix_widget_imports.ps1)",
+      "Bash(git checkout:*)",
+      "WebFetch(domain:api.exchangerate-api.com)"
     ],
     "deny": []
   }

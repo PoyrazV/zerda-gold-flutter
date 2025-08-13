@@ -43,8 +43,8 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    // Use centralized data service
-    await FinancialDataService.refreshData();
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
 
     setState(() {
       _isRefreshing = false;

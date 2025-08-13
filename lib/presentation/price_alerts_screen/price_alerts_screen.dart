@@ -5,8 +5,8 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/app_header.dart';
 import '../../widgets/price_ticker.dart';
+import '../../widgets/app_header.dart';
 import './widgets/alert_card_widget.dart';
 import './widgets/alert_history_widget.dart';
 import './widgets/create_alert_bottom_sheet.dart';
@@ -156,8 +156,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
           // Header with ZERDA branding
           AppHeader(textTopPadding: 1.0.h),
           
-          // Price ticker
-          _buildPriceTicker(),
+          // Price ticker with API data
+          const PriceTicker(),
           
           // Tab bar
           _buildTabBar(),

@@ -7,6 +7,7 @@ import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/price_ticker.dart';
 
 class GoldCoinPricesScreen extends StatefulWidget {
   const GoldCoinPricesScreen({Key? key}) : super(key: key);
@@ -290,8 +291,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
           // Header with ZERDA branding
           AppHeader(textTopPadding: 1.0.h, titleVerticalOffset: 12.0, menuButtonVerticalOffset: 12.0),
 
-          // Price ticker
-          _buildPriceTicker(),
+          // Price ticker with API data
+          const PriceTicker(),
 
           // Main content with table
           Expanded(

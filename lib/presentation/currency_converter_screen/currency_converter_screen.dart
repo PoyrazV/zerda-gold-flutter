@@ -6,6 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/price_ticker.dart';
 import '../../widgets/app_header.dart';
 import './widgets/amount_input_widget.dart';
 import './widgets/currency_picker_bottom_sheet.dart';
@@ -254,8 +255,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
           // Header with ZERDA branding
           AppHeader(textTopPadding: 1.0.h),
 
-          // Price ticker
-          _buildPriceTicker(),
+          // Price ticker with API data
+          const PriceTicker(),
 
           // Main content
           Expanded(

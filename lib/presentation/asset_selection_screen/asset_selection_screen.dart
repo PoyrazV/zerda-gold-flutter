@@ -37,8 +37,10 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   List<Map<String, dynamic>> _filteredGoldData = [];
   
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   bool _isLoading = true;
   bool _isSearching = false;
+  bool _showSearchBar = false;
 
   // Gold data - keeping static since API might not have gold prices
   final List<Map<String, dynamic>> _staticGoldData = [
@@ -144,6 +146,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     _tabController.dispose();
     _refreshController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -236,6 +239,27 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     );
   }
 
+  void _toggleSearchBar() {
+    setState(() {
+      _showSearchBar = !_showSearchBar;
+      
+      if (_showSearchBar) {
+        // Auto-focus search field when showing
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _searchFocusNode.requestFocus();
+        });
+      } else {
+        // Clear search when hiding search bar
+        _searchController.clear();
+        _isSearching = false;
+        _filteredCurrencyData = [];
+        _filteredGoldData = [];
+        // Remove focus
+        _searchFocusNode.unfocus();
+      }
+    });
+  }
+
   void _loadMoreCurrencies() {
     if (_isLoadingMoreCurrencies) return;
     
@@ -325,8 +349,14 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             // Header with ZERDA branding
             _buildHeader(),
 
-            // Search bar
-            _buildSearchBar(),
+            // Search bar (conditionally visible with animation)
+            AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              height: _showSearchBar ? null : 0,
+              child: _showSearchBar 
+                  ? _buildSearchBar()
+                  : SizedBox.shrink(),
+            ),
 
             // Tab bar
             _buildTabBar(),
@@ -393,8 +423,16 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                 ),
               ),
 
-              // Empty space for symmetry
-              SizedBox(width: 48),
+              // Search icon
+              IconButton(
+                onPressed: _toggleSearchBar,
+                icon: Icon(
+                  _showSearchBar ? Icons.close : Icons.search,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                padding: EdgeInsets.all(2.w),
+              ),
             ],
           ),
         ),
@@ -432,6 +470,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
           Expanded(
             child: TextField(
               controller: _searchController,
+              focusNode: _searchFocusNode,
               decoration: InputDecoration(
                 hintText: 'Kıymet ara...',
                 hintStyle: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(

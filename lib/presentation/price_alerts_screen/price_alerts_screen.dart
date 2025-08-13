@@ -445,25 +445,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
-                if (_activeAlerts.isNotEmpty) ...[
-                  SizedBox(width: 1.w),
-                  Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 1.5.w, vertical: 0.3.h),
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${_activeAlerts.length}',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontSize: 9.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

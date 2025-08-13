@@ -7,11 +7,13 @@ import '../../../core/app_export.dart';
 class AssetDetailModal extends StatefulWidget {
   final Map<String, dynamic> selectedAsset;
   final Function(Map<String, dynamic>, double) onCreateAlarm;
+  final double? initialTargetPrice; // For editing mode
 
   const AssetDetailModal({
     Key? key,
     required this.selectedAsset,
     required this.onCreateAlarm,
+    this.initialTargetPrice,
   }) : super(key: key);
 
   @override
@@ -27,7 +29,8 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
   @override
   void initState() {
     super.initState();
-    _targetPrice = widget.selectedAsset['currentPrice'] as double;
+    // Use initial target price if provided (editing mode), otherwise use current price
+    _targetPrice = widget.initialTargetPrice ?? (widget.selectedAsset['currentPrice'] as double);
     _priceController.text = '₺${_targetPrice.toStringAsFixed(2)}';
   }
 
@@ -40,8 +43,8 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90.h,
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.95),
+      height: 80.h,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       decoration: BoxDecoration(
         color: AppTheme.lightTheme.scaffoldBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -51,21 +54,36 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
           // Header
           _buildHeader(),
           
-          // Main content
+          // Main content - scrollable area
           Expanded(
-            child: SingleChildScrollView(
+            child: Padding(
               padding: EdgeInsets.all(4.w),
               child: Column(
                 children: [
-                  SizedBox(height: 8.h),
-                  _buildTargetPriceSection(),
-                  SizedBox(height: 4.h),
-                  _buildPercentageButtons(),
-                  SizedBox(height: 6.h),
-                  _buildInfoText(),
-                  SizedBox(height: 4.h),
-                  _buildCreateAlarmButton(),
-                  SizedBox(height: 4.h),
+                  // Top content - scrollable if needed
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 6.h),
+                          _buildTargetPriceSection(),
+                          SizedBox(height: 4.h),
+                          _buildPercentageButtons(),
+                          SizedBox(height: 4.h),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Bottom content - fixed at bottom
+                  Column(
+                    children: [
+                      _buildInfoText(),
+                      SizedBox(height: 2.h),
+                      _buildCreateAlarmButton(),
+                      SizedBox(height: 2.h),
+                    ],
+                  ),
                 ],
               ),
             ),

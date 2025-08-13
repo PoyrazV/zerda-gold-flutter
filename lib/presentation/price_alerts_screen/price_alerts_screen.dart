@@ -53,85 +53,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   }
 
   void _loadMockData() {
-    // Mock active alerts data
-    _activeAlerts = [
-      {
-        'id': 1,
-        'assetName': 'USD/TRY',
-        'assetFullName': 'Amerikan Doları',
-        'targetPrice': 35.0000,
-        'currentPrice': 34.2156,
-        'alertType': 'above',
-        'status': 'active',
-        'isEnabled': true,
-        'enableNotification': true,
-        'soundType': 'default',
-        'createdAt': DateTime.now().subtract(const Duration(days: 2)),
-      },
-      {
-        'id': 2,
-        'assetName': 'EUR/TRY',
-        'assetFullName': 'Euro',
-        'targetPrice': 36.5000,
-        'currentPrice': 37.1234,
-        'alertType': 'below',
-        'status': 'active',
-        'isEnabled': true,
-        'enableNotification': true,
-        'soundType': 'bell',
-        'createdAt': DateTime.now().subtract(const Duration(days: 1)),
-      },
-      {
-        'id': 3,
-        'assetName': 'GOLD',
-        'assetFullName': 'Altın (Gram)',
-        'targetPrice': 2900.00,
-        'currentPrice': 2847.50,
-        'alertType': 'above',
-        'status': 'active',
-        'isEnabled': false,
-        'enableNotification': true,
-        'soundType': 'chime',
-        'createdAt': DateTime.now().subtract(const Duration(hours: 12)),
-      },
-    ];
-
-    // Mock history alerts data
-    _historyAlerts = [
-      {
-        'id': 101,
-        'assetName': 'USD/TRY',
-        'assetFullName': 'Amerikan Doları',
-        'targetPrice': 34.0000,
-        'triggeredPrice': 34.0156,
-        'alertType': 'above',
-        'status': 'triggered',
-        'triggeredAt': DateTime.now().subtract(const Duration(days: 3)),
-        'createdAt': DateTime.now().subtract(const Duration(days: 5)),
-      },
-      {
-        'id': 102,
-        'assetName': 'GOLD',
-        'assetFullName': 'Altın (Gram)',
-        'targetPrice': 2800.00,
-        'triggeredPrice': 2795.50,
-        'alertType': 'below',
-        'status': 'triggered',
-        'triggeredAt': DateTime.now().subtract(const Duration(days: 7)),
-        'createdAt': DateTime.now().subtract(const Duration(days: 10)),
-      },
-      {
-        'id': 103,
-        'assetName': 'EUR/TRY',
-        'assetFullName': 'Euro',
-        'targetPrice': 38.0000,
-        'triggeredPrice': 37.8234,
-        'alertType': 'below',
-        'status': 'triggered',
-        'triggeredAt': DateTime.now().subtract(const Duration(days: 14)),
-        'createdAt': DateTime.now().subtract(const Duration(days: 16)),
-      },
-    ];
+    // Initialize empty lists - no mock data
+    _activeAlerts = [];
+    _historyAlerts = [];
   }
 
   @override
@@ -520,6 +444,23 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   }
 
   Widget _buildHistoryTab() {
+    if (_historyAlerts.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _refreshHistory,
+        color: AppTheme.lightTheme.colorScheme.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+            height: 60.h,
+            child: AlertHistoryWidget(
+              historyAlerts: _historyAlerts,
+              onDelete: _deleteHistoryAlert,
+            ),
+          ),
+        ),
+      );
+    }
+    
     return RefreshIndicator(
       onRefresh: _refreshHistory,
       color: AppTheme.lightTheme.colorScheme.primary,
@@ -527,6 +468,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
         padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
         child: AlertHistoryWidget(
           historyAlerts: _historyAlerts,
+          onDelete: _deleteHistoryAlert,
         ),
       ),
     );
@@ -604,11 +546,40 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   }
 
   void _editAlert(Map<String, dynamic> alert) {
-    // Navigate to edit alert screen or show edit bottom sheet
+    // Format alert data for asset detail modal
+    final selectedAsset = {
+      'code': alert['assetName'],
+      'name': alert['assetFullName'],
+      'currentPrice': alert['currentPrice'],
+      'changePercent': 0.0, // We don't have change percent in alert data
+    };
+
+    // Show asset detail modal for editing
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AssetDetailModal(
+        selectedAsset: selectedAsset,
+        initialTargetPrice: alert['targetPrice'] as double,
+        onCreateAlarm: (asset, targetPrice) => _updateAlarmWithPrice(alert['id'], asset, targetPrice),
+      ),
+    );
+  }
+
+  void _updateAlarmWithPrice(int alertId, Map<String, dynamic> selectedAsset, double targetPrice) {
+    setState(() {
+      final alertIndex = _activeAlerts.indexWhere((alert) => alert['id'] == alertId);
+      if (alertIndex != -1) {
+        _activeAlerts[alertIndex]['targetPrice'] = targetPrice;
+        _activeAlerts[alertIndex]['currentPrice'] = selectedAsset['currentPrice'];
+      }
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Alarm düzenleme özelliği yakında eklenecek'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        content: Text('Alarm başarıyla güncellendi'),
+        backgroundColor: AppTheme.positiveGreen,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -630,6 +601,59 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _deleteHistoryAlert(Map<String, dynamic> alert) async {
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Geçmiş Alarmı Sil',
+          style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Bu geçmiş alarmı kalıcı olarak silmek istediğinizden emin misiniz?',
+          style: AppTheme.lightTheme.textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'İptal',
+              style: TextStyle(
+                color: AppTheme.textSecondaryLight,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Sil',
+              style: TextStyle(
+                color: AppTheme.negativeRed,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      setState(() {
+        _historyAlerts.removeWhere((item) => item['id'] == alert['id']);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Geçmiş alarm silindi'),
+          backgroundColor: AppTheme.negativeRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _deleteAlert(int alertId) {

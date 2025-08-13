@@ -5,10 +5,12 @@ import '../../../core/app_export.dart';
 
 class AlertHistoryWidget extends StatelessWidget {
   final List<Map<String, dynamic>> historyAlerts;
+  final Function(Map<String, dynamic>)? onDelete;
 
   const AlertHistoryWidget({
     Key? key,
     required this.historyAlerts,
+    this.onDelete,
   }) : super(key: key);
 
   @override
@@ -38,6 +40,7 @@ class AlertHistoryWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(6.w),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CustomIconWidget(
             iconName: 'history',
@@ -52,6 +55,7 @@ class AlertHistoryWidget extends StatelessWidget {
               fontWeight: FontWeight.w500,
               fontSize: 16.sp,
             ),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: 2.h),
           Text(
@@ -80,196 +84,166 @@ class AlertHistoryWidget extends StatelessWidget {
         ? triggeredPrice >= targetPrice
         : triggeredPrice <= targetPrice;
 
-    Color statusColor = isSuccessful
-        ? AppTheme.lightTheme.colorScheme.primary
-        : AppTheme.alertOrange;
+    Color statusColor = Colors.grey[400]!; // Always grey for history
 
     double proximityPercentage =
         ((triggeredPrice - targetPrice).abs() / targetPrice * 100);
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
-      padding: EdgeInsets.all(3.w),
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: statusColor.withValues(alpha: 0.3),
-          width: 1.5,
+    return Dismissible(
+      key: Key('history_${alert['id']}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 4.w),
+        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+        decoration: BoxDecoration(
+          color: AppTheme.negativeRed,
+          borderRadius: BorderRadius.circular(12),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.shadowLight,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        child: CustomIconWidget(
+          iconName: 'delete',
+          color: Colors.white,
+          size: 24,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      confirmDismiss: (direction) async {
+        return true; // Always allow dismiss, confirmation will be handled by parent
+      },
+      onDismissed: (direction) {
+        onDelete?.call(alert);
+      },
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+          padding: EdgeInsets.all(3.w),
+          decoration: BoxDecoration(
+            color: AppTheme.lightTheme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: statusColor.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.shadowLight,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 2.5.w,
-                          height: 2.5.w,
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: 1.5.w),
-                        Expanded(
-                          child: Text(
-                            assetName,
-                            style: AppTheme.lightTheme.textTheme.titleMedium
-                                ?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12.sp,
+                        Row(
+                          children: [
+                            Container(
+                              width: 2.5.w,
+                              height: 2.5.w,
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
+                            SizedBox(width: 1.5.w),
+                            Expanded(
+                              child: Text(
+                                assetName,
+                                style: AppTheme.lightTheme.textTheme.titleMedium
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12.sp,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          'Alarm Tetiklendi',
+                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 0.3.h),
-                    Text(
-                      isSuccessful ? 'Başarıyla Tetiklendi' : 'Kısmi Tetiklendi',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: statusColor,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(1.5.w),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.all(1.5.w),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: CustomIconWidget(
-                  iconName: isSuccessful ? 'check_circle' : 'warning',
-                  color: statusColor,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 1.h),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hedef Fiyat',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondaryLight,
-                        fontSize: 10.sp,
-                      ),
-                    ),
-                    SizedBox(height: 0.3.h),
-                    Text(
-                      CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
-                      style: AppTheme.dataTextStyle(
-                        isLight: true,
-                        fontSize: 12.sp,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tetiklenen Fiyat',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondaryLight,
-                        fontSize: 10.sp,
-                      ),
-                    ),
-                    SizedBox(height: 0.3.h),
-                    Text(
-                      CurrencyFormatter.formatTRY(triggeredPrice, decimalPlaces: 4),
-                      style: AppTheme.dataTextStyle(
-                        isLight: true,
-                        fontSize: 12.sp,
-                      ).copyWith(color: statusColor),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Sapma',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryLight,
-                      fontSize: 11.sp,
+                    child: CustomIconWidget(
+                      iconName: 'check_circle',
+                      color: AppTheme.lightTheme.colorScheme.primary,
+                      size: 20,
                     ),
                   ),
-                  SizedBox(height: 0.5.h),
-                  Text(
-                    CurrencyFormatter.formatPercentage(proximityPercentage, decimalPlaces: 1),
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      color: proximityPercentage < 5
-                          ? AppTheme.alertOrange
-                          : AppTheme.textPrimaryLight,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13.sp,
+                ],
+              ),
+              SizedBox(height: 1.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mevcut Fiyat',
+                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          CurrencyFormatter.formatTRY(triggeredPrice, decimalPlaces: 4),
+                          style: AppTheme.dataTextStyle(
+                            isLight: true,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hedef Fiyat',
+                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
+                          style: AppTheme.dataTextStyle(
+                            isLight: true,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 1.h),
-          Row(
-            children: [
-              CustomIconWidget(
-                iconName:
-                    alertType == 'above' ? 'trending_up' : 'trending_down',
-                color: alertType == 'above'
-                    ? AppTheme.positiveGreen
-                    : AppTheme.negativeRed,
-                size: 16,
-              ),
-              SizedBox(width: 1.5.w),
-              Text(
-                alertType == 'above'
-                    ? 'Fiyat Üstü Alarmı'
-                    : 'Fiyat Altı Alarmı',
-                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                  fontSize: 12.sp,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _formatDateTime(triggeredAt),
-                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondaryLight,
-                  fontSize: 11.sp,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+        ),
+      );
   }
+
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';

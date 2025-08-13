@@ -163,12 +163,12 @@ class AlertCardWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
-                          _getStatusText(status),
+                          _formatDate(alertData['createdAt'] as DateTime),
                           style:
                               AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: statusColor,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -189,6 +189,29 @@ class AlertCardWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          'Mevcut Fiyat',
+                          style:
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                        SizedBox(height: 0.3.h),
+                        Text(
+                          CurrencyFormatter.formatTRY(currentPrice, decimalPlaces: 4),
+                          style: AppTheme.dataTextStyle(
+                            isLight: true,
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                           'Hedef Fiyat',
                           style:
                               AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
@@ -203,29 +226,6 @@ class AlertCardWidget extends StatelessWidget {
                             isLight: true,
                             fontSize: 12.sp,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Mevcut Fiyat',
-                          style:
-                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryLight,
-                            fontSize: 10.sp,
-                          ),
-                        ),
-                        SizedBox(height: 0.3.h),
-                        Text(
-                          CurrencyFormatter.formatTRY(currentPrice, decimalPlaces: 4),
-                          style: AppTheme.dataTextStyle(
-                            isLight: true,
-                            fontSize: 12.sp,
-                          ).copyWith(color: priceChangeColor),
                         ),
                       ],
                     ),
@@ -258,35 +258,6 @@ class AlertCardWidget extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 1.h),
-              Row(
-                children: [
-                  CustomIconWidget(
-                    iconName:
-                        alertType == 'above' ? 'trending_up' : 'trending_down',
-                    color: alertType == 'above'
-                        ? AppTheme.positiveGreen
-                        : AppTheme.negativeRed,
-                    size: 16,
-                  ),
-                  SizedBox(width: 1.5.w),
-                  Text(
-                    alertType == 'above'
-                        ? 'Fiyat Üstü Alarmı'
-                        : 'Fiyat Altı Alarmı',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      fontSize: 12.sp,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _formatDate(alertData['createdAt'] as DateTime),
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryLight,
-                      fontSize: 11.sp,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),

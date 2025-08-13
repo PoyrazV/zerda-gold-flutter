@@ -111,8 +111,8 @@ class AlertCardWidget extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-          padding: EdgeInsets.all(4.w),
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+          padding: EdgeInsets.all(3.w),
           decoration: BoxDecoration(
             color: AppTheme.lightTheme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
@@ -140,28 +140,28 @@ class AlertCardWidget extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              width: 3.w,
-                              height: 3.w,
+                              width: 2.5.w,
+                              height: 2.5.w,
                               decoration: BoxDecoration(
                                 color: statusColor,
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            SizedBox(width: 2.w),
+                            SizedBox(width: 1.5.w),
                             Expanded(
                               child: Text(
                                 assetName,
                                 style: AppTheme.lightTheme.textTheme.titleMedium
                                     ?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16.sp,
+                                  fontSize: 12.sp,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 1.h),
+                        SizedBox(height: 0.3.h),
                         Text(
                           _getStatusText(status),
                           style:
@@ -181,7 +181,7 @@ class AlertCardWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: 1.h),
               Row(
                 children: [
                   Expanded(
@@ -193,15 +193,15 @@ class AlertCardWidget extends StatelessWidget {
                           style:
                               AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondaryLight,
-                            fontSize: 11.sp,
+                            fontSize: 10.sp,
                           ),
                         ),
-                        SizedBox(height: 0.5.h),
+                        SizedBox(height: 0.3.h),
                         Text(
                           CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
                           style: AppTheme.dataTextStyle(
                             isLight: true,
-                            fontSize: 14.sp,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ],
@@ -216,15 +216,15 @@ class AlertCardWidget extends StatelessWidget {
                           style:
                               AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondaryLight,
-                            fontSize: 11.sp,
+                            fontSize: 10.sp,
                           ),
                         ),
-                        SizedBox(height: 0.5.h),
+                        SizedBox(height: 0.3.h),
                         Text(
                           CurrencyFormatter.formatTRY(currentPrice, decimalPlaces: 4),
                           style: AppTheme.dataTextStyle(
                             isLight: true,
-                            fontSize: 14.sp,
+                            fontSize: 12.sp,
                           ).copyWith(color: priceChangeColor),
                         ),
                       ],
@@ -257,7 +257,7 @@ class AlertCardWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: 1.h),
               Row(
                 children: [
                   CustomIconWidget(
@@ -268,7 +268,7 @@ class AlertCardWidget extends StatelessWidget {
                         : AppTheme.negativeRed,
                     size: 16,
                   ),
-                  SizedBox(width: 2.w),
+                  SizedBox(width: 1.5.w),
                   Text(
                     alertType == 'above'
                         ? 'Fiyat Üstü Alarmı'

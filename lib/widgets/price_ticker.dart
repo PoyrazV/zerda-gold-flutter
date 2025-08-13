@@ -3,7 +3,7 @@ import 'package:sizer/sizer.dart';
 import '../theme/app_theme.dart';
 import '../core/currency_formatter.dart';
 import '../services/watchlist_service.dart';
-import '../services/currency_api_service.dart';
+import '../services/global_ticker_service.dart';
 
 class PriceTicker extends StatefulWidget {
   final List<Map<String, dynamic>>? customData;
@@ -22,81 +22,36 @@ class PriceTicker extends StatefulWidget {
 }
 
 class _PriceTickerState extends State<PriceTicker> {
-  final CurrencyApiService _currencyApiService = CurrencyApiService();
-  List<Map<String, dynamic>> _apiTickerData = [];
-  bool _isLoadingApi = false;
+  final GlobalTickerService _globalTickerService = GlobalTickerService();
 
   @override
   void initState() {
     super.initState();
-    if (widget.customData == null) {
-      _fetchTickerData();
-    }
+    // Listen to global ticker service changes
+    _globalTickerService.addListener(_onTickerDataChanged);
   }
 
-  Future<void> _fetchTickerData() async {
-    if (_isLoadingApi) return;
-    
-    setState(() {
-      _isLoadingApi = true;
-    });
+  @override
+  void dispose() {
+    _globalTickerService.removeListener(_onTickerDataChanged);
+    super.dispose();
+  }
 
-    try {
-      print('PriceTicker: Fetching currency data from API...');
-      final data = await _currencyApiService.getFormattedCurrencyData();
-      print('PriceTicker: Received ${data.length} currencies from API');
-      
-      if (mounted && data.isNotEmpty) {
-        // Select major currencies for ticker
-        final majorCurrencies = ['USD', 'EUR', 'GBP', 'CHF'];
-        final tickerCurrencies = data.where((currency) {
-          final code = (currency['code'] as String).replaceAll('TRY', '');
-          return majorCurrencies.contains(code);
-        }).take(4).map((currency) => {
-          'symbol': currency['code'],
-          'price': ((currency['buyPrice'] as double? ?? 0.0) + (currency['sellPrice'] as double? ?? 0.0)) / 2,
-          'change': currency['change'] as double? ?? 0.0,
-          'changePercent': currency['change'] as double? ?? 0.0,
-        }).toList();
-
-        print('PriceTicker: Selected ${tickerCurrencies.length} major currencies for ticker');
-        setState(() {
-          _apiTickerData = tickerCurrencies;
-        });
-      }
-    } catch (e) {
-      print('Ticker API error: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingApi = false;
-        });
-      }
+  void _onTickerDataChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use custom data if provided, otherwise use API data, watchlist data, or default data
-    final watchlistItems = WatchlistService.getWatchlistItems();
-    
+    // Use custom data if provided, otherwise use global ticker service data
     List<Map<String, dynamic>> tickerData;
     if (widget.customData != null) {
       tickerData = widget.customData!;
-    } else if (_apiTickerData.isNotEmpty) {
-      // Use API data if available
-      tickerData = _apiTickerData;
-    } else if (watchlistItems.isNotEmpty) {
-      // Use watchlist data
-      tickerData = watchlistItems.map((item) => {
-        'symbol': item['code'],
-        'price': item['buyPrice'],
-        'change': item['change'],
-        'changePercent': item['changePercent']
-      }).toList();
     } else {
-      // Fallback to default data
-      tickerData = _getDefaultTickerData();
+      // Use global ticker service data (includes fallback to default data)
+      tickerData = _globalTickerService.getCurrentTickerData();
     }
 
     return Column(
@@ -245,32 +200,4 @@ class _PriceTickerState extends State<PriceTicker> {
     );
   }
 
-  List<Map<String, dynamic>> _getDefaultTickerData() {
-    return [
-      {
-        'symbol': 'USD/TRY',
-        'price': 34.2156,
-        'change': 0.0234,
-        'changePercent': 0.068
-      },
-      {
-        'symbol': 'EUR/TRY',
-        'price': 37.1234,
-        'change': -0.0456,
-        'changePercent': -0.123
-      },
-      {
-        'symbol': 'GBP/TRY',
-        'price': 43.5678,
-        'change': 0.1234,
-        'changePercent': 0.284
-      },
-      {
-        'symbol': 'GOLD',
-        'price': 2847.50,
-        'change': -12.50,
-        'changePercent': -0.437
-      },
-    ];
-  }
 }

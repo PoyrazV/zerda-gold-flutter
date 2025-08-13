@@ -5,12 +5,16 @@ import 'package:sizer/sizer.dart';
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
 import 'services/auth_service.dart';
+import 'services/global_ticker_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize AuthService
   await AuthService().initialize();
+
+  // Initialize GlobalTickerService
+  await GlobalTickerService().initialize();
 
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
   ErrorWidget.builder = (FlutterErrorDetails details) {

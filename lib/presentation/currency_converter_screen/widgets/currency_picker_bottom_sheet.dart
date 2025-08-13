@@ -246,6 +246,43 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
       'PLN': 'https://flagcdn.com/w320/pl.png',
       'CZK': 'https://flagcdn.com/w320/cz.png',
       'HUF': 'https://flagcdn.com/w320/hu.png',
+      'RON': 'https://flagcdn.com/w320/ro.png',
+      'BGN': 'https://flagcdn.com/w320/bg.png',
+      'HRK': 'https://flagcdn.com/w320/hr.png',
+      'UAH': 'https://flagcdn.com/w320/ua.png',
+      'SGD': 'https://flagcdn.com/w320/sg.png',
+      'HKD': 'https://flagcdn.com/w320/hk.png',
+      'MYR': 'https://flagcdn.com/w320/my.png',
+      'THB': 'https://flagcdn.com/w320/th.png',
+      'PHP': 'https://flagcdn.com/w320/ph.png',
+      'IDR': 'https://flagcdn.com/w320/id.png',
+      'NZD': 'https://flagcdn.com/w320/nz.png',
+      'ZAR': 'https://flagcdn.com/w320/za.png',
+      'BRL': 'https://flagcdn.com/w320/br.png',
+      'MXN': 'https://flagcdn.com/w320/mx.png',
+      'ARS': 'https://flagcdn.com/w320/ar.png',
+      'CLP': 'https://flagcdn.com/w320/cl.png',
+      'COP': 'https://flagcdn.com/w320/co.png',
+      'PEN': 'https://flagcdn.com/w320/pe.png',
+      'UYU': 'https://flagcdn.com/w320/uy.png',
+      'SAR': 'https://flagcdn.com/w320/sa.png',
+      'AED': 'https://flagcdn.com/w320/ae.png',
+      'QAR': 'https://flagcdn.com/w320/qa.png',
+      'KWD': 'https://flagcdn.com/w320/kw.png',
+      'BHD': 'https://flagcdn.com/w320/bh.png',
+      'OMR': 'https://flagcdn.com/w320/om.png',
+      'JOD': 'https://flagcdn.com/w320/jo.png',
+      'LBP': 'https://flagcdn.com/w320/lb.png',
+      'EGP': 'https://flagcdn.com/w320/eg.png',
+      'MAD': 'https://flagcdn.com/w320/ma.png',
+      'DZD': 'https://flagcdn.com/w320/dz.png',
+      'TND': 'https://flagcdn.com/w320/tn.png',
+      'LYD': 'https://flagcdn.com/w320/ly.png',
+      'ISK': 'https://flagcdn.com/w320/is.png',
+      'ALL': 'https://flagcdn.com/w320/al.png',
+      'MKD': 'https://flagcdn.com/w320/mk.png',
+      'RSD': 'https://flagcdn.com/w320/rs.png',
+      'BAM': 'https://flagcdn.com/w320/ba.png',
     };
 
     return apiData.map((currency) {
@@ -256,7 +293,7 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
       return {
         'code': baseCurrency,
         'name': currency['name'] as String,
-        'flag': flagUrls[baseCurrency] ?? 'https://flagcdn.com/w320/us.png',
+        'flag': flagUrls[baseCurrency] ?? '', // Empty string for unknown flags
         'symbol': currencySymbols[baseCurrency] ?? baseCurrency,
       };
     }).where((currency) => currency['code'] != '').toList(); // Filter out empty codes
@@ -591,15 +628,36 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
                                     size: 32,
                                   ),
                                 )
-                              : ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: CustomImageWidget(
-                                    imageUrl: currency['flag'] as String,
-                                    width: 10.w,
-                                    height: 7.w,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                              : (currency['flag'] as String).isEmpty
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          (currency['code'] as String).substring(0, (currency['code'] as String).length > 2 ? 2 : (currency['code'] as String).length),
+                                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                                            color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 10.sp,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: CustomImageWidget(
+                                        imageUrl: currency['flag'] as String,
+                                        width: 10.w,
+                                        height: 7.w,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                         ),
                         SizedBox(width: 4.w),
                         Expanded(

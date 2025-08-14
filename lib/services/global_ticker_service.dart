@@ -95,16 +95,24 @@ class GlobalTickerService extends ChangeNotifier {
         
         if (data.isNotEmpty) {
           // Select major currencies for ticker as fallback
-          final majorCurrencies = ['USD', 'EUR', 'GBP', 'CHF'];
-          final tickerCurrencies = data.where((currency) {
-            final code = (currency['code'] as String).replaceAll('TRY', '');
-            return majorCurrencies.contains(code);
-          }).take(4).map((currency) => {
-            'symbol': currency['code'],
-            'price': ((currency['buyPrice'] as double? ?? 0.0) + (currency['sellPrice'] as double? ?? 0.0)) / 2,
-            'change': currency['change'] as double? ?? 0.0,
-            'changePercent': currency['change'] as double? ?? 0.0,
-          }).toList();
+          final majorCurrencies = ['USD/TRY', 'EUR/TRY', 'GBP/TRY', 'GRAM'];
+          final tickerCurrencies = <Map<String, dynamic>>[];
+          
+          for (final targetCode in majorCurrencies) {
+            final currency = data.firstWhere(
+              (curr) => curr['code'] == targetCode,
+              orElse: () => <String, dynamic>{},
+            );
+            
+            if (currency.isNotEmpty) {
+              tickerCurrencies.add({
+                'symbol': currency['code'],
+                'price': ((currency['buyPrice'] as double? ?? 0.0) + (currency['sellPrice'] as double? ?? 0.0)) / 2,
+                'change': currency['change'] as double? ?? 0.0,
+                'changePercent': currency['change'] as double? ?? 0.0,
+              });
+            }
+          }
 
           print('GlobalTickerService: Selected ${tickerCurrencies.length} major currencies as fallback');
           _tickerData = tickerCurrencies;
@@ -163,12 +171,18 @@ class GlobalTickerService extends ChangeNotifier {
     ];
   }
 
-  // Get ticker data - returns API data if available, otherwise default data
+  // Get ticker data - returns API data if available, otherwise try to fetch major currencies
   List<Map<String, dynamic>> getCurrentTickerData() {
     if (_tickerData.isNotEmpty) {
       return _tickerData;
     }
-    return getDefaultData();
+    
+    // If we don't have data and we're not currently loading, try to fetch major currencies
+    if (!_isLoading && !_hasInitialData) {
+      _fetchTickerData();
+    }
+    
+    return _tickerData;
   }
 
   @override

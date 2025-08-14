@@ -19,35 +19,28 @@ class EmptyPortfolioState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.primaryColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: CustomIconWidget(
-                  iconName: 'pie_chart',
-                  color: AppTheme.lightTheme.primaryColor,
-                  size: 20.w,
-                ),
-              ),
+            SizedBox(height: 14.h),
+            CustomIconWidget(
+              iconName: 'account_balance_wallet',
+              color: Colors.grey,
+              size: 48,
             ),
-            SizedBox(height: 4.h),
+            SizedBox(height: 2.h),
             Text(
               'Portföyünüz Boş',
               style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurface,
+                color: AppTheme.textSecondaryLight,
+                fontWeight: FontWeight.w500,
+                fontSize: 16.sp,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 2.h),
             Text(
-              'Yatırım takibinizi başlatmak için ilk pozisyonunuzu ekleyin. Döviz, altın, hisse senedi ve daha fazlası...',
+              'Yatırım takibinizi başlatmak için ilk pozisyonunuzu ekleyin.',
               style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                color: AppTheme.textSecondaryLight,
+                fontSize: 12.sp,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -64,8 +57,9 @@ class EmptyPortfolioState extends StatelessWidget {
                 ),
                 label: Text(
                   'İlk Yatırımınızı Ekleyin',
-                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                    color: AppTheme.lightTheme.colorScheme.onPrimary,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -74,30 +68,6 @@ class EmptyPortfolioState extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-              ),
-            ),
-            SizedBox(height: 2.h),
-            OutlinedButton.icon(
-              onPressed: () {
-                // Navigate to market overview or help
-              },
-              icon: CustomIconWidget(
-                iconName: 'info',
-                color: AppTheme.lightTheme.primaryColor,
-                size: 18,
-              ),
-              label: Text(
-                'Yatırım Rehberi',
-                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                  color: AppTheme.lightTheme.primaryColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 6.w),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),

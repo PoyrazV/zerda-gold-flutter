@@ -77,182 +77,132 @@ class _PositionCardState extends State<PositionCard>
     return GestureDetector(
       onTap: _toggleExpanded,
       onLongPress: () => _showContextMenu(context),
-      child: Dismissible(
-        key: Key(widget.position['id'].toString()),
-        background: _buildSwipeBackground(true),
-        secondaryBackground: _buildSwipeBackground(false),
-        onDismissed: (direction) {
-          if (direction == DismissDirection.startToEnd) {
-            // Swipe right actions
-            _showQuickActions(context);
-          } else {
-            // Swipe left actions
-            _showDetailedBreakdown(context);
-          }
-        },
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-          decoration: BoxDecoration(
-            color: AppTheme.lightTheme.cardColor,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.lightTheme.shadowColor,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.all(4.w),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 12.w,
-                      height: 12.w,
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightTheme.primaryColor
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          (widget.position['symbol'] as String)
-                              .substring(0, 2)
-                              .toUpperCase(),
-                          style: AppTheme.lightTheme.textTheme.titleSmall
-                              ?.copyWith(
-                            color: AppTheme.lightTheme.primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+        decoration: BoxDecoration(
+          color: AppTheme.lightTheme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.lightTheme.shadowColor,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(4.w),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12.w,
+                    height: 12.w,
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightTheme.primaryColor
+                          .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        (widget.position['symbol'] as String)
+                            .substring(0, 2)
+                            .toUpperCase(),
+                        style: AppTheme.lightTheme.textTheme.titleSmall
+                            ?.copyWith(
+                          color: AppTheme.lightTheme.primaryColor,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    SizedBox(width: 3.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.position['name'] as String,
-                            style: AppTheme.lightTheme.textTheme.titleMedium
-                                ?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 0.5.h),
-                          Text(
-                            '${widget.position['quantity']} adet',
-                            style: AppTheme.lightTheme.textTheme.bodySmall
-                                ?.copyWith(
-                              color: AppTheme
-                                  .lightTheme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                  ),
+                  SizedBox(width: 3.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          CurrencyFormatter.formatTRY(currentValue),
+                          widget.position['name'] as String,
                           style: AppTheme.lightTheme.textTheme.titleMedium
                               ?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 0.5.h),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CustomIconWidget(
-                              iconName:
-                                  isPositive ? 'trending_up' : 'trending_down',
-                              color: isPositive
-                                  ? AppTheme.positiveGreen
-                                  : AppTheme.negativeRed,
-                              size: 14,
-                            ),
-                            SizedBox(width: 1.w),
-                            Text(
-                              CurrencyFormatter.formatPercentageChange(gainLossPercentage),
-                              style: AppTheme.lightTheme.textTheme.bodySmall
-                                  ?.copyWith(
-                                color: isPositive
-                                    ? AppTheme.positiveGreen
-                                    : AppTheme.negativeRed,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '${widget.position['quantity']} adet',
+                          style: AppTheme.lightTheme.textTheme.bodySmall
+                              ?.copyWith(
+                            color: AppTheme
+                                .lightTheme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
-                    SizedBox(width: 2.w),
-                    CustomIconWidget(
-                      iconName: _isExpanded ? 'expand_less' : 'expand_more',
-                      color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
-                  ],
-                ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        CurrencyFormatter.formatTRY(currentValue),
+                        style: AppTheme.lightTheme.textTheme.titleMedium
+                            ?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 0.5.h),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CustomIconWidget(
+                            iconName:
+                                isPositive ? 'trending_up' : 'trending_down',
+                            color: isPositive
+                                ? AppTheme.positiveGreen
+                                : AppTheme.negativeRed,
+                            size: 14,
+                          ),
+                          SizedBox(width: 1.w),
+                          Text(
+                            CurrencyFormatter.formatPercentageChange(gainLossPercentage),
+                            style: AppTheme.lightTheme.textTheme.bodySmall
+                                ?.copyWith(
+                              color: isPositive
+                                  ? AppTheme.positiveGreen
+                                  : AppTheme.negativeRed,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: 2.w),
+                  CustomIconWidget(
+                    iconName: _isExpanded ? 'expand_less' : 'expand_more',
+                    color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                    size: 20,
+                  ),
+                ],
               ),
-              AnimatedBuilder(
-                animation: _expandAnimation,
-                builder: (context, child) {
-                  return ClipRect(
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      heightFactor: _expandAnimation.value,
-                      child: child,
-                    ),
-                  );
-                },
-                child: _buildExpandedContent(
-                    gainLoss, gainLossPercentage, isPositive),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwipeBackground(bool isLeftSwipe) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      decoration: BoxDecoration(
-        color: isLeftSwipe
-            ? AppTheme.lightTheme.primaryColor
-            : AppTheme.alertOrange,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Align(
-        alignment: isLeftSwipe ? Alignment.centerLeft : Alignment.centerRight,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 6.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomIconWidget(
-                iconName: isLeftSwipe ? 'edit' : 'info',
-                color: Colors.white,
-                size: 24,
-              ),
-              SizedBox(height: 1.h),
-              Text(
-                isLeftSwipe ? 'Düzenle' : 'Detaylar',
-                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+            ),
+            AnimatedBuilder(
+              animation: _expandAnimation,
+              builder: (context, child) {
+                return ClipRect(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    heightFactor: _expandAnimation.value,
+                    child: child,
+                  ),
+                );
+              },
+              child: _buildExpandedContent(
+                  gainLoss, gainLossPercentage, isPositive),
+            ),
+          ],
         ),
       ),
     );
@@ -371,132 +321,6 @@ class _PositionCardState extends State<PositionCard>
           ),
         ),
       ],
-    );
-  }
-
-  void _showQuickActions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.all(4.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'edit',
-                color: AppTheme.lightTheme.primaryColor,
-                size: 24,
-              ),
-              title: const Text('Miktarı Düzenle'),
-              onTap: () {
-                Navigator.pop(context);
-                widget.onEdit();
-              },
-            ),
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'flag',
-                color: AppTheme.alertOrange,
-                size: 24,
-              ),
-              title: const Text('Hedef Fiyat Belirle'),
-              onTap: () {
-                Navigator.pop(context);
-                widget.onSetTarget();
-              },
-            ),
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'delete',
-                color: AppTheme.negativeRed,
-                size: 24,
-              ),
-              title: const Text('Pozisyonu Kaldır'),
-              onTap: () {
-                Navigator.pop(context);
-                widget.onRemove();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDetailedBreakdown(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        builder: (context, scrollController) => Container(
-          padding: EdgeInsets.all(4.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Satın Alma Geçmişi',
-                style: AppTheme.lightTheme.textTheme.headlineSmall,
-              ),
-              SizedBox(height: 2.h),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount:
-                      (widget.position['purchaseHistory'] as List).length,
-                  itemBuilder: (context, index) {
-                    final purchase = (widget.position['purchaseHistory']
-                        as List)[index] as Map<String, dynamic>;
-                    return Card(
-                      margin: EdgeInsets.only(bottom: 2.h),
-                      child: Padding(
-                        padding: EdgeInsets.all(3.w),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${purchase['quantity']} adet',
-                                    style: AppTheme
-                                        .lightTheme.textTheme.titleMedium,
-                                  ),
-                                  Text(
-                                    purchase['date'] as String,
-                                    style:
-                                        AppTheme.lightTheme.textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              CurrencyFormatter.formatTRY((purchase['price'] as num).toDouble()),
-                              style: AppTheme.lightTheme.textTheme.titleMedium
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

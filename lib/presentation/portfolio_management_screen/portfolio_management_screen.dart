@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sizer/sizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
@@ -25,61 +27,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
-  List<Map<String, dynamic>> _positions = [
-    {
-      'id': 1,
-      'symbol': 'USD/TRY',
-      'name': 'Amerikan Doları',
-      'quantity': 1000.0,
-      'averageCost': 32.15,
-      'currentPrice': 33.42,
-      'purchaseValue': 32150.0,
-      'currentValue': 33420.0,
-      'purchaseHistory': [
-        {'quantity': 500.0, 'price': 31.80, 'date': '15/07/2024'},
-        {'quantity': 300.0, 'price': 32.25, 'date': '22/07/2024'},
-        {'quantity': 200.0, 'price': 32.90, 'date': '28/07/2024'},
-      ],
-      'priceHistory': [
-        31.20,
-        31.45,
-        31.80,
-        32.10,
-        32.25,
-        32.50,
-        32.80,
-        33.10,
-        33.25,
-        33.42
-      ],
-    },
-    {
-      'id': 2,
-      'symbol': 'GOLD',
-      'name': 'Altın (Ons)',
-      'quantity': 5.0,
-      'averageCost': 2850.0,
-      'currentPrice': 2920.0,
-      'purchaseValue': 14250.0,
-      'currentValue': 14600.0,
-      'purchaseHistory': [
-        {'quantity': 2.0, 'price': 2820.0, 'date': '10/07/2024'},
-        {'quantity': 3.0, 'price': 2870.0, 'date': '20/07/2024'},
-      ],
-      'priceHistory': [
-        2800,
-        2820,
-        2845,
-        2860,
-        2870,
-        2885,
-        2900,
-        2910,
-        2915,
-        2920
-      ],
-    },
-  ];
+  List<Map<String, dynamic>> _positions = [];
 
   @override
   void initState() {
@@ -87,6 +35,9 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    
+    // Load portfolio data from storage
+    _loadPortfolioData();
   }
 
   void _updateTicker() {
@@ -99,6 +50,36 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
     super.dispose();
+  }
+
+  // Load portfolio data from SharedPreferences
+  Future<void> _loadPortfolioData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? positionsJson = prefs.getString('portfolio_positions');
+      
+      if (positionsJson != null && positionsJson.isNotEmpty) {
+        final List<dynamic> decodedPositions = jsonDecode(positionsJson);
+        setState(() {
+          _positions = decodedPositions.map((e) => Map<String, dynamic>.from(e)).toList();
+        });
+        print('Portfolio: Loaded ${_positions.length} positions from storage');
+      }
+    } catch (e) {
+      print('Portfolio: Error loading positions: $e');
+    }
+  }
+
+  // Save portfolio data to SharedPreferences
+  Future<void> _savePortfolioData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String positionsJson = jsonEncode(_positions);
+      await prefs.setString('portfolio_positions', positionsJson);
+      print('Portfolio: Saved ${_positions.length} positions to storage');
+    } catch (e) {
+      print('Portfolio: Error saving positions: $e');
+    }
   }
 
   double get _totalPortfolioValue {
@@ -148,23 +129,20 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddPositionBottomSheet,
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-        foregroundColor: Colors.white,
-        child: CustomIconWidget(
-          iconName: 'add',
-          color: Colors.white,
-          size: 24,
-        ),
-      ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
   Widget _buildEmptyState() {
-    return EmptyPortfolioState(
-      onAddFirstPosition: _showAddPositionBottomSheet,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Column(
+        children: [
+          EmptyPortfolioState(
+            onAddFirstPosition: _showAddPositionBottomSheet,
+          ),
+        ],
+      ),
     );
   }
 
@@ -219,23 +197,119 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final position = _positions[index];
-                return PositionCard(
-                  position: position,
-                  onEdit: () => _editPosition(position),
-                  onSetTarget: () => _setTargetPrice(position),
-                  onRemove: () => _removePosition(position),
-                  onDuplicate: () => _duplicatePosition(position),
-                  onExport: () => _exportPositionData(position),
-                  onPriceAlert: () => _createPriceAlert(position),
+                return Dismissible(
+                  key: Key(position['id'].toString()),
+                  direction: DismissDirection.horizontal,
+                  background: Container(
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.only(left: 6.w),
+                    margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CustomIconWidget(
+                          iconName: 'edit',
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(height: 0.5.h),
+                        Text(
+                          'Düzenle',
+                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  secondaryBackground: Container(
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 6.w),
+                    margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
+                    decoration: BoxDecoration(
+                      color: AppTheme.negativeRed,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CustomIconWidget(
+                          iconName: 'delete',
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        SizedBox(height: 0.5.h),
+                        Text(
+                          'Sil',
+                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  confirmDismiss: (direction) async {
+                    if (direction == DismissDirection.startToEnd) {
+                      // Left to right swipe - Edit using position details dialog
+                      _showEditPositionDetailsDialog(position);
+                      return false; // Don't dismiss the item, just show dialog
+                    } else {
+                      // Right to left swipe - Delete
+                      return true; // Allow dismissal for delete
+                    }
+                  },
+                  onDismissed: (direction) {
+                    // This will only be called for right-to-left swipe (delete)
+                    if (direction == DismissDirection.endToStart) {
+                      _dismissPosition(position);
+                    }
+                  },
+                  child: PositionCard(
+                    position: position,
+                    onEdit: () => _editPosition(position),
+                    onSetTarget: () => _setTargetPrice(position),
+                    onRemove: () => _removePosition(position),
+                    onDuplicate: () => _duplicatePosition(position),
+                    onExport: () => _exportPositionData(position),
+                    onPriceAlert: () => _createPriceAlert(position),
+                  ),
                 );
               },
               childCount: _positions.length,
             ),
           ),
           SliverToBoxAdapter(
-            child: SizedBox(height: 10.h),
+            child: Container(
+              margin: EdgeInsets.all(4.w),
+              alignment: Alignment.center,
+              child: _buildScrollableActionButton(),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildScrollableActionButton() {
+    return SizedBox(
+      width: 70.w,
+      child: FloatingActionButton.extended(
+        onPressed: _showAddPositionBottomSheet,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        label: Text(
+          'Varlık Ekle',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -543,6 +617,9 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
       _positions.add(newPosition);
     });
 
+    // Save to persistent storage
+    _savePortfolioData();
+
     Fluttertoast.showToast(
       msg: "Pozisyon eklendi",
       toastLength: Toast.LENGTH_SHORT,
@@ -553,6 +630,8 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   }
 
   void _editPosition(Map<String, dynamic> position) {
+    final quantityController = TextEditingController(text: position['quantity'].toString());
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -567,8 +646,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
               ),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
-              controller:
-                  TextEditingController(text: position['quantity'].toString()),
+              controller: quantityController,
             ),
           ],
         ),
@@ -579,6 +657,17 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              final newQuantity = double.tryParse(quantityController.text) ?? position['quantity'];
+              
+              setState(() {
+                position['quantity'] = newQuantity;
+                position['purchaseValue'] = (position['purchasePrice'] as num).toDouble() * newQuantity;
+                position['currentValue'] = (position['currentPrice'] as num).toDouble() * newQuantity;
+              });
+              
+              // Save to persistent storage
+              _savePortfolioData();
+              
               Navigator.pop(context);
               Fluttertoast.showToast(
                 msg: "Pozisyon güncellendi",
@@ -596,11 +685,16 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   }
 
   void _setTargetPrice(Map<String, dynamic> position) {
+    final targetPriceController = TextEditingController(
+      text: position['targetPrice']?.toString() ?? ''
+    );
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hedef Fiyat Belirle'),
         content: TextField(
+          controller: targetPriceController,
           decoration: const InputDecoration(
             labelText: 'Hedef Fiyat',
             prefixText: '₺ ',
@@ -614,6 +708,15 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              final targetPrice = double.tryParse(targetPriceController.text);
+              
+              setState(() {
+                position['targetPrice'] = targetPrice;
+              });
+              
+              // Save to persistent storage
+              _savePortfolioData();
+              
               Navigator.pop(context);
               Fluttertoast.showToast(
                 msg: "Hedef fiyat belirlendi",
@@ -626,6 +729,96 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
             child: const Text('Kaydet'),
           ),
         ],
+      ),
+    );
+  }
+
+  // Show edit position details dialog (using AddPositionBottomSheet's dialog)
+  void _showEditPositionDetailsDialog(Map<String, dynamic> position) {
+    // Convert position to asset format that _PositionDetailsDialog expects
+    final assetData = {
+      'code': position['symbol'] ?? 'N/A',
+      'name': position['name'] ?? 'Bilinmeyen Varlık',
+      'buyPrice': (position['currentPrice'] as num?)?.toDouble() ?? 0.0,
+    };
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditPositionDetailsDialog(
+        position: position,
+        asset: assetData,
+        onUpdatePosition: _updatePositionFromDialog,
+      ),
+    );
+  }
+
+  // Update position from dialog
+  void _updatePositionFromDialog(Map<String, dynamic> position, double newQuantity, double newPrice) {
+    setState(() {
+      position['quantity'] = newQuantity;
+      position['purchasePrice'] = newPrice;
+      position['purchaseValue'] = newPrice * newQuantity;
+      position['averageCost'] = newPrice;
+      
+      // Update current value with current price
+      final currentPrice = (position['currentPrice'] as num?)?.toDouble() ?? newPrice;
+      position['currentValue'] = currentPrice * newQuantity;
+    });
+    
+    // Save to persistent storage
+    _savePortfolioData();
+    
+    Fluttertoast.showToast(
+      msg: "${position['name']} güncellendi",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: AppTheme.positiveGreen,
+      textColor: Colors.white,
+    );
+  }
+
+  // Handle position dismissal after confirmation
+  void _dismissPosition(Map<String, dynamic> position) {
+    setState(() {
+      _positions.removeWhere((p) => p['id'] == position['id']);
+    });
+    
+    // Save to persistent storage
+    _savePortfolioData();
+    
+    Fluttertoast.showToast(
+      msg: "${position['name']} pozisyonu silindi",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: AppTheme.negativeRed,
+      textColor: Colors.white,
+    );
+
+    // Show undo option
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${position['name']} silindi'),
+        backgroundColor: AppTheme.negativeRed,
+        action: SnackBarAction(
+          label: 'Geri Al',
+          textColor: Colors.white,
+          onPressed: () {
+            setState(() {
+              _positions.add(position);
+            });
+            _savePortfolioData();
+            Fluttertoast.showToast(
+              msg: "Pozisyon geri yüklendi",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: AppTheme.positiveGreen,
+              textColor: Colors.white,
+            );
+          },
+        ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -647,6 +840,10 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
               setState(() {
                 _positions.removeWhere((p) => p['id'] == position['id']);
               });
+              
+              // Save to persistent storage
+              _savePortfolioData();
+              
               Navigator.pop(context);
               Fluttertoast.showToast(
                 msg: "Pozisyon kaldırıldı",
@@ -673,6 +870,9 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
     setState(() {
       _positions.add(duplicatedPosition);
     });
+
+    // Save to persistent storage
+    _savePortfolioData();
 
     Fluttertoast.showToast(
       msg: "Pozisyon kopyalandı",
@@ -777,6 +977,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
         return descending ? bGain.compareTo(aGain) : aGain.compareTo(bGain);
       });
     });
+    _savePortfolioData(); // Save order changes
   }
 
   void _sortPositionsByValue({required bool descending}) {
@@ -787,6 +988,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
         return descending ? bValue.compareTo(aValue) : aValue.compareTo(bValue);
       });
     });
+    _savePortfolioData(); // Save order changes
   }
 
   void _sortPositionsByName() {
@@ -794,6 +996,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
       _positions
           .sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
     });
+    _savePortfolioData(); // Save order changes
   }
 
   void _showPortfolioMenu() {

@@ -508,8 +508,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_circle_outline, size: 20),
-                          SizedBox(width: 2.w),
                           Text(
                             'Daha Fazla Göster',
                             style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),

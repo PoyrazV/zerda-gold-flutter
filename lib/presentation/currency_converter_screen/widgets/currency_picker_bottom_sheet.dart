@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
-import '../../../services/currency_api_service.dart';
 import '../../../widgets/gold_bars_icon.dart';
 
 class CurrencyPickerBottomSheet extends StatefulWidget {
@@ -24,15 +23,6 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredCurrencies = [];
   bool _showingCurrencies = true; // true for currencies, false for gold
-  
-  // API Service
-  final CurrencyApiService _currencyApiService = CurrencyApiService();
-  
-  // API Data Storage
-  List<Map<String, dynamic>> _allApiCurrencies = [];
-  bool _isLoadingCurrencies = false;
-  bool _isLoadingMore = false;
-  int _displayedCurrencyCount = 20;
 
   final List<Map<String, dynamic>> _currencyList = [
     {
@@ -95,6 +85,450 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
       "flag": "https://flagcdn.com/w320/ru.png",
       "symbol": "₽"
     },
+    {
+      "code": "SEK",
+      "name": "İsveç Kronu",
+      "flag": "https://flagcdn.com/w320/se.png",
+      "symbol": "kr"
+    },
+    {
+      "code": "NOK",
+      "name": "Norveç Kronu",
+      "flag": "https://flagcdn.com/w320/no.png",
+      "symbol": "kr"
+    },
+    {
+      "code": "DKK",
+      "name": "Danimarka Kronu",
+      "flag": "https://flagcdn.com/w320/dk.png",
+      "symbol": "kr"
+    },
+    {
+      "code": "PLN",
+      "name": "Polonya Zlotisi",
+      "flag": "https://flagcdn.com/w320/pl.png",
+      "symbol": "zł"
+    },
+    {
+      "code": "CZK",
+      "name": "Çek Korunası",
+      "flag": "https://flagcdn.com/w320/cz.png",
+      "symbol": "Kč"
+    },
+    {
+      "code": "HUF",
+      "name": "Macar Forinti",
+      "flag": "https://flagcdn.com/w320/hu.png",
+      "symbol": "Ft"
+    },
+    {
+      "code": "RON",
+      "name": "Rumen Leyi",
+      "flag": "https://flagcdn.com/w320/ro.png",
+      "symbol": "lei"
+    },
+    {
+      "code": "BGN",
+      "name": "Bulgar Levası",
+      "flag": "https://flagcdn.com/w320/bg.png",
+      "symbol": "лв"
+    },
+    {
+      "code": "HRK",
+      "name": "Hırvat Kunası",
+      "flag": "https://flagcdn.com/w320/hr.png",
+      "symbol": "kn"
+    },
+    {
+      "code": "UAH",
+      "name": "Ukrayna Grivnası",
+      "flag": "https://flagcdn.com/w320/ua.png",
+      "symbol": "₴"
+    },
+    {
+      "code": "INR",
+      "name": "Hindistan Rupisi",
+      "flag": "https://flagcdn.com/w320/in.png",
+      "symbol": "₹"
+    },
+    {
+      "code": "KRW",
+      "name": "Güney Kore Wonu",
+      "flag": "https://flagcdn.com/w320/kr.png",
+      "symbol": "₩"
+    },
+    {
+      "code": "SGD",
+      "name": "Singapur Doları",
+      "flag": "https://flagcdn.com/w320/sg.png",
+      "symbol": "S\$"
+    },
+    {
+      "code": "HKD",
+      "name": "Hong Kong Doları",
+      "flag": "https://flagcdn.com/w320/hk.png",
+      "symbol": "HK\$"
+    },
+    {
+      "code": "MYR",
+      "name": "Malezya Ringiti",
+      "flag": "https://flagcdn.com/w320/my.png",
+      "symbol": "RM"
+    },
+    {
+      "code": "THB",
+      "name": "Tayland Bahtı",
+      "flag": "https://flagcdn.com/w320/th.png",
+      "symbol": "฿"
+    },
+    {
+      "code": "PHP",
+      "name": "Filipinler Pesosu",
+      "flag": "https://flagcdn.com/w320/ph.png",
+      "symbol": "₱"
+    },
+    {
+      "code": "IDR",
+      "name": "Endonezya Rupiahı",
+      "flag": "https://flagcdn.com/w320/id.png",
+      "symbol": "Rp"
+    },
+    {
+      "code": "NZD",
+      "name": "Yeni Zelanda Doları",
+      "flag": "https://flagcdn.com/w320/nz.png",
+      "symbol": "NZ\$"
+    },
+    {
+      "code": "ZAR",
+      "name": "Güney Afrika Randı",
+      "flag": "https://flagcdn.com/w320/za.png",
+      "symbol": "R"
+    },
+    {
+      "code": "BRL",
+      "name": "Brezilya Reali",
+      "flag": "https://flagcdn.com/w320/br.png",
+      "symbol": "R\$"
+    },
+    {
+      "code": "MXN",
+      "name": "Meksika Pesosu",
+      "flag": "https://flagcdn.com/w320/mx.png",
+      "symbol": "Mex\$"
+    },
+    {
+      "code": "ARS",
+      "name": "Arjantin Pesosu",
+      "flag": "https://flagcdn.com/w320/ar.png",
+      "symbol": "\$"
+    },
+    {
+      "code": "CLP",
+      "name": "Şili Pesosu",
+      "flag": "https://flagcdn.com/w320/cl.png",
+      "symbol": "\$"
+    },
+    {
+      "code": "COP",
+      "name": "Kolombiya Pesosu",
+      "flag": "https://flagcdn.com/w320/co.png",
+      "symbol": "\$"
+    },
+    {
+      "code": "PEN",
+      "name": "Peru Solü",
+      "flag": "https://flagcdn.com/w320/pe.png",
+      "symbol": "S/"
+    },
+    {
+      "code": "UYU",
+      "name": "Uruguay Pesosu",
+      "flag": "https://flagcdn.com/w320/uy.png",
+      "symbol": "\$U"
+    },
+    {
+      "code": "SAR",
+      "name": "Suudi Arabistan Riyali",
+      "flag": "https://flagcdn.com/w320/sa.png",
+      "symbol": "﷼"
+    },
+    {
+      "code": "AED",
+      "name": "BAE Dirhemi",
+      "flag": "https://flagcdn.com/w320/ae.png",
+      "symbol": "د.إ"
+    },
+    {
+      "code": "QAR",
+      "name": "Katar Riyali",
+      "flag": "https://flagcdn.com/w320/qa.png",
+      "symbol": "﷼"
+    },
+    {
+      "code": "KWD",
+      "name": "Kuveyt Dinarı",
+      "flag": "https://flagcdn.com/w320/kw.png",
+      "symbol": "د.ك"
+    },
+    {
+      "code": "BHD",
+      "name": "Bahreyn Dinarı",
+      "flag": "https://flagcdn.com/w320/bh.png",
+      "symbol": ".د.ب"
+    },
+    {
+      "code": "OMR",
+      "name": "Umman Riyali",
+      "flag": "https://flagcdn.com/w320/om.png",
+      "symbol": "﷼"
+    },
+    {
+      "code": "JOD",
+      "name": "Ürdün Dinarı",
+      "flag": "https://flagcdn.com/w320/jo.png",
+      "symbol": "د.ا"
+    },
+    {
+      "code": "LBP",
+      "name": "Lübnan Lirası",
+      "flag": "https://flagcdn.com/w320/lb.png",
+      "symbol": "ل.ل"
+    },
+    {
+      "code": "EGP",
+      "name": "Mısır Poundu",
+      "flag": "https://flagcdn.com/w320/eg.png",
+      "symbol": "£"
+    },
+    {
+      "code": "MAD",
+      "name": "Fas Dirhemi",
+      "flag": "https://flagcdn.com/w320/ma.png",
+      "symbol": "د.م."
+    },
+    {
+      "code": "DZD",
+      "name": "Cezayir Dinarı",
+      "flag": "https://flagcdn.com/w320/dz.png",
+      "symbol": "د.ج"
+    },
+    {
+      "code": "TND",
+      "name": "Tunus Dinarı",
+      "flag": "https://flagcdn.com/w320/tn.png",
+      "symbol": "د.ت"
+    },
+    {
+      "code": "LYD",
+      "name": "Libya Dinarı",
+      "flag": "https://flagcdn.com/w320/ly.png",
+      "symbol": "ل.د"
+    },
+    {
+      "code": "ISK",
+      "name": "İzlanda Kronu",
+      "flag": "https://flagcdn.com/w320/is.png",
+      "symbol": "kr"
+    },
+    {
+      "code": "ALL",
+      "name": "Arnavutluk Leki",
+      "flag": "https://flagcdn.com/w320/al.png",
+      "symbol": "L"
+    },
+    {
+      "code": "MKD",
+      "name": "Kuzey Makedonya Dinarı",
+      "flag": "https://flagcdn.com/w320/mk.png",
+      "symbol": "ден"
+    },
+    {
+      "code": "RSD",
+      "name": "Sırbistan Dinarı",
+      "flag": "https://flagcdn.com/w320/rs.png",
+      "symbol": "дин."
+    },
+    {
+      "code": "BAM",
+      "name": "Bosna-Hersek Markı",
+      "flag": "https://flagcdn.com/w320/ba.png",
+      "symbol": "KM"
+    },
+    {
+      "code": "AZN",
+      "name": "Azerbaycan Manatı",
+      "flag": "https://flagcdn.com/w320/az.png",
+      "symbol": "₼"
+    },
+    {
+      "code": "GEL",
+      "name": "Gürcistan Larisi",
+      "flag": "https://flagcdn.com/w320/ge.png",
+      "symbol": "₾"
+    },
+    {
+      "code": "AMD",
+      "name": "Ermenistan Dramı",
+      "flag": "https://flagcdn.com/w320/am.png",
+      "symbol": "֏"
+    },
+    {
+      "code": "BYN",
+      "name": "Belarus Rublesi",
+      "flag": "https://flagcdn.com/w320/by.png",
+      "symbol": "Br"
+    },
+    {
+      "code": "MDL",
+      "name": "Moldova Leyi",
+      "flag": "https://flagcdn.com/w320/md.png",
+      "symbol": "L"
+    },
+    {
+      "code": "KZT",
+      "name": "Kazakistan Tengesi",
+      "flag": "https://flagcdn.com/w320/kz.png",
+      "symbol": "₸"
+    },
+    {
+      "code": "UZS",
+      "name": "Özbekistan Somu",
+      "flag": "https://flagcdn.com/w320/uz.png",
+      "symbol": "лв"
+    },
+    {
+      "code": "KGS",
+      "name": "Kırgızistan Somu",
+      "flag": "https://flagcdn.com/w320/kg.png",
+      "symbol": "с"
+    },
+    {
+      "code": "TJS",
+      "name": "Tacikistan Somonisi",
+      "flag": "https://flagcdn.com/w320/tj.png",
+      "symbol": "ЅМ"
+    },
+    {
+      "code": "TMT",
+      "name": "Türkmenistan Manatı",
+      "flag": "https://flagcdn.com/w320/tm.png",
+      "symbol": "m"
+    },
+    {
+      "code": "AFN",
+      "name": "Afganistan Afganisi",
+      "flag": "https://flagcdn.com/w320/af.png",
+      "symbol": "؋"
+    },
+    {
+      "code": "PKR",
+      "name": "Pakistan Rupisi",
+      "flag": "https://flagcdn.com/w320/pk.png",
+      "symbol": "₨"
+    },
+    {
+      "code": "LKR",
+      "name": "Sri Lanka Rupisi",
+      "flag": "https://flagcdn.com/w320/lk.png",
+      "symbol": "₨"
+    },
+    {
+      "code": "BDT",
+      "name": "Bangladeş Takası",
+      "flag": "https://flagcdn.com/w320/bd.png",
+      "symbol": "৳"
+    },
+    {
+      "code": "NPR",
+      "name": "Nepal Rupisi",
+      "flag": "https://flagcdn.com/w320/np.png",
+      "symbol": "₨"
+    },
+    {
+      "code": "MMK",
+      "name": "Myanmar Kyatı",
+      "flag": "https://flagcdn.com/w320/mm.png",
+      "symbol": "K"
+    },
+    {
+      "code": "LAK",
+      "name": "Laos Kipi",
+      "flag": "https://flagcdn.com/w320/la.png",
+      "symbol": "₭"
+    },
+    {
+      "code": "VND",
+      "name": "Vietnam Dongu",
+      "flag": "https://flagcdn.com/w320/vn.png",
+      "symbol": "₫"
+    },
+    {
+      "code": "MNT",
+      "name": "Moğolistan Tugrugu",
+      "flag": "https://flagcdn.com/w320/mn.png",
+      "symbol": "₮"
+    },
+    {
+      "code": "ETB",
+      "name": "Etiyopya Birri",
+      "flag": "https://flagcdn.com/w320/et.png",
+      "symbol": "Br"
+    },
+    {
+      "code": "KES",
+      "name": "Kenya Şilini",
+      "flag": "https://flagcdn.com/w320/ke.png",
+      "symbol": "KSh"
+    },
+    {
+      "code": "TZS",
+      "name": "Tanzanya Şilini",
+      "flag": "https://flagcdn.com/w320/tz.png",
+      "symbol": "TSh"
+    },
+    {
+      "code": "UGX",
+      "name": "Uganda Şilini",
+      "flag": "https://flagcdn.com/w320/ug.png",
+      "symbol": "USh"
+    },
+    {
+      "code": "NGN",
+      "name": "Nijerya Nairası",
+      "flag": "https://flagcdn.com/w320/ng.png",
+      "symbol": "₦"
+    },
+    {
+      "code": "GHS",
+      "name": "Gana Cedisi",
+      "flag": "https://flagcdn.com/w320/gh.png",
+      "symbol": "₵"
+    },
+    {
+      "code": "BWP",
+      "name": "Botsvana Pulası",
+      "flag": "https://flagcdn.com/w320/bw.png",
+      "symbol": "P"
+    },
+    {
+      "code": "NAD",
+      "name": "Namibya Doları",
+      "flag": "https://flagcdn.com/w320/na.png",
+      "symbol": "\$"
+    },
+    {
+      "code": "MUR",
+      "name": "Mauritius Rupisi",
+      "flag": "https://flagcdn.com/w320/mu.png",
+      "symbol": "₨"
+    },
+    {
+      "code": "SCR",
+      "name": "Seyşeller Rupisi",
+      "flag": "https://flagcdn.com/w320/sc.png",
+      "symbol": "₨"
+    },
   ];
 
   final List<Map<String, dynamic>> _goldList = [
@@ -130,25 +564,6 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     },
   ];
 
-  // Get the current currency list with pagination
-  List<Map<String, dynamic>> get _currentCurrencyList {
-    if (_showingCurrencies) {
-      // Use API data if available, otherwise fallback to hardcoded list
-      final sourceList = _allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList;
-      return sourceList.take(_displayedCurrencyCount).toList();
-    } else {
-      return _goldList; // Gold list doesn't need pagination (only 5 items)
-    }
-  }
-
-  bool get _hasMoreCurrencies {
-    if (_showingCurrencies) {
-      final sourceList = _allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList;
-      return _displayedCurrencyCount < sourceList.length;
-    }
-    return false;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -157,11 +572,9 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     _showingCurrencies = !_isGoldCurrency(selectedCode);
     _searchController.addListener(_filterCurrencies);
     
-    // Load API data if showing currencies
+    // Initialize with hardcoded data immediately - no API loading
     if (_showingCurrencies) {
-      // Show fallback currencies immediately while loading API data
-      _filteredCurrencies = _currencyList.take(_displayedCurrencyCount).toList();
-      _loadApiCurrencies();
+      _filteredCurrencies = _currencyList;
     } else {
       _filteredCurrencies = _goldList;
     }
@@ -173,164 +586,16 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     super.dispose();
   }
 
-  Future<void> _loadApiCurrencies() async {
-    setState(() {
-      _isLoadingCurrencies = true;
-    });
-
-    try {
-      final apiData = await _currencyApiService.getFormattedCurrencyData();
-      if (mounted && apiData.isNotEmpty) {
-        setState(() {
-          _allApiCurrencies = _convertApiDataToCurrencyFormat(apiData);
-          _filteredCurrencies = _currentCurrencyList;
-        });
-      }
-    } catch (e) {
-      print('Error loading API currencies: $e');
-      // Fallback to hardcoded currencies
-      if (mounted) {
-        setState(() {
-          _filteredCurrencies = _currencyList.take(_displayedCurrencyCount).toList();
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingCurrencies = false;
-        });
-      }
-    }
-  }
-
-  List<Map<String, dynamic>> _convertApiDataToCurrencyFormat(List<Map<String, dynamic>> apiData) {
-    // Currency symbols mapping
-    final currencySymbols = {
-      'USD': '\$',
-      'EUR': '€',
-      'GBP': '£',
-      'JPY': '¥',
-      'CHF': 'CHF',
-      'CAD': 'C\$',
-      'AUD': 'A\$',
-      'CNY': '¥',
-      'RUB': '₽',
-      'TRY': '₺',
-      'INR': '₹',
-      'KRW': '₩',
-      'SEK': 'kr',
-      'NOK': 'kr',
-      'DKK': 'kr',
-      'PLN': 'zł',
-      'CZK': 'Kč',
-      'HUF': 'Ft',
-    };
-
-    // Flag URLs mapping (using flagcdn.com)
-    final flagUrls = {
-      'USD': 'https://flagcdn.com/w320/us.png',
-      'EUR': 'https://flagcdn.com/w320/eu.png',
-      'GBP': 'https://flagcdn.com/w320/gb.png',
-      'JPY': 'https://flagcdn.com/w320/jp.png',
-      'CHF': 'https://flagcdn.com/w320/ch.png',
-      'CAD': 'https://flagcdn.com/w320/ca.png',
-      'AUD': 'https://flagcdn.com/w320/au.png',
-      'CNY': 'https://flagcdn.com/w320/cn.png',
-      'RUB': 'https://flagcdn.com/w320/ru.png',
-      'TRY': 'https://flagcdn.com/w320/tr.png',
-      'INR': 'https://flagcdn.com/w320/in.png',
-      'KRW': 'https://flagcdn.com/w320/kr.png',
-      'SEK': 'https://flagcdn.com/w320/se.png',
-      'NOK': 'https://flagcdn.com/w320/no.png',
-      'DKK': 'https://flagcdn.com/w320/dk.png',
-      'PLN': 'https://flagcdn.com/w320/pl.png',
-      'CZK': 'https://flagcdn.com/w320/cz.png',
-      'HUF': 'https://flagcdn.com/w320/hu.png',
-      'RON': 'https://flagcdn.com/w320/ro.png',
-      'BGN': 'https://flagcdn.com/w320/bg.png',
-      'HRK': 'https://flagcdn.com/w320/hr.png',
-      'UAH': 'https://flagcdn.com/w320/ua.png',
-      'SGD': 'https://flagcdn.com/w320/sg.png',
-      'HKD': 'https://flagcdn.com/w320/hk.png',
-      'MYR': 'https://flagcdn.com/w320/my.png',
-      'THB': 'https://flagcdn.com/w320/th.png',
-      'PHP': 'https://flagcdn.com/w320/ph.png',
-      'IDR': 'https://flagcdn.com/w320/id.png',
-      'NZD': 'https://flagcdn.com/w320/nz.png',
-      'ZAR': 'https://flagcdn.com/w320/za.png',
-      'BRL': 'https://flagcdn.com/w320/br.png',
-      'MXN': 'https://flagcdn.com/w320/mx.png',
-      'ARS': 'https://flagcdn.com/w320/ar.png',
-      'CLP': 'https://flagcdn.com/w320/cl.png',
-      'COP': 'https://flagcdn.com/w320/co.png',
-      'PEN': 'https://flagcdn.com/w320/pe.png',
-      'UYU': 'https://flagcdn.com/w320/uy.png',
-      'SAR': 'https://flagcdn.com/w320/sa.png',
-      'AED': 'https://flagcdn.com/w320/ae.png',
-      'QAR': 'https://flagcdn.com/w320/qa.png',
-      'KWD': 'https://flagcdn.com/w320/kw.png',
-      'BHD': 'https://flagcdn.com/w320/bh.png',
-      'OMR': 'https://flagcdn.com/w320/om.png',
-      'JOD': 'https://flagcdn.com/w320/jo.png',
-      'LBP': 'https://flagcdn.com/w320/lb.png',
-      'EGP': 'https://flagcdn.com/w320/eg.png',
-      'MAD': 'https://flagcdn.com/w320/ma.png',
-      'DZD': 'https://flagcdn.com/w320/dz.png',
-      'TND': 'https://flagcdn.com/w320/tn.png',
-      'LYD': 'https://flagcdn.com/w320/ly.png',
-      'ISK': 'https://flagcdn.com/w320/is.png',
-      'ALL': 'https://flagcdn.com/w320/al.png',
-      'MKD': 'https://flagcdn.com/w320/mk.png',
-      'RSD': 'https://flagcdn.com/w320/rs.png',
-      'BAM': 'https://flagcdn.com/w320/ba.png',
-    };
-
-    return apiData.map((currency) {
-      final code = currency['code'] as String;
-      // Extract base currency code (remove 'TRY' suffix)
-      final baseCurrency = code.replaceAll('TRY', '');
-      
-      return {
-        'code': baseCurrency,
-        'name': currency['name'] as String,
-        'flag': flagUrls[baseCurrency] ?? '', // Empty string for unknown flags
-        'symbol': currencySymbols[baseCurrency] ?? baseCurrency,
-      };
-    }).where((currency) => currency['code'] != '').toList(); // Filter out empty codes
-  }
-
-  void _loadMoreCurrencies() {
-    if (_isLoadingMore || !_hasMoreCurrencies) return;
-
-    setState(() {
-      _isLoadingMore = true;
-    });
-
-    // Simulate loading delay
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() {
-          final sourceList = _allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList;
-          _displayedCurrencyCount = (_displayedCurrencyCount + 20).clamp(0, sourceList.length);
-          _filteredCurrencies = _currentCurrencyList;
-          _isLoadingMore = false;
-        });
-      }
-    });
-  }
-
   void _filterCurrencies() {
     final query = _searchController.text.toLowerCase();
     
     setState(() {
       if (query.isEmpty) {
-        // No search, show paginated list
-        _filteredCurrencies = _currentCurrencyList;
+        // No search, show full list
+        _filteredCurrencies = _showingCurrencies ? _currencyList : _goldList;
       } else {
-        // Search across all data (no pagination when searching)
-        final sourceList = _showingCurrencies 
-            ? (_allApiCurrencies.isNotEmpty ? _allApiCurrencies : _currencyList)
-            : _goldList;
+        // Search across data
+        final sourceList = _showingCurrencies ? _currencyList : _goldList;
         
         _filteredCurrencies = sourceList.where((currency) {
           final code = (currency['code'] as String).toLowerCase();
@@ -347,15 +612,9 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     setState(() {
       _showingCurrencies = showCurrencies;
       _searchController.clear(); // Clear search when switching sections
-      _displayedCurrencyCount = 20; // Reset pagination
       
       if (_showingCurrencies) {
-        // Load API currencies if not already loaded
-        if (_allApiCurrencies.isEmpty && !_isLoadingCurrencies) {
-          _loadApiCurrencies();
-        } else {
-          _filteredCurrencies = _currentCurrencyList;
-        }
+        _filteredCurrencies = _currencyList;
       } else {
         _filteredCurrencies = _goldList;
       }
@@ -522,75 +781,13 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
             ),
           ),
 
-          // Loading indicator
-          if (_isLoadingCurrencies && _showingCurrencies)
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 2.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                    ),
-                  ),
-                  SizedBox(width: 2.w),
-                  Text(
-                    'Dövizler yükleniyor...',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
           // Currency list
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 4.w),
-              itemCount: _filteredCurrencies.length + (_hasMoreCurrencies && _searchController.text.isEmpty ? 1 : 0),
+              itemCount: _filteredCurrencies.length,
               itemBuilder: (context, index) {
-                // "Daha Fazla Göster" button
-                if (index == _filteredCurrencies.length && _hasMoreCurrencies && _searchController.text.isEmpty) {
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 2.h),
-                    child: ElevatedButton(
-                      onPressed: _isLoadingMore ? null : _loadMoreCurrencies,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 1.5.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: _isLoadingMore
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_circle_outline, size: 20),
-                                SizedBox(width: 2.w),
-                                Text(
-                                  'Daha Fazla Göster',
-                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                    ),
-                  );
-                }
                 final currency = _filteredCurrencies[index];
                 final isSelected = currency['code'] == widget.selectedCurrency;
 

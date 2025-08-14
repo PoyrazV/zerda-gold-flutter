@@ -54,9 +54,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     "symbol": "gr"
   };
 
-  double _exchangeRate = 32.4567 / 2654.30; // USD to Gold Gram
-  double _changePercentage = 1.10;
-  DateTime _lastUpdate = DateTime.now().subtract(const Duration(minutes: 2));
+  double _exchangeRate = 1.0; // Will be calculated after API loads
+  double _changePercentage = 0.0;
+  DateTime _lastUpdate = DateTime.now();
 
 
   @override
@@ -77,7 +77,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     _fromAmountController.addListener(_onFromAmountChanged);
     _fromAmountController.text = '1';
     
-    // Load API data
+    // Load API data and update initial exchange rate
     _loadApiData();
     
     // Listen to watchlist changes to update ticker
@@ -100,6 +100,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       final currencyData = await _currencyApiService.getLatestRates();
       if (currencyData != null && currencyData['rates'] != null) {
         _currencyRates = Map<String, dynamic>.from(currencyData['rates']);
+        // Add TRY itself with rate 1.0 for TRY to TRY conversions
+        _currencyRates['TRY'] = 1.0;
       }
 
       // Load gold prices and connect to WebSocket
@@ -158,13 +160,12 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         _fromCurrency = _toCurrency;
         _toCurrency = temp;
 
-        // Update exchange rate (inverse)
-        _exchangeRate = 1 / _exchangeRate;
-        _changePercentage = -_changePercentage;
-
-        // Swap amounts
-        final tempAmount = _fromAmountController.text;
-        _fromAmountController.text = _toAmountController.text;
+        // Recalculate exchange rate for swapped currencies
+        _updateExchangeRate();
+        
+        // Keep the same value in the from field
+        final currentFromValue = _fromAmountController.text;
+        _fromAmountController.text = currentFromValue;
         _calculateConversion();
       });
       _swapAnimationController.reset();
@@ -265,23 +266,34 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       return _getFallbackCurrencyRate(fromCode, toCode);
     }
 
-    // API provides rates with TRY as base (TRY to other currencies)
-    // So rates[USD] = how many USD for 1 TRY
+    // API provides rates with TRY as base
+    // rates[USD] = how many USD for 1 TRY (e.g., 0.029 means 1 TRY = 0.029 USD)
+    // To get USD/TRY rate (how many TRY for 1 USD), we need 1 / rates[USD]
     
     if (fromCode == 'TRY') {
       // TRY to other currency
+      // 1 TRY = rates[toCode] target currency
       final rate = _currencyRates[toCode];
-      return rate?.toDouble() ?? 1.0;
+      return rate?.toDouble() ?? _getFallbackCurrencyRate(fromCode, toCode);
     } else if (toCode == 'TRY') {
       // Other currency to TRY
+      // 1 source currency = 1/rates[fromCode] TRY
       final rate = _currencyRates[fromCode];
-      return rate != null ? 1.0 / rate.toDouble() : 1.0;
+      if (rate != null && rate != 0) {
+        return 1.0 / rate.toDouble();
+      }
+      return _getFallbackCurrencyRate(fromCode, toCode);
     } else {
       // Currency to Currency (via TRY)
-      final fromToTryRate = _currencyRates[fromCode];
-      final toToTryRate = _currencyRates[toCode];
-      if (fromToTryRate != null && toToTryRate != null) {
-        return toToTryRate.toDouble() / fromToTryRate.toDouble();
+      // Convert from source to TRY, then TRY to target
+      final fromRate = _currencyRates[fromCode]; // 1 TRY = fromRate source
+      final toRate = _currencyRates[toCode];     // 1 TRY = toRate target
+      
+      if (fromRate != null && toRate != null && fromRate != 0) {
+        // 1 source = (1/fromRate) TRY
+        // (1/fromRate) TRY = (1/fromRate) * toRate target
+        // Therefore: 1 source = toRate/fromRate target
+        return toRate.toDouble() / fromRate.toDouble();
       }
     }
 

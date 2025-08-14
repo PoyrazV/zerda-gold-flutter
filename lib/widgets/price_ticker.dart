@@ -50,8 +50,31 @@ class _PriceTickerState extends State<PriceTicker> {
     if (widget.customData != null) {
       tickerData = widget.customData!;
     } else {
-      // Use global ticker service data (includes fallback to default data)
+      // Use global ticker service data (API data only, no fallback to mock)
       tickerData = _globalTickerService.getCurrentTickerData();
+    }
+
+    // If no data and service is loading, show loading indicator
+    if (tickerData.isEmpty && _globalTickerService.isLoading) {
+      return Container(
+        height: 10.h,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.lightTheme.colorScheme.primary,
+              AppTheme.lightTheme.colorScheme.primaryContainer,
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+            strokeWidth: 2,
+          ),
+        ),
+      );
     }
 
     return Column(

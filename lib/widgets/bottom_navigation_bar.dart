@@ -65,18 +65,12 @@ class CustomBottomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Colors.grey[300]!,
-            width: 0.5,
-          ),
-        ),
+        color: const Color(0xFF0D1B45), // Dark navy background
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -1),
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -121,15 +115,15 @@ class CustomBottomNavigationBar extends StatelessWidget {
                             child: item['title'] == 'Altın' 
                               ? GoldBarsIcon(
                                   color: isActive
-                                      ? const Color(0xFF1976D2) // Material Blue
-                                      : Colors.grey[600]!,
+                                      ? const Color(0xFFFFD700) // Gold color for active
+                                      : Colors.white, // White for inactive
                                   size: 20,
                                 )
                               : Icon(
                                   item['icon'] as IconData,
                                   color: isActive
-                                      ? const Color(0xFF1976D2) // Material Blue
-                                      : Colors.grey[600],
+                                      ? const Color(0xFFFFD700) // Gold color for active
+                                      : Colors.white, // White for inactive
                                   size: 20,
                                 ),
                           ),
@@ -140,10 +134,10 @@ class CustomBottomNavigationBar extends StatelessWidget {
                               item['title'] as String,
                               style: TextStyle(
                                 color: isActive
-                                    ? const Color(0xFF1976D2) // Material Blue
-                                    : Colors.grey[600],
+                                    ? const Color(0xFFFFD700) // Gold color for active
+                                    : Colors.white, // White for inactive
                                 fontSize: 9.sp,
-                                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                               ),
                               textAlign: TextAlign.center,
                               overflow: TextOverflow.ellipsis,

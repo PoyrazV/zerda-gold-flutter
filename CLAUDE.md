@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build for iOS**: `flutter build ios --release`
 
 ### Code Quality
-- **Lint check**: Uses `flutter_lints: ^5.0.0` for code quality
+- **Lint check**: Uses `flutter_lints: ^6.0.0` for code quality
 - No custom analysis_options.yaml file - follows default Flutter linting rules
 
 ## Architecture Overview
@@ -142,3 +142,14 @@ class ExampleScreen extends StatefulWidget {
 - **Flutter test framework** available via `flutter_test` SDK
 - Currently no specific test files - ready for test implementation
 - Use standard Flutter testing patterns for widget and integration tests
+- Run tests with: `flutter test`
+
+## Services Architecture
+
+### Key Services
+- **AuthService**: User authentication and session management
+- **GlobalTickerService**: Real-time price data management for watchlist
+- **WatchlistService**: Manages user's watched currencies/assets
+- **FinancialDataService**: Handles financial data fetching and caching
+- **CurrencyApiService**: External API integration for currency rates
+- **DatshopApiService**: Third-party financial data provider integration

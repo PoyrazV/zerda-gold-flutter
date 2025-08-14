@@ -170,7 +170,7 @@ class CurrencyApiService {
         
         formattedData.add({
           "code": "${key}/TRY",
-          "name": name,
+          "name": "${key}/TRY",  // Use code as name too
           "buyPrice": buyPrice,
           "sellPrice": sellPrice,
           "change": changePercent,

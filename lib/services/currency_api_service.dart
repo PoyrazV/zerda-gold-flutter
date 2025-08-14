@@ -17,25 +17,33 @@ class CurrencyApiService {
 
   Future<Map<String, dynamic>?> getLatestRates() async {
     try {
-      // TRY bazında tüm kurları al - API key gerektirmiyor
+      print('CurrencyApiService: Making API request to ${_baseUrl}TRY');
       final response = await _dio.get('TRY');
+      print('CurrencyApiService: API response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        print('CurrencyApiService: API response received successfully');
         return response.data;
+      } else {
+        print('CurrencyApiService: API returned status ${response.statusCode}');
       }
     } catch (e) {
-      print('API hatası: $e');
+      print('CurrencyApiService: API error: $e');
     }
     return null;
   }
 
   Future<List<Map<String, dynamic>>> getFormattedCurrencyData() async {
     final data = await getLatestRates();
+    print('CurrencyApiService: Raw API data received: ${data != null}');
+    
     if (data == null || data['rates'] == null) {
+      print('CurrencyApiService: No rates data available');
       return [];
     }
 
     final rates = data['rates'] as Map<String, dynamic>;
+    print('CurrencyApiService: Processing ${rates.length} rates');
     
     final currencyNames = {
       'USD': 'Amerikan Doları',
@@ -134,12 +142,12 @@ class CurrencyApiService {
 
     List<Map<String, dynamic>> formattedData = [];
 
-    // TRY bazında kurlar - ters çevir
+    // TRY bazında kurlar - direkt kullan (API zaten TRY bazında)
     currencyNames.forEach((key, name) {
       if (rates.containsKey(key)) {
         double rate = rates[key]?.toDouble() ?? 1.0;
         
-        // TRY bazında kur, ters çevir (1 USD = x TRY)
+        // TRY bazında kur direkt kullan (1 TRY = x USD olarak geldiği için ters çevir)
         double tryPrice = 1.0 / rate;
         
         double buyPrice = tryPrice * 0.9985;  // Alış daha düşük
@@ -161,17 +169,21 @@ class CurrencyApiService {
         double changePercent = (DateTime.now().millisecond % 200 - 100) * 0.01;
         
         formattedData.add({
-          "code": "${key}TRY",
+          "code": "${key}/TRY",
           "name": name,
           "buyPrice": buyPrice,
           "sellPrice": sellPrice,
           "change": changePercent,
+          "changePercent": changePercent,
           "isPositive": changePercent >= 0,
           "timestamp": _getCurrentTime(),
         });
+        
+        print('CurrencyApiService: Added ${key}/TRY - ${tryPrice.toStringAsFixed(4)}');
       }
     });
 
+    print('CurrencyApiService: Formatted ${formattedData.length} currencies');
     return formattedData;
   }
 

@@ -141,6 +141,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
     );
     _allGoldData = List.from(_staticGoldData);
     _filteredGoldData = List.from(_allGoldData);
+    print('AlarmAssetSelection: Gold data initialized with ${_allGoldData.length} items');
     _searchController.addListener(_onSearchChanged);
     _fetchCurrencyData();
   }
@@ -160,17 +161,22 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
         _isLoading = true;
       });
       
+      print('AlarmAssetSelection: Fetching currency data...');
       final apiData = await _currencyApiService.getFormattedCurrencyData();
+      print('AlarmAssetSelection: Received ${apiData.length} currencies');
       
       setState(() {
         if (apiData.isNotEmpty) {
           _allCurrencyData = apiData;
           _displayedCurrencyCount = 20; // Reset pagination
+          print('AlarmAssetSelection: Currency data loaded successfully');
+        } else {
+          print('AlarmAssetSelection: API returned empty data, check network');
+          _allCurrencyData = []; // Keep empty to show "no data" message
         }
       });
     } catch (e) {
       print('AlarmAssetSelection: Error fetching currency data: $e');
-      // Keep empty lists on error
     } finally {
       if (mounted) {
         setState(() {

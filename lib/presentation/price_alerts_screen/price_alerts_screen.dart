@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
@@ -33,7 +35,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
-    _loadMockData();
+    _loadStoredData();
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
@@ -52,10 +54,74 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     super.dispose();
   }
 
-  void _loadMockData() {
-    // Initialize empty lists - no mock data
-    _activeAlerts = [];
-    _historyAlerts = [];
+  Future<void> _loadStoredData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Load active alerts
+      final activeAlertsString = prefs.getString('active_alerts');
+      if (activeAlertsString != null) {
+        final List<dynamic> activeAlertsJson = jsonDecode(activeAlertsString);
+        _activeAlerts = activeAlertsJson.map((alert) {
+          // Convert DateTime strings back to DateTime objects
+          final alertMap = Map<String, dynamic>.from(alert);
+          alertMap['createdAt'] = DateTime.parse(alertMap['createdAt']);
+          return alertMap;
+        }).toList();
+      }
+      
+      // Load history alerts
+      final historyAlertsString = prefs.getString('history_alerts');
+      if (historyAlertsString != null) {
+        final List<dynamic> historyAlertsJson = jsonDecode(historyAlertsString);
+        _historyAlerts = historyAlertsJson.map((alert) {
+          // Convert DateTime strings back to DateTime objects
+          final alertMap = Map<String, dynamic>.from(alert);
+          alertMap['createdAt'] = DateTime.parse(alertMap['createdAt']);
+          if (alertMap['triggeredAt'] != null) {
+            alertMap['triggeredAt'] = DateTime.parse(alertMap['triggeredAt']);
+          }
+          return alertMap;
+        }).toList();
+      }
+      
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error loading stored alerts: $e');
+      // Initialize empty lists on error
+      _activeAlerts = [];
+      _historyAlerts = [];
+    }
+  }
+
+  Future<void> _saveStoredData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Prepare active alerts for storage
+      final activeAlertsForStorage = _activeAlerts.map((alert) {
+        final alertCopy = Map<String, dynamic>.from(alert);
+        alertCopy['createdAt'] = alertCopy['createdAt'].toIso8601String();
+        return alertCopy;
+      }).toList();
+      
+      // Prepare history alerts for storage
+      final historyAlertsForStorage = _historyAlerts.map((alert) {
+        final alertCopy = Map<String, dynamic>.from(alert);
+        alertCopy['createdAt'] = alertCopy['createdAt'].toIso8601String();
+        if (alertCopy['triggeredAt'] != null) {
+          alertCopy['triggeredAt'] = alertCopy['triggeredAt'].toIso8601String();
+        }
+        return alertCopy;
+      }).toList();
+      
+      await prefs.setString('active_alerts', jsonEncode(activeAlertsForStorage));
+      await prefs.setString('history_alerts', jsonEncode(historyAlertsForStorage));
+    } catch (e) {
+      print('Error saving stored alerts: $e');
+    }
   }
 
   @override
@@ -86,7 +152,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
@@ -417,8 +482,20 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
 
   Widget _buildActiveAlertsTab() {
     if (_activeAlerts.isEmpty) {
-      return EmptyAlertsWidget(
-        onCreateAlert: _showAssetSelectionModal,
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            Container(
+              margin: EdgeInsets.all(4.w),
+              alignment: Alignment.center,
+              child: _buildScrollableActionButton(),
+            ),
+            EmptyAlertsWidget(
+              onCreateAlert: _showAssetSelectionModal,
+            ),
+          ],
+        ),
       );
     }
 
@@ -426,9 +503,18 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
       onRefresh: _refreshAlerts,
       color: AppTheme.lightTheme.colorScheme.primary,
       child: ListView.builder(
-        padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
-        itemCount: _activeAlerts.length,
+        padding: EdgeInsets.only(top: 1.h, bottom: 12.h),
+        itemCount: _activeAlerts.length + 1,
         itemBuilder: (context, index) {
+          // Add button as the last item
+          if (index == _activeAlerts.length) {
+            return Container(
+              margin: EdgeInsets.all(4.w),
+              alignment: Alignment.center,
+              child: _buildScrollableActionButton(),
+            );
+          }
+          
           final alert = _activeAlerts[index];
           return AlertCardWidget(
             alertData: alert,
@@ -474,14 +560,20 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: _showAssetSelectionModal,
-      backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-      child: CustomIconWidget(
-        iconName: 'add',
-        color: Colors.white,
-        size: 24,
+  Widget _buildScrollableActionButton() {
+    return SizedBox(
+      width: 70.w,
+      child: FloatingActionButton.extended(
+        onPressed: _showAssetSelectionModal,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        label: Text(
+          'Alarm Ekle',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -535,11 +627,13 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     setState(() {
       _activeAlerts.insert(0, alertData);
     });
+    
+    _saveStoredData();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm başarıyla oluşturuldu'),
-        backgroundColor: AppTheme.positiveGreen,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -575,11 +669,13 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
         _activeAlerts[alertIndex]['currentPrice'] = selectedAsset['currentPrice'];
       }
     });
+    
+    _saveStoredData();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm başarıyla güncellendi'),
-        backgroundColor: AppTheme.positiveGreen,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -593,84 +689,58 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     setState(() {
       _activeAlerts.insert(0, duplicatedAlert);
     });
+    
+    _saveStoredData();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm kopyalandı'),
-        backgroundColor: AppTheme.positiveGreen,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  void _deleteHistoryAlert(Map<String, dynamic> alert) async {
-    final bool? shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Geçmiş Alarmı Sil',
-          style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Bu geçmiş alarmı kalıcı olarak silmek istediğinizden emin misiniz?',
-          style: AppTheme.lightTheme.textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'İptal',
-              style: TextStyle(
-                color: AppTheme.textSecondaryLight,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Sil',
-              style: TextStyle(
-                color: AppTheme.negativeRed,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+  void _deleteHistoryAlert(Map<String, dynamic> alert) {
+    setState(() {
+      _historyAlerts.removeWhere((item) => item['id'] == alert['id']);
+    });
+    
+    _saveStoredData();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Geçmiş alarm silindi'),
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
       ),
     );
-
-    if (shouldDelete == true) {
-      setState(() {
-        _historyAlerts.removeWhere((item) => item['id'] == alert['id']);
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Geçmiş alarm silindi'),
-          backgroundColor: AppTheme.negativeRed,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   void _deleteAlert(int alertId) {
+    // Store the deleted alert for undo functionality
+    final deletedAlert = _activeAlerts.firstWhere((alert) => alert['id'] == alertId);
+    final deletedIndex = _activeAlerts.indexWhere((alert) => alert['id'] == alertId);
+    
     setState(() {
       _activeAlerts.removeWhere((alert) => alert['id'] == alertId);
     });
+    
+    _saveStoredData();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm silindi'),
-        backgroundColor: AppTheme.negativeRed,
+        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: 'Geri Al',
           textColor: Colors.white,
           onPressed: () {
-            // Implement undo functionality
+            setState(() {
+              _activeAlerts.insert(deletedIndex, deletedAlert);
+            });
+            _saveStoredData();
           },
         ),
       ),
@@ -690,6 +760,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                 : 'disabled';
       }
     });
+    
+    _saveStoredData();
   }
 
   void _showAlertDetail(Map<String, dynamic> alert) {

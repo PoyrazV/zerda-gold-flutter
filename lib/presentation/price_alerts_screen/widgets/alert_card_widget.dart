@@ -99,7 +99,7 @@ class AlertCardWidget extends StatelessWidget {
           onEdit?.call();
           return false;
         } else if (direction == DismissDirection.endToStart) {
-          return await _showDeleteConfirmation(context);
+          return true;
         }
         return false;
       },
@@ -295,42 +295,4 @@ class AlertCardWidget extends StatelessWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  Future<bool> _showDeleteConfirmation(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(
-                'Alarmı Sil',
-                style: AppTheme.lightTheme.textTheme.titleLarge,
-              ),
-              content: Text(
-                'Bu alarmı silmek istediğinizden emin misiniz?',
-                style: AppTheme.lightTheme.textTheme.bodyMedium,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(
-                    'İptal',
-                    style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                      color: AppTheme.textSecondaryLight,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(
-                    'Sil',
-                    style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                      color: AppTheme.negativeRed,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-  }
 }

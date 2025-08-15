@@ -220,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildAddTickerCard() {
     return Container(
-      width: 23.w, // Same width as ticker cards
+      width: 26.5.w, // Same width as ticker cards
       height: 22.w, // Same height as ticker cards
       margin: EdgeInsets.only(right: 2.w),
       decoration: BoxDecoration(
@@ -233,8 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Add functionality to add new ticker
-          print('Add ticker tapped');
+          Navigator.pushNamed(context, '/asset-selection-screen');
         },
         borderRadius: BorderRadius.circular(8),
         child: Center(
@@ -267,7 +266,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final double change = currency['change'] as double;
     
     return Container(
-      width: 23.w, // Further increased width for larger text
+      width: 26.5.w, // Further increased width for larger text
       height: 22.w, // Moderate height for balanced spacing
       margin: EdgeInsets.only(right: 2.w),
       decoration: BoxDecoration(
@@ -335,10 +334,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    '${isPositive ? '+' : ''}${change.toStringAsFixed(2).replaceAll('.', ',')}%',
+                    '%${change.abs().toStringAsFixed(2).replaceAll('.', ',')}',
                     style: GoogleFonts.inter(
-                      fontSize: 2.5.w, // Increased font size for better readability
-                      fontWeight: FontWeight.w900, // Extra bold
+                      fontSize: 2.7.w, // Increased font size to match list
+                      fontWeight: FontWeight.w500, // Medium weight to match list
                       color: isPositive 
                           ? const Color(0xFF047857) // Green text
                           : const Color(0xFFB91C1C), // Red text
@@ -359,7 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       height: 4.h, // 5-6% of screen height
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       decoration: const BoxDecoration(
-        color: Color(0xFF2A2A2A), // Updated background color
+        color: Color(0xFF18214F), // Dark navy background
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -371,24 +370,21 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w, // 1rem equivalent - responsive
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFFFFFFF), // White text
+                color: const Color(0xFFE8D095), // Gold text
                 height: 2, // Line height 2.5rem
               ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Padding(
-              padding: EdgeInsets.only(right: 4.w),
-              child: Text(
-                'ANKAUF',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 4.w, // 1rem equivalent - responsive
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFFFFFFF), // White text
-                  height: 2, // Line height 2.5rem
-                ),
+            child: Text(
+              'ANKAUF',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 4.w, // 1rem equivalent - responsive
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095), // Gold text
+                height: 2, // Line height 2.5rem
               ),
             ),
           ),
@@ -400,7 +396,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w, // 1rem equivalent - responsive
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFFFFFFF), // White text
+                color: const Color(0xFFE8D095), // Gold text
                 height: 2, // Line height 2.5rem
               ),
             ),
@@ -438,113 +434,131 @@ class _DashboardScreenState extends State<DashboardScreen>
     
     // Alternating row colors
     final Color backgroundColor = index.isEven 
-        ? const Color(0xFFF6F6F6) // Gray for even rows
+        ? const Color(0xFFF0F0F0) // Darker gray for even rows
         : const Color(0xFFFFFFFF); // White for odd rows
     
     return Container(
-      height: 6.5.h, // Reduced from 8.h to 6.h for more compact rows
+      height: 8.h, // Reduced from 8.h to 6.h for more compact rows
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
       decoration: BoxDecoration(
         color: backgroundColor,
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Top row with currency name and prices
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 3,
-                child: Text(
-                  currency['name'] as String,
+          // Left section - Currency name and time
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(height: 0.5.w),
+                Padding(
+                  padding: EdgeInsets.only(top: 1.w),
+                  child: Text(
+                    currency['name'] as String,
                   style: GoogleFonts.inter(
                     fontSize: 4.w, // 0.875rem equivalent - responsive
-                    fontWeight: FontWeight.w500, // Medium weight
+                    fontWeight: FontWeight.w800, // Bold weight for name
                     color: const Color(0xFF1E2939),
-                    height: 1.8, // Line height 1.8rem
+                    height: 1.4, // Reduced line height for compact layout
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4.w),
+                SizedBox(height: 2.w),
+                Padding(
+                  padding: EdgeInsets.only(top: 2.w),
                   child: Text(
-                    CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
-                    textAlign: TextAlign.center,
+                    currentTime,
                     style: GoogleFonts.inter(
-                      fontSize: 4.w, // 1rem equivalent - responsive
-                      fontWeight: FontWeight.w900, // Black weight
-                      color: const Color(0xFF1E2939),
-                      height: 1.8,
+                      fontSize: 3.w, // Smaller font size for time
+                      fontWeight: FontWeight.normal, // Regular weight
+                      color: const Color(0xFF6B7280), // Lighter gray color
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Middle section - Buy price
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: EdgeInsets.only(top: 1.w),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Text(
+                  CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 4.w, // 1rem equivalent - responsive
+                    fontWeight: FontWeight.w700, // Semi-bold weight
+                    color: const Color(0xFF1E2939),
+                    height: 1.8,
                   ),
                 ),
               ),
-            ),  
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4.w),
+            ),
+          ),
+          // Right section - Sell price and percentage change
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: EdgeInsets.only(right: 3.w),
+              child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(top: 1.w),
                   child: Text(
                     CurrencyFormatter.formatExchangeRate(currency['sellPrice'] as double),
                     textAlign: TextAlign.right,
                     style: GoogleFonts.inter(
                       fontSize: 4.w, // 1rem equivalent - responsive
-                      fontWeight: FontWeight.w900, // Black weight
+                      fontWeight: FontWeight.w700, // Semi-bold weight
                       color: const Color(0xFF1E2939),
-                      height: 1.8,
+                      height: 1.6,
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 1.w),
-          // Bottom row with time and percentage change
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Time on the left
-              Text(
-                currentTime,
-                style: GoogleFonts.inter(
-                  fontSize: 2.5.w, // Back to original font size
-                  fontWeight: FontWeight.normal, // Regular weight
-                  color: const Color(0xFF131313),
-                  height: 1.5,
-                ),
-              ),
-              SizedBox(width: 2.w), // Space between time and percentage
-              // Percentage change container on the right
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.w),
-                decoration: BoxDecoration(
-                  color: isPositive 
-                      ? const Color(0xFFECFDF5) // Green background for increase
-                      : const Color(0xFFFEF2F2), // Red background for decrease
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
+                SizedBox(height: 1.5.w),
+                Padding(
+                  padding: EdgeInsets.only(top: 1.5.w, right: 1.w),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
+                  decoration: BoxDecoration(
                     color: isPositive 
-                        ? const Color(0x3305966) // Green border with opacity
-                        : const Color(0x1ADC2626), // Red border with opacity
-                    width: 1,
+                        ? const Color(0xFFECFDF5) // Green background for increase
+                        : const Color(0xFFFEF2F2), // Red background for decrease
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: isPositive 
+                          ? const Color(0x33059669) // Fixed green border with opacity
+                          : const Color(0x1ADC2626), // Red border with opacity
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '%${change.abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                    style: GoogleFonts.inter(
+                      fontSize: 2.7.w, // Increased font size
+                      fontWeight: FontWeight.w500, // Medium weight instead of extra bold
+                      color: isPositive 
+                          ? const Color(0xFF047857) // Green text
+                          : const Color(0xFFB91C1C), // Red text
+                      height: 1.0, // Line height 0.625rem
+                    ),
+                    ),
                   ),
                 ),
-                child: Text(
-                  '%${change.abs().toStringAsFixed(2).replaceAll('.', ',')}',
-                  style: GoogleFonts.inter(
-                    fontSize: 2.5.w, // 0.625rem equivalent - responsive
-                    fontWeight: FontWeight.w900, // Extra bold for percentage numbers
-                    color: isPositive 
-                        ? const Color(0xFF047857) // Green text
-                        : const Color(0xFFB91C1C), // Red text
-                    height: 1.0, // Line height 0.625rem
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
+            ),
           ),
         ],
       ),

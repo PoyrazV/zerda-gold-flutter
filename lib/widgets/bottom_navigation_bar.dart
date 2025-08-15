@@ -117,14 +117,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
                                   color: isActive
                                       ? const Color(0xFFE8D095) // Gold color for active
                                       : Colors.white, // White for inactive
-                                  size: 20,
+                                  size: 25,
                                 )
                               : Icon(
                                   item['icon'] as IconData,
                                   color: isActive
                                       ? const Color(0xFFE8D095) // Gold color for active
                                       : Colors.white, // White for inactive
-                                  size: 20,
+                                  size: 25,
                                 ),
                           ),
                           SizedBox(height: 0.2.h),
@@ -136,7 +136,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
                                 color: isActive
                                     ? const Color(0xFFE8D095) // Gold color for active
                                     : Colors.white, // White for inactive
-                                fontSize: 9.sp,
+                                fontSize: 10.sp,
                                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                               ),
                               textAlign: TextAlign.center,

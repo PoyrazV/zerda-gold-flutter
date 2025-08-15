@@ -17,8 +17,8 @@ class CurrencyApiService {
 
   Future<Map<String, dynamic>?> getLatestRates() async {
     try {
-      print('CurrencyApiService: Making API request to ${_baseUrl}TRY');
-      final response = await _dio.get('TRY');
+      print('CurrencyApiService: Making API request to ${_baseUrl}EUR');
+      final response = await _dio.get('EUR');
       print('CurrencyApiService: API response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
@@ -141,17 +141,15 @@ class CurrencyApiService {
     };
 
     List<Map<String, dynamic>> formattedData = [];
-
-    // TRY bazında kurlar - direkt kullan (API zaten TRY bazında)
+    
+    // EUR bazında kurlar - direkt kullan
     currencyNames.forEach((key, name) {
-      if (rates.containsKey(key)) {
-        double rate = rates[key]?.toDouble() ?? 1.0;
+      if (rates.containsKey(key) && key != 'EUR') { // EUR'yi kendisiyle karşılaştırma
+        double eurRate = rates[key]?.toDouble() ?? 1.0;
         
-        // TRY bazında kur direkt kullan (1 TRY = x USD olarak geldiği için ters çevir)
-        double tryPrice = 1.0 / rate;
-        
-        double buyPrice = tryPrice * 0.9985;  // Alış daha düşük
-        double sellPrice = tryPrice * 1.0015; // Satış daha yüksek
+        // EUR bazında fiyatlar - 1 EUR = x Currency
+        double buyPrice = eurRate * 0.9985;  // Alış daha düşük
+        double sellPrice = eurRate * 1.0015; // Satış daha yüksek
         
         // Küçük değerli para birimleri için özel hesaplama
         if (['JPY', 'KRW', 'IDR', 'VND', 'UGX', 'TZS', 'MGA', 'MWK', 'LAK', 'KHR', 'MNT', 'UZS', 'LBP', 'IRR'].contains(key)) {
@@ -169,8 +167,8 @@ class CurrencyApiService {
         double changePercent = (DateTime.now().millisecond % 200 - 100) * 0.01;
         
         formattedData.add({
-          "code": "${key}/TRY",
-          "name": "${key}/TRY",  // Use code as name too
+          "code": "${key}/EUR",
+          "name": "${key}/EUR",  // Use code as name too
           "buyPrice": buyPrice,
           "sellPrice": sellPrice,
           "change": changePercent,
@@ -179,7 +177,7 @@ class CurrencyApiService {
           "timestamp": _getCurrentTime(),
         });
         
-        print('CurrencyApiService: Added ${key}/TRY - ${tryPrice.toStringAsFixed(4)}');
+        print('CurrencyApiService: Added ${key}/EUR - ${eurRate.toStringAsFixed(4)}');
       }
     });
 
@@ -195,11 +193,11 @@ class CurrencyApiService {
   // Historical data endpoints - Free tier doesn't support historical data
   Future<Map<String, dynamic>?> getHistoricalData({
     required String date, // Format: YYYY-MM-DD
-    String base = 'TRY',
+    String base = 'EUR',
   }) async {
     try {
       // exchangerate-api.com historical endpoint (not available in free tier)
-      final response = await _dio.get('$date/TRY');
+      final response = await _dio.get('$date/EUR');
       
       if (response.statusCode == 200) {
         return response.data;
@@ -259,12 +257,12 @@ class CurrencyApiService {
 
   double _getVolatilityForSymbol(String symbol) {
     switch (symbol) {
-      case 'USDTRY':
-      case 'EURTRY':
-      case 'GBPTRY':
+      case 'USDEUR':
+      case 'TRYEUR':
+      case 'GBPEUR':
         return 0.015; // 1.5% daily volatility for major pairs
-      case 'JPYTRY':
-      case 'CHFTRY':
+      case 'JPYEUR':
+      case 'CHFEUR':
         return 0.012; // Lower volatility
       default:
         return 0.02; // 2% for exotic pairs
@@ -288,15 +286,15 @@ class CurrencyApiService {
 
   double _getBasePriceForSymbol(String symbol) {
     switch (symbol) {
-      case 'USDTRY': return 34.60;
-      case 'EURTRY': return 37.50;
-      case 'GBPTRY': return 43.80;
-      case 'CHFTRY': return 39.20;
-      case 'AUDTRY': return 22.90;
-      case 'CADTRY': return 25.95;
-      case 'JPYTRY': return 0.23;
-      case 'SEKTRY': return 3.12;
-      default: return 34.60;
+      case 'USDEUR': return 0.92;
+      case 'TRYEUR': return 0.026;
+      case 'GBPEUR': return 1.17;
+      case 'CHFEUR': return 1.04;
+      case 'AUDEUR': return 0.61;
+      case 'CADEUR': return 0.69;
+      case 'JPYEUR': return 0.0061;
+      case 'SEKEUR': return 0.083;
+      default: return 0.92;
     }
   }
 }

@@ -65,7 +65,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1B45), // Dark navy background
+        color: const Color(0xFF18214F), // Dark navy background
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -115,14 +115,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
                             child: item['title'] == 'Altın' 
                               ? GoldBarsIcon(
                                   color: isActive
-                                      ? const Color(0xFFFFD700) // Gold color for active
+                                      ? const Color(0xFFE8D095) // Gold color for active
                                       : Colors.white, // White for inactive
                                   size: 20,
                                 )
                               : Icon(
                                   item['icon'] as IconData,
                                   color: isActive
-                                      ? const Color(0xFFFFD700) // Gold color for active
+                                      ? const Color(0xFFE8D095) // Gold color for active
                                       : Colors.white, // White for inactive
                                   size: 20,
                                 ),
@@ -134,7 +134,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
                               item['title'] as String,
                               style: TextStyle(
                                 color: isActive
-                                    ? const Color(0xFFFFD700) // Gold color for active
+                                    ? const Color(0xFFE8D095) // Gold color for active
                                     : Colors.white, // White for inactive
                                 fontSize: 9.sp,
                                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,

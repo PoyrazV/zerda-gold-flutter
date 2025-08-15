@@ -52,12 +52,12 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (mounted) {
         setState(() {
           _allCurrencyData = currencies;
-          // Select featured currencies (USD, EUR, GBP and first gold if available)
+          // Select featured currencies (USD, GBP, TRY and first gold if available)
           _featuredCurrencies = [
             ...currencies.where((c) => 
-              c['code'] == 'USD/TRY' || 
-              c['code'] == 'EUR/TRY' || 
-              c['code'] == 'GBP/TRY'
+              c['code'] == 'USD/EUR' || 
+              c['code'] == 'TRY/EUR' || 
+              c['code'] == 'GBP/EUR'
             ).take(3),
             if (currencies.length > 3) currencies[3],
           ];
@@ -105,35 +105,36 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B45),
+      backgroundColor: const Color(0xFF18214F),
       drawer: const AppDrawer(),
       body: Column(
         children: [
           // Modern Mobile-First Header
           _buildMobileHeader(),
           
-          // Main scrollable content
+          // Main content with fixed ticker and header
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _handleRefresh,
-              color: const Color(0xFFFFD700), //Ticker arkaplan rengi
-              backgroundColor: Colors.white,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    // Horizontal scrollable ticker cards
-                    _buildTickerSection(),
-                    
-                    // Table header
-                    _buildTableHeader(),
-                    
-                    // Products list with alternating colors
-                    _buildProductsList(),
-                    
-                  ],
+            child: Column(
+              children: [
+                // Horizontal scrollable ticker cards - Fixed at top
+                _buildTickerSection(),
+                
+                // Table header - Fixed below ticker
+                _buildTableHeader(),
+                
+                // Products list with alternating colors - Scrollable
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _handleRefresh,
+                    color: const Color(0xFFFFD700), //Ticker arkaplan rengi
+                    backgroundColor: Colors.white,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: _buildProductsList(),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
 
@@ -149,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Container(
       height: 13.h, // 12-14% of screen height
       decoration: const BoxDecoration(
-        color: Color(0xFF0D1B45), // Dark navy background
+        color: Color(0xFF18214F), // Dark navy background
       ),
       child: SafeArea(
         child: Padding(
@@ -193,8 +194,8 @@ class _DashboardScreenState extends State<DashboardScreen>
   
   Widget _buildTickerSection() {
     return Container(
-      height: 30.w, // Keep the increased height
-      margin: EdgeInsets.symmetric(vertical: 4.w),
+      height: 24.w, // Adjusted height with some margin for cards
+      margin: EdgeInsets.only(top: 0.w, bottom: 3.w),
       child: _featuredCurrencies.isEmpty 
         ? Center(
             child: CircularProgressIndicator(
@@ -219,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     
     return Container(
       width: 25.w, // Further increased width for larger text
-      height: 30.w, // Increased height for larger text
+      height: 22.w, // Moderate height for balanced spacing
       margin: EdgeInsets.only(right: 3.w),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB), // Light gray background (original)
@@ -229,57 +230,47 @@ class _DashboardScreenState extends State<DashboardScreen>
           width: 1,
         ),
       ),
-      padding: EdgeInsets.all(1.w), // Further reduced padding
+      padding: EdgeInsets.all(2.5.w), // Further reduced padding
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space evenly
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space between elements
         crossAxisAlignment: CrossAxisAlignment.center, // Center horizontally
         children: [
-          // Product name - constrained height
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(
+          // Top section - Product name and price close together
+          SizedBox(height: 0.5.w), // Üstten boşluk - USD/EUR'u aşağı iter
+          Column(
+            children: [
+              // Product name
+              Text(
                 currency['name'] as String,
-                style: GoogleFonts.inter(
-                  fontSize: 3.w, // Increased font size for better readability
-                  fontWeight: FontWeight.w900, // Extra bold
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700,
+                  fontSize: 3.3.w, // Increased font size for better readability
                   color: const Color(0xFF4B5563), // Original gray text
-                  height: 1.1,
+                  height: 1.0,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center, // Center align text
               ),
-            ),
-          ),
-          
-          // Price - constrained height
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
-                  style: GoogleFonts.inter(
-                    fontSize: 3.0.w, // Increased font size for better readability
-                    fontWeight: FontWeight.w900, // Black weight (already bold)
-                    color: const Color(0xFF1F2937), // Darker gray for better visibility
-                    height: 1.0,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center, // Center align text
+              
+              SizedBox(height: 4.w), // Small spacing between name and price
+              
+              // Price
+              Text(
+                CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
+                style: GoogleFonts.inter(fontWeight: FontWeight.w900,
+                  fontSize: 3.5.w, // Increased font size for better readability
+                  color: const Color(0xFF4B5563), // Darker gray for better visibility
+                  height: 1.0,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center, // Center align text
               ),
-            ),
+            ],
           ),
           
-          // Change percentage container - constrained height
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Container(
+          // Bottom section - Change percentage container
+          Container(
                 padding: EdgeInsets.symmetric(horizontal: 0.5.w, vertical: 0.3.w),
                 decoration: BoxDecoration(
                   color: isPositive 
@@ -303,13 +294,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                       color: isPositive 
                           ? const Color(0xFF047857) // Green text
                           : const Color(0xFFB91C1C), // Red text
-                      height: 1.0,
+                      height: 1.2,
                     ),
                     textAlign: TextAlign.center, // Center align text
                   ),
                 ),
-              ),
-            ),
           ),
         ],
       ),
@@ -418,8 +407,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: Text(
                   currency['name'] as String,
                   style: GoogleFonts.inter(
-                    fontSize: 3.5.w, // 0.875rem equivalent - responsive
-                    fontWeight: FontWeight.w500, // Medium weight
+                    fontSize: 4.w, // 0.875rem equivalent - responsive
+                    fontWeight: FontWeight.w600, // Medium weight
                     color: const Color(0xFF1E2939),
                     height: 1.8, // Line height 1.8rem
                   ),

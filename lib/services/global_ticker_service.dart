@@ -95,7 +95,7 @@ class GlobalTickerService extends ChangeNotifier {
         
         if (data.isNotEmpty) {
           // Select major currencies for ticker as fallback
-          final majorCurrencies = ['USD/TRY', 'EUR/TRY', 'GBP/TRY', 'GRAM'];
+          final majorCurrencies = ['USD/EUR', 'TRY/EUR', 'GBP/EUR', 'GRAM'];
           final tickerCurrencies = <Map<String, dynamic>>[];
           
           for (final targetCode in majorCurrencies) {
@@ -145,19 +145,19 @@ class GlobalTickerService extends ChangeNotifier {
   List<Map<String, dynamic>> getDefaultData() {
     return [
       {
-        'symbol': 'USD/TRY',
+        'symbol': 'USD/EUR',
         'price': 34.2156,
         'change': 0.0234,
         'changePercent': 0.068
       },
       {
-        'symbol': 'EUR/TRY',
+        'symbol': 'TRY/EUR',
         'price': 37.1234,
         'change': -0.0456,
         'changePercent': -0.123
       },
       {
-        'symbol': 'GBP/TRY',
+        'symbol': 'GBP/EUR',
         'price': 43.5678,
         'change': 0.1234,
         'changePercent': 0.284

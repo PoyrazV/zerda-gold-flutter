@@ -71,7 +71,7 @@ class TickerDataService {
         
         // Try to find this currency in API data
         final apiCurrency = allCurrencies.firstWhere(
-          (c) => c['code'] == code || c['code'] == code.replaceAll('/TRY', 'TRY'),
+          (c) => c['code'] == code || c['code'] == code.replaceAll('/EUR', 'EUR'),
           orElse: () => <String, dynamic>{},
         );
         

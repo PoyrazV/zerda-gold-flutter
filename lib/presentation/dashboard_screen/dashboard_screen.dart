@@ -52,14 +52,15 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (mounted) {
         setState(() {
           _allCurrencyData = currencies;
-          // Select featured currencies (USD, GBP, TRY and first gold if available)
+          // Select featured currencies (USD, GBP, TRY, CHF, JPY)
           _featuredCurrencies = [
             ...currencies.where((c) => 
               c['code'] == 'USD/EUR' || 
               c['code'] == 'TRY/EUR' || 
-              c['code'] == 'GBP/EUR'
-            ).take(3),
-            if (currencies.length > 3) currencies[3],
+              c['code'] == 'GBP/EUR' ||
+              c['code'] == 'CHF/EUR' ||
+              c['code'] == 'JPY/EUR'
+            ).take(5),
           ];
         });
       }
@@ -204,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           )
         : ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
+            padding: EdgeInsets.symmetric(horizontal: 2.w),
             itemCount: _featuredCurrencies.length,
             itemBuilder: (context, index) {
               final currency = _featuredCurrencies[index];
@@ -219,9 +220,9 @@ class _DashboardScreenState extends State<DashboardScreen>
     final double change = currency['change'] as double;
     
     return Container(
-      width: 25.w, // Further increased width for larger text
+      width: 23.w, // Further increased width for larger text
       height: 22.w, // Moderate height for balanced spacing
-      margin: EdgeInsets.only(right: 3.w),
+      margin: EdgeInsets.only(right: 2.w),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB), // Light gray background (original)
         borderRadius: BorderRadius.circular(8), // 0.5rem equivalent
@@ -287,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%',
+                    '${isPositive ? '+' : ''}${change.toStringAsFixed(2).replaceAll('.', ',')}%',
                     style: GoogleFonts.inter(
                       fontSize: 2.5.w, // Increased font size for better readability
                       fontWeight: FontWeight.w900, // Extra bold
@@ -330,14 +331,17 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              'ANKAUF',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 4.w, // 1rem equivalent - responsive
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFFFFFFFF), // White text
-                height: 2, // Line height 2.5rem
+            child: Padding(
+              padding: EdgeInsets.only(right: 4.w),
+              child: Text(
+                'ANKAUF',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 4.w, // 1rem equivalent - responsive
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFFFFFFF), // White text
+                  height: 2, // Line height 2.5rem
+                ),
               ),
             ),
           ),
@@ -391,8 +395,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         : const Color(0xFFFFFFFF); // White for odd rows
     
     return Container(
-      height: 8.h, // 7-8% of screen height
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.w),
+      height: 6.5.h, // Reduced from 8.h to 6.h for more compact rows
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
       decoration: BoxDecoration(
         color: backgroundColor,
       ),
@@ -408,7 +412,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   currency['name'] as String,
                   style: GoogleFonts.inter(
                     fontSize: 4.w, // 0.875rem equivalent - responsive
-                    fontWeight: FontWeight.w600, // Medium weight
+                    fontWeight: FontWeight.w500, // Medium weight
                     color: const Color(0xFF1E2939),
                     height: 1.8, // Line height 1.8rem
                   ),
@@ -418,27 +422,33 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               Expanded(
                 flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 4.w, // 1rem equivalent - responsive
-                    fontWeight: FontWeight.w900, // Black weight
-                    color: const Color(0xFF1E2939),
-                    height: 1.8,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 4.w),
+                  child: Text(
+                    CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 4.w, // 1rem equivalent - responsive
+                      fontWeight: FontWeight.w900, // Black weight
+                      color: const Color(0xFF1E2939),
+                      height: 1.8,
                   ),
                 ),
               ),
+            ),  
               Expanded(
                 flex: 2,
-                child: Text(
-                  CurrencyFormatter.formatExchangeRate(currency['sellPrice'] as double),
-                  textAlign: TextAlign.right,
-                  style: GoogleFonts.inter(
-                    fontSize: 4.w, // 1rem equivalent - responsive
-                    fontWeight: FontWeight.w900, // Black weight
-                    color: const Color(0xFF1E2939),
-                    height: 1.8,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 4.w),
+                  child: Text(
+                    CurrencyFormatter.formatExchangeRate(currency['sellPrice'] as double),
+                    textAlign: TextAlign.right,
+                    style: GoogleFonts.inter(
+                      fontSize: 4.w, // 1rem equivalent - responsive
+                      fontWeight: FontWeight.w900, // Black weight
+                      color: const Color(0xFF1E2939),
+                      height: 1.8,
+                    ),
                   ),
                 ),
               ),
@@ -476,7 +486,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
                 child: Text(
-                  '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%',
+                  '%${change.abs().toStringAsFixed(2).replaceAll('.', ',')}',
                   style: GoogleFonts.inter(
                     fontSize: 2.5.w, // 0.625rem equivalent - responsive
                     fontWeight: FontWeight.w900, // Extra bold for percentage numbers

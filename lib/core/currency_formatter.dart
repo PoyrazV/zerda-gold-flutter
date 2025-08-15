@@ -105,10 +105,15 @@ class CurrencyFormatter {
     return formatter.format(amount);
   }
 
-  /// Formats exchange rate with 4 decimal places
-  /// Example: 34.1234 → 34,1234
+  /// Formats exchange rate with appropriate decimal places
+  /// For values >= 1000: 2 decimal places, otherwise 4 decimal places
+  /// Example: 1041.8027 → 1.041,80, 34.1234 → 34,1234
   static String formatExchangeRate(double rate) {
-    return _turkishFormatter4Decimals.format(rate);
+    if (rate >= 1000) {
+      return _turkishFormatter.format(rate); // 2 decimal places for thousands
+    } else {
+      return _turkishFormatter4Decimals.format(rate); // 4 decimal places for smaller values
+    }
   }
 
   /// Formats currency based on currency code

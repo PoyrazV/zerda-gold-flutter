@@ -593,6 +593,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     );
   }
 
+
   Widget _buildBottomNavigation() {
     return CustomBottomNavigationBar(currentRoute: '/gold-coin-prices-screen');
   }

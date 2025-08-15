@@ -23,19 +23,13 @@ class PriceAlertsScreen extends StatefulWidget {
   State<PriceAlertsScreen> createState() => _PriceAlertsScreenState();
 }
 
-class _PriceAlertsScreenState extends State<PriceAlertsScreen>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
+class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
   List<Map<String, dynamic>> _activeAlerts = [];
   List<Map<String, dynamic>> _historyAlerts = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (mounted) setState(() {});
-    });
     _loadStoredData();
     
     // Listen to watchlist changes to update ticker
@@ -51,7 +45,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -146,18 +139,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
           // Price ticker with API data
           const TickerSection(),
           
-          // Tab bar
-          _buildTabBar(),
-          
-          // Content
+          // Content - show only active alerts
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildActiveAlertsTab(),
-                _buildHistoryTab(),
-              ],
-            ),
+            child: _buildActiveAlertsTab(),
           ),
         ],
       ),
@@ -239,103 +223,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
   }
 
 
-  Widget _buildTabBar() {
-    return Container(
-      color: const Color(0xFF18214F), // Dark navy background
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: const Color(0xFFE8D095),
-        labelColor: const Color(0xFFE8D095),
-        unselectedLabelColor: Colors.white.withOpacity(0.6),
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Builder(
-                  builder: (context) {
-                    return AnimatedBuilder(
-                      animation: _tabController.animation!,
-                      builder: (context, child) {
-                        return CustomIconWidget(
-                          iconName: 'notifications_active',
-                          color: _tabController.index == 0
-                              ? const Color(0xFFE8D095)
-                              : Colors.white.withOpacity(0.6),
-                          size: 16,
-                        );
-                      },
-                    );
-                  },
-                ),
-                SizedBox(width: 1.w),
-                AnimatedBuilder(
-                  animation: _tabController.animation!,
-                  builder: (context, child) {
-                    return Text(
-                      'Aktif',
-                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: _tabController.index == 0
-                            ? const Color(0xFFE8D095)
-                            : Colors.white.withOpacity(0.6),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Builder(
-                  builder: (context) {
-                    return AnimatedBuilder(
-                      animation: _tabController.animation!,
-                      builder: (context, child) {
-                        return CustomIconWidget(
-                          iconName: 'history',
-                          color: _tabController.index == 1
-                              ? const Color(0xFFE8D095)
-                              : Colors.white.withOpacity(0.6),
-                          size: 16,
-                        );
-                      },
-                    );
-                  },
-                ),
-                SizedBox(width: 1.w),
-                AnimatedBuilder(
-                  animation: _tabController.animation!,
-                  builder: (context, child) {
-                    return Text(
-                      'Geçmiş',
-                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: _tabController.index == 1
-                            ? const Color(0xFFE8D095)
-                            : Colors.white.withOpacity(0.6),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildActiveAlertsTab() {
     if (_activeAlerts.isEmpty) {

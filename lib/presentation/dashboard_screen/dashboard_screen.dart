@@ -135,6 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+
   Widget _buildBottomNavigation() {
     return CustomBottomNavigationBar(currentRoute: '/dashboard-screen');
   }

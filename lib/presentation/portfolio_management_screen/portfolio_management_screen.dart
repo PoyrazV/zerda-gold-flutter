@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/app_header.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/dashboard_header.dart';
+import '../../widgets/ticker_section.dart';
 import './widgets/add_position_bottom_sheet.dart';
 import './widgets/empty_portfolio_state.dart';
 import './widgets/portfolio_summary_card.dart';
@@ -118,10 +119,18 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
       body: Column(
         children: [
           // Header with ZERDA branding
-          AppHeader(textTopPadding: 1.0.h),
+          const DashboardHeader(),
+
+          // Spacer between logo and ticker
+          Container(
+            height: 2.h,
+            decoration: const BoxDecoration(
+              color: Color(0xFF18214F), // Dark navy background
+            ),
+          ),
 
           // Price ticker
-          _buildPriceTicker(),
+          const TickerSection(),
 
           // Main content
           Expanded(
@@ -301,7 +310,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
       width: 70.w,
       child: FloatingActionButton.extended(
         onPressed: _showAddPositionBottomSheet,
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: const Color(0xFF18214F),
         label: Text(
           'Varlık Ekle',
           style: TextStyle(
@@ -402,10 +411,6 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
     );
   }
 
-  Widget _buildPriceTicker() {
-    // Use shared PriceTicker widget
-    return PriceTicker();
-  }
 
   Widget _buildPriceTickerOld() {
     // Show watchlist items in ticker

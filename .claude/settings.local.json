@@ -33,7 +33,8 @@
       "Bash(del fix_widget_imports.ps1)",
       "Bash(git checkout:*)",
       "WebFetch(domain:api.exchangerate-api.com)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\widgets\\main_layout.dart\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

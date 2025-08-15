@@ -19,7 +19,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   static final List<Map<String, dynamic>> _navItems = [
     {
       'title': 'Döviz',
-      'icon': Icons.attach_money,
+      'icon': Icons.euro,
       'route': '/dashboard-screen',
     },
     {

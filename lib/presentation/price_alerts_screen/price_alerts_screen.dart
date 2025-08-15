@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/price_ticker.dart';
-import '../../widgets/app_header.dart';
+import '../../widgets/dashboard_header.dart';
+import '../../widgets/ticker_section.dart';
 import './widgets/alert_card_widget.dart';
 import './widgets/alert_history_widget.dart';
 import './widgets/alarm_asset_selection_modal.dart';
@@ -132,10 +133,18 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          AppHeader(textTopPadding: 1.0.h),
+          const DashboardHeader(),
+          
+          // Spacer between logo and ticker
+          Container(
+            height: 2.h,
+            decoration: const BoxDecoration(
+              color: Color(0xFF18214F), // Dark navy background
+            ),
+          ),
           
           // Price ticker with API data
-          const PriceTicker(),
+          const TickerSection(),
           
           // Tab bar
           _buildTabBar(),
@@ -229,19 +238,15 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
     );
   }
 
-  Widget _buildPriceTicker() {
-    // Use shared PriceTicker widget
-    return PriceTicker();
-  }
 
   Widget _buildTabBar() {
     return Container(
-      color: AppTheme.lightTheme.colorScheme.surface,
+      color: const Color(0xFF18214F), // Dark navy background
       child: TabBar(
         controller: _tabController,
-        indicatorColor: AppTheme.lightTheme.colorScheme.primary,
-        labelColor: AppTheme.lightTheme.colorScheme.primary,
-        unselectedLabelColor: AppTheme.textSecondaryLight,
+        indicatorColor: const Color(0xFFE8D095),
+        labelColor: const Color(0xFFE8D095),
+        unselectedLabelColor: Colors.white.withOpacity(0.6),
         tabs: [
           Tab(
             child: Row(
@@ -256,8 +261,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                         return CustomIconWidget(
                           iconName: 'notifications_active',
                           color: _tabController.index == 0
-                              ? AppTheme.lightTheme.colorScheme.primary
-                              : AppTheme.textSecondaryLight,
+                              ? const Color(0xFFE8D095)
+                              : Colors.white.withOpacity(0.6),
                           size: 16,
                         );
                       },
@@ -274,8 +279,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
                         color: _tabController.index == 0
-                            ? AppTheme.lightTheme.colorScheme.primary
-                            : AppTheme.textSecondaryLight,
+                            ? const Color(0xFFE8D095)
+                            : Colors.white.withOpacity(0.6),
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -298,8 +303,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                         return CustomIconWidget(
                           iconName: 'history',
                           color: _tabController.index == 1
-                              ? AppTheme.lightTheme.colorScheme.primary
-                              : AppTheme.textSecondaryLight,
+                              ? const Color(0xFFE8D095)
+                              : Colors.white.withOpacity(0.6),
                           size: 16,
                         );
                       },
@@ -316,8 +321,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
                         color: _tabController.index == 1
-                            ? AppTheme.lightTheme.colorScheme.primary
-                            : AppTheme.textSecondaryLight,
+                            ? const Color(0xFFE8D095)
+                            : Colors.white.withOpacity(0.6),
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -417,7 +422,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen>
       width: 70.w,
       child: FloatingActionButton.extended(
         onPressed: _showAssetSelectionModal,
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: const Color(0xFF18214F),
         label: Text(
           'Alarm Ekle',
           style: TextStyle(

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/app_header.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/dashboard_header.dart';
+import '../../widgets/ticker_section.dart';
 
 class GoldCoinPricesScreen extends StatefulWidget {
   const GoldCoinPricesScreen({Key? key}) : super(key: key);
@@ -289,10 +290,10 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          AppHeader(textTopPadding: 1.0.h, titleVerticalOffset: 12.0, menuButtonVerticalOffset: 12.0),
+          const DashboardHeader(),
 
           // Price ticker with API data
-          const PriceTicker(),
+          const TickerSection(),
 
           // Main content with table
           Expanded(
@@ -302,57 +303,52 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                 ),
                 child: Column(
                   children: [
-                    // Table header
+                    // Table header - Dashboard style
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.lightTheme.colorScheme.primary,
-                            AppTheme.lightTheme.colorScheme.primaryContainer,
-                          ],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
+                      width: double.infinity,
+                      height: 4.h,
+                      padding: EdgeInsets.symmetric(horizontal: 4.w),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF18214F), // Dark navy background
                       ),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             flex: 3,
                             child: Text(
-                              'Birim',
-                              textAlign: TextAlign.left,
-                              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                color: Colors.white,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
+                              'PRODUKT',
+                              style: GoogleFonts.inter(
+                                fontSize: 4.w,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFE8D095), // Gold text
+                                height: 2,
                               ),
                             ),
                           ),
                           Expanded(
                             flex: 2,
                             child: Text(
-                              'Alış',
+                              'ANKAUF',
                               textAlign: TextAlign.center,
-                              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                color: Colors.white,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
+                              style: GoogleFonts.inter(
+                                fontSize: 4.w,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFE8D095), // Gold text
+                                height: 2,
                               ),
                             ),
                           ),
                           Expanded(
                             flex: 2,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 6.5.w),
-                              child: Text(
-                                'Satış',
-                                textAlign: TextAlign.center,
-                                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            child: Text(
+                              'VERKAUF',
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.inter(
+                                fontSize: 4.w,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFE8D095), // Gold text
+                                height: 2,
                               ),
                             ),
                           ),
@@ -360,11 +356,16 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                       ),
                     ),
 
-                    // Gold table
+                    // Gold table - Dashboard style
                     Expanded(
-                      child: Container(
-                        color: AppTheme.lightTheme.scaffoldBackgroundColor,
-                        child: _buildGoldTable(),
+                      child: RefreshIndicator(
+                        onRefresh: _handleRefresh,
+                        color: const Color(0xFFFFD700),
+                        backgroundColor: Colors.white,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: _buildGoldList(),
+                        ),
                       ),
                     ),
                   ],
@@ -433,152 +434,161 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     );
   }
 
-  Widget _buildGoldTable() {
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      color: AppTheme.lightTheme.colorScheme.primary,
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(top: 0.5.h),
-        itemCount: _goldCoinData.length,
-      itemBuilder: (context, index) {
-        final gold = _goldCoinData[index];
-        final isLastItem = index == _goldCoinData.length - 1;
-
-        return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
-          decoration: BoxDecoration(
-            color: AppTheme.lightTheme.scaffoldBackgroundColor,
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            ),
+  Widget _buildGoldList() {
+    if (_goldCoinData.isEmpty) {
+      return Container(
+        height: 20.h,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: const Color(0xFFFFD700),
           ),
-          child: _buildGoldRow(gold),
-        );
-      },
-      ),
+        ),
+      );
+    }
+    
+    return Column(
+      children: _goldCoinData.asMap().entries.map((entry) {
+        int index = entry.key;
+        Map<String, dynamic> gold = entry.value;
+        return _buildGoldRow(gold, index);
+      }).toList(),
     );
   }
 
-  Widget _buildGoldRow(Map<String, dynamic> gold) {
+  Widget _buildGoldRow(Map<String, dynamic> gold, int index) {
     final bool isPositive = gold['isPositive'] as bool;
-
-    return InkWell(
-      onTap: () {
-        // Navigate to asset detail screen with gold data
-        Navigator.pushNamed(
-          context, 
-          '/asset-detail-screen',
-          arguments: {
-            'code': gold['code'],
-          },
-        );
-      },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 1.2.h),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Gold info - with timestamp
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    gold['code'] as String,
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  SizedBox(height: 0.1.h),
-                  Text(
+    final double change = gold['change'] as double;
+    final String currentTime = "${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}";
+    
+    // Alternating row colors
+    final Color backgroundColor = index.isEven 
+        ? const Color(0xFFF0F0F0) // Darker gray for even rows
+        : const Color(0xFFFFFFFF); // White for odd rows
+    
+    return Container(
+      height: 8.h,
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left section - Gold name and time
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(height: 0.5.w),
+                Padding(
+                  padding: EdgeInsets.only(top: 1.w),
+                  child: Text(
                     gold['name'] as String,
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondaryLight,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w400,
+                    style: GoogleFonts.inter(
+                      fontSize: 4.w,
+                      fontWeight: FontWeight.bold, // Bold weight for name
+                      color: const Color(0xFF1E2939),
+                      height: 1.4,
                     ),
-                    overflow: TextOverflow.ellipsis,
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 0.1.h),
-                  Text(
-                    gold['timestamp'] as String,
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryLight,
-                      fontSize: 8.sp,
-                      fontWeight: FontWeight.w400,
+                ),
+                SizedBox(height: 2.w),
+                Padding(
+                  padding: EdgeInsets.only(top: 2.w),
+                  child: Text(
+                    currentTime,
+                    style: GoogleFonts.inter(
+                      fontSize: 3.w,
+                      fontWeight: FontWeight.normal,
+                      color: const Color(0xFF6B7280),
+                      height: 1.2,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Middle section - Buy price
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: EdgeInsets.only(top: 1.w),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Text(
+                  CurrencyFormatter.formatTRY(gold['buyPrice'] as double),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 4.w,
+                    fontWeight: FontWeight.w600, // Semi-bold weight
+                    color: const Color(0xFF1E2939),
+                    height: 1.8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Right section - Sell price and percentage change
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: EdgeInsets.only(right: 3.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(top: 1.w),
+                    child: Text(
+                      CurrencyFormatter.formatTRY(gold['sellPrice'] as double),
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w600, // Semi-bold weight
+                        color: const Color(0xFF1E2939),
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 1.5.w),
+                  Padding(
+                    padding: EdgeInsets.only(top: 1.5.w, right: 1.w),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
+                      decoration: BoxDecoration(
+                        color: isPositive 
+                            ? const Color(0xFFECFDF5) // Green background for increase
+                            : const Color(0xFFFEF2F2), // Red background for decrease
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: isPositive 
+                              ? const Color(0x33059669) // Fixed green border with opacity
+                              : const Color(0x1ADC2626), // Red border with opacity
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '%${change.abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                        style: GoogleFonts.inter(
+                          fontSize: 2.7.w,
+                          fontWeight: FontWeight.w500, // Medium weight
+                          color: isPositive 
+                              ? const Color(0xFF047857) // Green text
+                              : const Color(0xFFB91C1C), // Red text
+                          height: 1.0,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-
-            // Buy price - better aligned
-            Expanded(
-              flex: 2,
-              child: Container(
-                alignment: Alignment.center,
-                child: Text(
-                  CurrencyFormatter.formatTRY(gold['buyPrice'] as double),
-                  style: AppTheme.dataTextStyle(
-                    isLight: true,
-                    fontSize: 12.sp,
-                  ).copyWith(fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-            ),
-
-            // Sell price and percentage change - lowered position
-            Expanded(
-              flex: 2,
-              child: Container(
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.only(right: 2.w),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 2.0.h), // Push sell price down even more
-                    Text(
-                      CurrencyFormatter.formatTRY(gold['sellPrice'] as double),
-                      style: AppTheme.dataTextStyle(
-                        isLight: true,
-                        fontSize: 12.sp,
-                      ).copyWith(fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                    SizedBox(height: 0.2.h),
-                    Text(
-                      CurrencyFormatter.formatPercentageChange(gold['change'] as double),
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed,
-                        fontSize: 9.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

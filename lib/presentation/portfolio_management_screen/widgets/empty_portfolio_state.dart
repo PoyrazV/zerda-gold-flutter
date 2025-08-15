@@ -64,6 +64,7 @@ class EmptyPortfolioState extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF18214F),
                   padding: EdgeInsets.symmetric(vertical: 2.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

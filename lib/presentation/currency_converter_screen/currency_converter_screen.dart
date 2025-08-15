@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
@@ -8,8 +9,8 @@ import '../../services/currency_api_service.dart';
 import '../../services/datshop_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/price_ticker.dart';
-import '../../widgets/app_header.dart';
+import '../../widgets/dashboard_header.dart';
+import '../../widgets/ticker_section.dart';
 import './widgets/amount_input_widget.dart';
 import './widgets/currency_picker_bottom_sheet.dart';
 import './widgets/currency_selector_widget.dart';
@@ -389,10 +390,18 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          AppHeader(textTopPadding: 1.0.h),
+          const DashboardHeader(),
+
+          // Spacer between logo and ticker
+          Container(
+            height: 2.h,
+            decoration: const BoxDecoration(
+              color: Color(0xFF18214F), // Dark navy background
+            ),
+          ),
 
           // Price ticker with API data
-          const PriceTicker(),
+          const TickerSection(),
 
           // Main content
           Expanded(

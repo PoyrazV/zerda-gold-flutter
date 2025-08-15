@@ -245,7 +245,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 text: TextSpan(
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 20,
                     fontWeight: FontWeight.w600,
                   ),
                   children: [

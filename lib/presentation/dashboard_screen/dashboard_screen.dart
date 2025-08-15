@@ -206,12 +206,59 @@ class _DashboardScreenState extends State<DashboardScreen>
         : ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 2.w),
-            itemCount: _featuredCurrencies.length,
+            itemCount: _featuredCurrencies.length + 1, // +1 for add button
             itemBuilder: (context, index) {
+              if (index == _featuredCurrencies.length) {
+                return _buildAddTickerCard();
+              }
               final currency = _featuredCurrencies[index];
               return _buildTickerCard(currency);
             },
           ),
+    );
+  }
+
+  Widget _buildAddTickerCard() {
+    return Container(
+      width: 23.w, // Same width as ticker cards
+      height: 22.w, // Same height as ticker cards
+      margin: EdgeInsets.only(right: 2.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB), // Same background as ticker cards
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0x1A6B7280), // Same border as ticker cards
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          // TODO: Add functionality to add new ticker
+          print('Add ticker tapped');
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.add,
+                size: 6.w,
+                color: const Color(0xFF4B5563),
+              ),
+              SizedBox(height: 1.w),
+              Text(
+                'EKLE',
+                style: GoogleFonts.inter(
+                  fontSize: 3.w,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF4B5563),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

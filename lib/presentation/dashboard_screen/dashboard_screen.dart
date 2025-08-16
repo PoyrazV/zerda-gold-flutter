@@ -99,15 +99,57 @@ class _DashboardScreenState extends State<DashboardScreen>
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Modern Mobile-First Header
-          const DashboardHeader(),
+          // Modern Mobile-First Header with reduced bottom spacing
+          Container(
+            height: 13.h,
+            decoration: const BoxDecoration(
+              color: Color(0xFF18214F),
+            ),
+            child: SafeArea(
+              top: true,
+              child: Padding(
+                padding: EdgeInsets.only(left: 4.w, right: 4.w, top: 0.5.h), // Aligned with DashboardHeader widget
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (BuildContext context) {
+                        return IconButton(
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          icon: Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                            size: 8.w,
+                          ),
+                        );
+                      },
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: SvgPicture.asset(
+                          'assets/images/zerda-gold-logo.svg',
+                          height: 5.h,
+                          width: 25.w,
+                          fit: BoxFit.contain,
+                          placeholderBuilder: (context) => SizedBox(
+                            height: 5.h,
+                            width: 25.w,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                  ],
+                ),
+              ),
+            ),
+          ),
           
           // Main content with fixed ticker and header
           Expanded(
             child: Column(
               children: [
                 // Horizontal scrollable ticker cards - Fixed at top
-                const TickerSection(),
+                const TickerSection(reduceBottomPadding: true),
                 
                 // Table header - Fixed below ticker
                 _buildTableHeader(),

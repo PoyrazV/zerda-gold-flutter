@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
@@ -289,11 +290,53 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Header with ZERDA branding
-          const DashboardHeader(),
+          // Header with ZERDA branding with reduced bottom spacing
+          Container(
+            height: 13.h,
+            decoration: const BoxDecoration(
+              color: Color(0xFF18214F),
+            ),
+            child: SafeArea(
+              top: true,
+              child: Padding(
+                padding: EdgeInsets.only(left: 4.w, right: 4.w, top: 0.5.h), // Aligned with DashboardHeader widget
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (BuildContext context) {
+                        return IconButton(
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          icon: Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                            size: 8.w,
+                          ),
+                        );
+                      },
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: SvgPicture.asset(
+                          'assets/images/zerda-gold-logo.svg',
+                          height: 5.h,
+                          width: 25.w,
+                          fit: BoxFit.contain,
+                          placeholderBuilder: (context) => SizedBox(
+                            height: 5.h,
+                            width: 25.w,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
           // Price ticker with API data
-          const TickerSection(),
+          const TickerSection(reduceBottomPadding: true),
 
           // Main content with table
           Expanded(

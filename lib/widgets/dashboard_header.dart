@@ -37,12 +37,12 @@ class DashboardHeader extends StatelessWidget {
                 child: Center(
                   child: SvgPicture.asset(
                     'assets/images/zerda-gold-logo.svg',
-                    height: 8.h, // Increased height for better visibility
-                    width: 40.w, // Increased width constraint
+                    height: 5.h, // Reduced height
+                    width: 25.w, // Reduced width constraint
                     fit: BoxFit.contain,
                     placeholderBuilder: (context) => SizedBox(
-                      height: 8.h,
-                      width: 40.w,
+                      height: 5.h,
+                      width: 25.w,
                     ),
                   ),
                 ),

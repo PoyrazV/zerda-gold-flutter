@@ -161,62 +161,80 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
       itemCount: sarrafiyeData.length,
       itemBuilder: (context, index) {
         final item = sarrafiyeData[index];
-        final isLastItem = index == sarrafiyeData.length - 1;
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Darker gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          height: 8.h,
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
           decoration: BoxDecoration(
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            ),
+            color: backgroundColor,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 1.6.h, horizontal: 0.w),
-            child: Row(
-              children: [
-                // Name
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    item['name'] as String,
-                    style: AppTheme.dataTextStyle(
-                      isLight: true,
-                      fontSize: 12.sp,
-                    ).copyWith(fontWeight: FontWeight.w500),
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left section - Asset name
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      item['name'] as String,
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E2939),
+                        height: 1.4,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                // Buy price
-                Expanded(
-                  flex: 2,
+              ),
+              // Middle section - Buy price
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.center,
                   child: Text(
-                    CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: 4),
+                    CurrencyFormatter.formatExchangeRate(item['buyPrice'] as double),
                     textAlign: TextAlign.center,
-                    style: AppTheme.dataTextStyle(
-                      isLight: true,
-                      fontSize: 12.sp,
-                    ).copyWith(fontWeight: FontWeight.w500),
-                  ),
-                ),
-                // Sell price
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    alignment: Alignment.centerRight,
-                    padding: EdgeInsets.only(right: 4.w),
-                    child: Text(
-                      CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: 4),
-                      style: AppTheme.dataTextStyle(
-                        isLight: true,
-                        fontSize: 12.sp,
-                      ).copyWith(fontWeight: FontWeight.w500),
+                    style: GoogleFonts.inter(
+                      fontSize: 4.w,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E2939),
+                      height: 1.8,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              // Right section - Sell price
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 3.w),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      CurrencyFormatter.formatExchangeRate(item['sellPrice'] as double),
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E2939),
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },

@@ -6,6 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
+import '../../widgets/gold_bars_icon.dart';
 
 class AssetSelectionScreen extends StatefulWidget {
   const AssetSelectionScreen({Key? key}) : super(key: key);
@@ -131,6 +132,9 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _refreshController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -496,9 +500,9 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       color: const Color(0xFF18214F),
       child: TabBar(
         controller: _tabController,
-        indicatorColor: const Color(0xFFFFD700), // Gold indicator
+        indicatorColor: const Color(0xFFE8D095), // Gold indicator
         indicatorWeight: 3,
-        labelColor: const Color(0xFFFFD700), // Gold for selected
+        labelColor: const Color(0xFFE8D095), // Gold for selected
         unselectedLabelColor: Colors.grey, // Gray for unselected
         tabs: [
           Tab(
@@ -524,9 +528,9 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.diamond,
+                GoldBarsIcon(
                   size: 16,
+                  color: _tabController.index == 1 ? const Color(0xFFE8D095) : Colors.grey,
                 ),
                 SizedBox(width: 1.w),
                 Text(

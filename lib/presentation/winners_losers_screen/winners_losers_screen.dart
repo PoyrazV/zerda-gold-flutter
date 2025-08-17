@@ -324,14 +324,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
     return Container(
       height: 12.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: const Color(0xFF18214F),
       ),
       child: SafeArea(
         child: Padding(
@@ -358,10 +351,10 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
                 ),
               ),
 
-              // KAZANANLAR/KAYBEDENLER title - perfectly centered
+              // Performans Geçmişi title - perfectly centered
               Center(
                 child: Text(
-                  'KAZANANLAR/KAYBEDENLER',
+                  'Performans Geçmişi',
                   textAlign: TextAlign.center,
                   style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                     color: Colors.white,

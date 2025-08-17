@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../core/app_export.dart';
 import '../services/currency_api_service.dart';
+import '../services/watchlist_service.dart';
 
 class TickerSection extends StatefulWidget {
   final bool reduceBottomPadding;
@@ -17,33 +18,73 @@ class TickerSection extends StatefulWidget {
 
 class _TickerSectionState extends State<TickerSection> {
   final CurrencyApiService _currencyApiService = CurrencyApiService();
-  List<Map<String, dynamic>> _featuredCurrencies = [];
+  List<Map<String, dynamic>> _tickerData = [];
+  
+  // Default popular currency pairs when watchlist is empty
+  final List<Map<String, dynamic>> _defaultCurrencies = [
+    {'code': 'USD/EUR', 'name': 'USD/EUR', 'buyPrice': 0.92, 'sellPrice': 0.93, 'change': 0.45, 'isPositive': true},
+    {'code': 'GBP/EUR', 'name': 'GBP/EUR', 'buyPrice': 1.17, 'sellPrice': 1.18, 'change': -0.23, 'isPositive': false},
+    {'code': 'CHF/EUR', 'name': 'CHF/EUR', 'buyPrice': 1.04, 'sellPrice': 1.05, 'change': 0.12, 'isPositive': true},
+    {'code': 'AUD/EUR', 'name': 'AUD/EUR', 'buyPrice': 0.60, 'sellPrice': 0.61, 'change': -0.38, 'isPositive': false},
+    {'code': 'JPY/EUR', 'name': 'JPY/EUR', 'buyPrice': 0.0062, 'sellPrice': 0.0063, 'change': 0.67, 'isPositive': true},
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadCurrencyData();
+    _loadTickerData();
+    // Listen to watchlist changes
+    WatchlistService.addListener(_updateTicker);
+  }
+  
+  @override
+  void dispose() {
+    WatchlistService.removeListener(_updateTicker);
+    super.dispose();
+  }
+  
+  void _updateTicker() {
+    if (mounted) {
+      _loadTickerData();
+    }
   }
 
-  Future<void> _loadCurrencyData() async {
-    try {
-      final currencies = await _currencyApiService.getFormattedCurrencyData();
-      if (mounted) {
-        setState(() {
-          // Select featured currencies (USD, GBP, TRY, CHF, JPY)
-          _featuredCurrencies = [
-            ...currencies.where((c) => 
-              c['code'] == 'USD/EUR' || 
-              c['code'] == 'TRY/EUR' || 
-              c['code'] == 'GBP/EUR' ||
-              c['code'] == 'CHF/EUR' ||
-              c['code'] == 'JPY/EUR'
-            ).take(5),
-          ];
-        });
+  Future<void> _loadTickerData() async {
+    // Get watchlist items
+    final watchlistItems = WatchlistService.getWatchlistItems();
+    
+    if (watchlistItems.isNotEmpty) {
+      // Use watchlist items for ticker
+      setState(() {
+        _tickerData = watchlistItems.take(10).toList(); // Limit to 10 items
+      });
+    } else {
+      // Use default popular currencies when watchlist is empty
+      try {
+        // Try to get real data from API for popular pairs
+        final currencies = await _currencyApiService.getFormattedCurrencyData();
+        if (mounted) {
+          setState(() {
+            // Try to find the default pairs in API data
+            final List<Map<String, dynamic>> apiTickerData = [];
+            for (var defaultPair in _defaultCurrencies) {
+              final apiData = currencies.firstWhere(
+                (c) => c['code'] == defaultPair['code'],
+                orElse: () => defaultPair, // Use default if not found
+              );
+              apiTickerData.add(apiData);
+            }
+            _tickerData = apiTickerData.isNotEmpty ? apiTickerData : _defaultCurrencies;
+          });
+        }
+      } catch (e) {
+        // Fall back to default data on error
+        if (mounted) {
+          setState(() {
+            _tickerData = _defaultCurrencies;
+          });
+        }
       }
-    } catch (e) {
-      print('Error loading currency data: $e');
     }
   }
 
@@ -55,7 +96,7 @@ class _TickerSectionState extends State<TickerSection> {
         color: Color(0xFF18214F), // Dark navy background for ticker section
       ),
       padding: EdgeInsets.only(bottom: widget.reduceBottomPadding ? 0.5.w : 2.w), // Conditional bottom padding
-      child: _featuredCurrencies.isEmpty
+      child: _tickerData.isEmpty
           ? Center(
               child: SizedBox(
                 width: 5.w,
@@ -69,12 +110,12 @@ class _TickerSectionState extends State<TickerSection> {
           : ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 2.w),
-              itemCount: _featuredCurrencies.length + 1, // +1 for add button
+              itemCount: _tickerData.length + 1, // +1 for add button
               itemBuilder: (context, index) {
-                if (index == _featuredCurrencies.length) {
+                if (index == _tickerData.length) {
                   return _buildAddTickerCard();
                 }
-                final currency = _featuredCurrencies[index];
+                final currency = _tickerData[index];
                 return _buildTickerCard(currency);
               },
             ),

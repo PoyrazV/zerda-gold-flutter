@@ -359,7 +359,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
                   style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 14.sp,
+                    fontSize: 20.sp,
                     letterSpacing: 0.5,
                   ),
                   overflow: TextOverflow.ellipsis,

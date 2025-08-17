@@ -802,54 +802,52 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
               ),
             ),
 
-            // Price
+            // Price and percentage
             Expanded(
-              flex: 2,
-              child: Text(
-                CurrencyFormatter.formatEUR((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 4.w,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E2939),
-                  height: 1.8,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-
-            // Percentage change with Dashboard style badge
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-                  decoration: BoxDecoration(
-                    color: isPositive 
-                        ? const Color(0xFFECFDF5) // Green background for increase
-                        : const Color(0xFFFEF2F2), // Red background for decrease
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: isPositive 
-                          ? const Color(0x33059669) // Green border with opacity
-                          : const Color(0x1ADC2626), // Red border with opacity
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    '%${changePercent.abs().toStringAsFixed(2).replaceAll('.', ',')}',
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    CurrencyFormatter.formatEUR((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
                     style: GoogleFonts.inter(
-                      fontSize: 3.5.w,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 4.w,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E2939),
+                      height: 1.4,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  SizedBox(height: 0.3.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 1.5.w, vertical: 0.2.h),
+                    decoration: BoxDecoration(
                       color: isPositive 
-                          ? const Color(0xFF059669) // Green text
-                          : const Color(0xFFDC2626), // Red text
-                      height: 1.2,
+                          ? const Color(0xFFECFDF5) // Green background for increase
+                          : const Color(0xFFFEF2F2), // Red background for decrease
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: isPositive 
+                            ? const Color(0x33059669) // Green border with opacity
+                            : const Color(0x1ADC2626), // Red border with opacity
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '%${changePercent.abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: GoogleFonts.inter(
+                        fontSize: 2.8.w,
+                        fontWeight: FontWeight.w600,
+                        color: isPositive 
+                            ? const Color(0xFF059669) // Green text
+                            : const Color(0xFFDC2626), // Red text
+                        height: 1.2,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
 

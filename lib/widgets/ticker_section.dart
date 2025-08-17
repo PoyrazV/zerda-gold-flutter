@@ -17,14 +17,7 @@ class TickerSection extends StatefulWidget {
 
 class _TickerSectionState extends State<TickerSection> {
   final CurrencyApiService _currencyApiService = CurrencyApiService();
-  List<Map<String, dynamic>> _featuredCurrencies = [
-    // Default values to show immediately
-    {'code': 'USD/EUR', 'name': 'USD/EUR', 'buyPrice': 1.0856, 'change': 0.12, 'isPositive': true},
-    {'code': 'TRY/EUR', 'name': 'TRY/EUR', 'buyPrice': 0.0266, 'change': -0.08, 'isPositive': false},
-    {'code': 'GBP/EUR', 'name': 'GBP/EUR', 'buyPrice': 1.1789, 'change': 0.05, 'isPositive': true},
-    {'code': 'CHF/EUR', 'name': 'CHF/EUR', 'buyPrice': 1.0234, 'change': -0.03, 'isPositive': false},
-    {'code': 'JPY/EUR', 'name': 'JPY/EUR', 'buyPrice': 0.0061, 'change': 0.15, 'isPositive': true},
-  ];
+  List<Map<String, dynamic>> _featuredCurrencies = [];
 
   @override
   void initState() {
@@ -62,18 +55,29 @@ class _TickerSectionState extends State<TickerSection> {
         color: Color(0xFF18214F), // Dark navy background for ticker section
       ),
       padding: EdgeInsets.only(bottom: widget.reduceBottomPadding ? 0.5.w : 2.w), // Conditional bottom padding
-      child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 2.w),
-            itemCount: _featuredCurrencies.length + 1, // +1 for add button
-            itemBuilder: (context, index) {
-              if (index == _featuredCurrencies.length) {
-                return _buildAddTickerCard();
-              }
-              final currency = _featuredCurrencies[index];
-              return _buildTickerCard(currency);
-            },
-          ),
+      child: _featuredCurrencies.isEmpty
+          ? Center(
+              child: SizedBox(
+                width: 5.w,
+                height: 5.w,
+                child: CircularProgressIndicator(
+                  color: const Color(0xFFFFD700),
+                  strokeWidth: 2,
+                ),
+              ),
+            )
+          : ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 2.w),
+              itemCount: _featuredCurrencies.length + 1, // +1 for add button
+              itemBuilder: (context, index) {
+                if (index == _featuredCurrencies.length) {
+                  return _buildAddTickerCard();
+                }
+                final currency = _featuredCurrencies[index];
+                return _buildTickerCard(currency);
+              },
+            ),
     );
   }
 

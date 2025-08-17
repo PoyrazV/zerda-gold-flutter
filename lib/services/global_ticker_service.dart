@@ -10,13 +10,7 @@ class GlobalTickerService extends ChangeNotifier {
 
   final CurrencyApiService _currencyApiService = CurrencyApiService();
   
-  List<Map<String, dynamic>> _tickerData = [
-    // Default data to show immediately
-    {'symbol': 'USD/TRY', 'price': 34.5958, 'change': 0.12, 'changePercent': 0.35},
-    {'symbol': 'EUR/TRY', 'price': 37.4891, 'change': -0.08, 'changePercent': -0.21},
-    {'symbol': 'GBP/TRY', 'price': 43.8056, 'change': 0.15, 'changePercent': 0.34},
-    {'symbol': 'GOLD', 'price': 2845.50, 'change': 12.30, 'changePercent': 0.43},
-  ];
+  List<Map<String, dynamic>> _tickerData = [];
   bool _isLoading = false;
   bool _hasInitialData = false;
   Timer? _refreshTimer;
@@ -46,9 +40,8 @@ class GlobalTickerService extends ChangeNotifier {
   Future<void> _fetchTickerData() async {
     if (_isLoading) return;
     
-    // Don't set loading to true to avoid loading indicator
-    // _isLoading = true;
-    // notifyListeners();
+    _isLoading = true;
+    notifyListeners();
 
     try {
       // Get watchlist items

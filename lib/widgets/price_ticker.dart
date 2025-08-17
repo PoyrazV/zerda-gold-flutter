@@ -52,16 +52,6 @@ class _PriceTickerState extends State<PriceTicker> {
     } else {
       // Use global ticker service data (API data only, no fallback to mock)
       tickerData = _globalTickerService.getCurrentTickerData();
-      
-      // If no data yet, use default values to avoid loading indicator
-      if (tickerData.isEmpty) {
-        tickerData = [
-          {'symbol': 'USD/TRY', 'price': 34.5958, 'change': 0.12, 'changePercent': 0.35},
-          {'symbol': 'EUR/TRY', 'price': 37.4891, 'change': -0.08, 'changePercent': -0.21},
-          {'symbol': 'GBP/TRY', 'price': 43.8056, 'change': 0.15, 'changePercent': 0.34},
-          {'symbol': 'GOLD', 'price': 2845.50, 'change': 12.30, 'changePercent': 0.43},
-        ];
-      }
     }
 
     return Column(
@@ -79,22 +69,33 @@ class _PriceTickerState extends State<PriceTicker> {
             ),
           ),
           padding: EdgeInsets.only(bottom: 2.w),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 2.w),
-            itemCount: tickerData.length + (widget.showAddButton ? 1 : 0),
-            itemBuilder: (context, index) {
-              // Add button at the end
-              if (widget.showAddButton && index == tickerData.length) {
-                return _buildAddButton(context);
-              }
+          child: tickerData.isEmpty
+              ? Center(
+                  child: SizedBox(
+                    width: 5.w,
+                    height: 5.w,
+                    child: const CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: 2.w),
+                  itemCount: tickerData.length + (widget.showAddButton ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    // Add button at the end
+                    if (widget.showAddButton && index == tickerData.length) {
+                      return _buildAddButton(context);
+                    }
 
-              final data = tickerData[index];
-              final bool isPositive = (data['change'] as double? ?? 0) >= 0;
+                    final data = tickerData[index];
+                    final bool isPositive = (data['change'] as double? ?? 0) >= 0;
 
-              return _buildTickerItem(context, data, isPositive);
-            },
-          ),
+                    return _buildTickerItem(context, data, isPositive);
+                  },
+                ),
         ),
       ],
     );

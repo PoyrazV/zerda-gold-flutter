@@ -110,7 +110,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
           Expanded(
             flex: 3,
             child: Text(
-              'BİRİM',
+              'PRODUKT',
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
@@ -122,7 +122,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
           Expanded(
             flex: 2,
             child: Text(
-              'ALIŞ',
+              'ANKAUF',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 4.w,
@@ -135,7 +135,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
           Expanded(
             flex: 2,
             child: Text(
-              'SATIŞ',
+              'VERKAUF',
               textAlign: TextAlign.right,
               style: GoogleFonts.inter(
                 fontSize: 4.w,

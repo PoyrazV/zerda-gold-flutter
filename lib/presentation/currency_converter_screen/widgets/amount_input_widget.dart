@@ -24,7 +24,7 @@ class AmountInputWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
@@ -47,6 +47,7 @@ class AmountInputWidget extends StatelessWidget {
               color: AppTheme.lightTheme.colorScheme.onSurface
                   .withValues(alpha: 0.6),
               fontWeight: FontWeight.w500,
+              fontSize: 12.sp,
             ),
           ),
           SizedBox(height: 1.h),

@@ -24,7 +24,7 @@ class QuickConverterWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
@@ -45,8 +45,8 @@ class QuickConverterWidget extends StatelessWidget {
             children: [
               CustomIconWidget(
                 iconName: 'flash_on',
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 20,
+                color: const Color(0xFF18214F),
+                size: 24,
               ),
               SizedBox(width: 2.w),
               Text(
@@ -54,11 +54,12 @@ class QuickConverterWidget extends StatelessWidget {
                 style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppTheme.lightTheme.colorScheme.onSurface,
+                  fontSize: 14.sp,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 0.5.h),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -100,7 +101,7 @@ class QuickConverterWidget extends StatelessWidget {
                               '${CurrencyFormatter.formatNumber(amount, decimalPlaces: 0)} $fromCurrency',
                               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.lightTheme.colorScheme.primary,
+                                color: const Color(0xFF18214F),
                                 fontSize: 14.sp,
                               ),
                               textAlign: TextAlign.center,

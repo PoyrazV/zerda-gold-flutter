@@ -9,8 +9,8 @@ class AppTheme {
   static const Color primaryLight =
       Color(0xFF1A237E); // Deep blue for navigation headers
   static const Color primaryVariantLight =
-      Color(0xFF512DA8); // Purple accent for gradients
-  static const Color secondaryLight = Color(0xFF512DA8); // Purple accent
+      Color(0xFF283593); // Indigo blue for gradients
+  static const Color secondaryLight = Color(0xFF283593); // Indigo blue accent
   static const Color secondaryVariantLight = Color(0xFF1A237E);
   static const Color backgroundLight =
       Color(0xFFFAFAFA); // Light neutral background
@@ -30,8 +30,8 @@ class AppTheme {
   static const Color primaryDark =
       Color(0xFF3F51B5); // Lighter blue for dark mode
   static const Color primaryVariantDark =
-      Color(0xFF7986CB); // Lighter purple variant
-  static const Color secondaryDark = Color(0xFF7986CB);
+      Color(0xFF5C6BC0); // Lighter indigo blue variant
+  static const Color secondaryDark = Color(0xFF5C6BC0);
   static const Color secondaryVariantDark = Color(0xFF3F51B5);
   static const Color backgroundDark = Color(0xFF121212); // Dark background
   static const Color surfaceDark = Color(0xFF1E1E1E); // Dark surface

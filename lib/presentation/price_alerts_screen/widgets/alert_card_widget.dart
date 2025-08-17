@@ -177,7 +177,7 @@ class AlertCardWidget extends StatelessWidget {
                   Switch(
                     value: isEnabled,
                     onChanged: (value) => onToggle?.call(),
-                    activeColor: AppTheme.lightTheme.colorScheme.primary,
+                    activeColor: const Color(0xFF18214F),
                   ),
                 ],
               ),

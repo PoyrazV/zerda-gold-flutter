@@ -370,8 +370,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     final toCode = _toCurrency['code'];
 
     final shareText = '$fromAmount $fromCode = $toAmount $toCode\n'
-        'Kur: 1 $fromCode = ${CurrencyFormatter.formatExchangeRate(_exchangeRate)} $toCode\n'
-        'FinTracker Pro ile hesaplandı';
+        'Kur: 1 $fromCode = ${CurrencyFormatter.formatExchangeRate(_exchangeRate)} $toCode\n';
 
     // In a real app, you would use share_plus package
     ScaffoldMessenger.of(context).showSnackBar(
@@ -385,7 +384,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF9FAFB),
       drawer: const AppDrawer(),
       body: Column(
         children: [
@@ -394,7 +393,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
 
           // Spacer between logo and ticker
           Container(
-            height: 2.h,
             decoration: const BoxDecoration(
               color: Color(0xFF18214F), // Dark navy background
             ),
@@ -471,8 +469,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                                 child: Container(
                                   padding: EdgeInsets.all(3.w),
                                   decoration: BoxDecoration(
-                                    color:
-                                        AppTheme.lightTheme.colorScheme.primary,
+                                    color: const Color(0xFF18214F),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
@@ -486,8 +483,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                                     angle: 1.5708, // 90 degrees in radians (π/2)
                                     child: CustomIconWidget(
                                       iconName: 'swap_vert',
-                                      color:
-                                          AppTheme.lightTheme.colorScheme.onPrimary,
+                                      color: const Color(0xFFE8D095),
                                       size: 24,
                                     ),
                                   ),

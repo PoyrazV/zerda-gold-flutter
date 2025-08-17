@@ -11,24 +11,22 @@ import 'services/watchlist_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize AuthService
-  await AuthService().initialize();
-
-  // Initialize GlobalTickerService (will use default currencies when watchlist is empty)
-  await GlobalTickerService().initialize();
-
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return CustomErrorWidget(
       errorDetails: details,
     );
   };
-  // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
-  Future.wait([
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-  ]).then((value) {
-    runApp(MyApp());
-  });
+  
+  // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE  
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  
+  // Run app immediately, initialize services in background
+  runApp(MyApp());
+  
+  // Initialize services after app starts
+  AuthService().initialize();
+  GlobalTickerService().initialize();
 }
 
 class MyApp extends StatelessWidget {

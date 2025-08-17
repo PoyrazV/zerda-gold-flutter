@@ -130,7 +130,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
           
           // Spacer between logo and ticker
           Container(
-            height: 2.h,
             decoration: const BoxDecoration(
               color: Color(0xFF18214F), // Dark navy background
             ),

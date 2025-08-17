@@ -27,29 +27,32 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _initializeApp();
+    // Start initialization after a minimal delay to let the screen render
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
+    });
   }
 
   void _setupAnimations() {
     // Logo animation controller
     _logoAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
     // Loading animation controller
     _loadingAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
 
-    // Logo scale animation with bounce effect
+    // Logo scale animation with fast ease
     _logoScaleAnimation = Tween<double>(
-      begin: 0.5,
+      begin: 0.8,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _logoAnimationController,
-      curve: Curves.elasticOut,
+      curve: Curves.easeOutCubic,
     ));
 
     // Logo opacity animation
@@ -77,32 +80,27 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializeApp() async {
     try {
       // Start loading animation after logo appears
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 300));
       _loadingAnimationController.forward();
 
       // Step 1: Check authentication status
-      await _updateLoadingState('Checking authentication...', 0.2);
-      await Future.delayed(const Duration(milliseconds: 500));
+      await _updateLoadingState('Checking authentication...', 0.25);
+      await Future.delayed(const Duration(milliseconds: 150));
       final bool isAuthenticated = await _checkAuthenticationStatus();
 
       // Step 2: Load user preferences
-      await _updateLoadingState('Loading preferences...', 0.4);
-      await Future.delayed(const Duration(milliseconds: 400));
+      await _updateLoadingState('Loading preferences...', 0.50);
+      await Future.delayed(const Duration(milliseconds: 150));
       await _loadUserPreferences();
 
       // Step 3: Fetch market data configuration
-      await _updateLoadingState('Fetching market data...', 0.6);
-      await Future.delayed(const Duration(milliseconds: 600));
+      await _updateLoadingState('Fetching market data...', 0.75);
+      await Future.delayed(const Duration(milliseconds: 150));
       await _fetchMarketDataConfiguration();
 
-      // Step 4: Prepare cached data
-      await _updateLoadingState('Preparing data...', 0.8);
-      await Future.delayed(const Duration(milliseconds: 400));
-      await _prepareCachedData();
-
-      // Step 5: Complete initialization
+      // Step 4: Complete initialization
       await _updateLoadingState('Ready!', 1.0);
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Navigate based on authentication status
       if (mounted) {
@@ -228,13 +226,14 @@ class _SplashScreenState extends State<SplashScreen>
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
-                AppTheme.lightTheme.colorScheme.primary,
-                AppTheme.lightTheme.colorScheme.primaryContainer,
+                Color(0xFF18214F), // Dark navy - matches header
+                Color(0xFF1E2A5E), // Smooth transition
+                Color(0xFF283593), // Indigo blue
               ],
             ),
           ),
@@ -289,26 +288,19 @@ class _SplashScreenState extends State<SplashScreen>
   Widget _buildAppLogo() {
     return Column(
       children: [
-        // App Icon/Logo
+        // App Icon/Logo - Simplified without shadows for faster rendering
         Container(
           width: 25.w,
           height: 25.w,
           decoration: BoxDecoration(
-            color: AppTheme.lightTheme.colorScheme.surface,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
           ),
           child: Center(
             child: Text(
               'Z',
-              style: AppTheme.lightTheme.textTheme.displayLarge?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.primary,
+              style: TextStyle(
+                color: const Color(0xFF18214F),
                 fontWeight: FontWeight.bold,
                 fontSize: 48.sp,
               ),
@@ -321,8 +313,8 @@ class _SplashScreenState extends State<SplashScreen>
         // App Name
         Text(
           'ZERDA',
-          style: AppTheme.lightTheme.textTheme.headlineMedium?.copyWith(
-            color: AppTheme.lightTheme.colorScheme.onPrimary,
+          style: TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.2,
             fontSize: 24.sp,
@@ -334,10 +326,10 @@ class _SplashScreenState extends State<SplashScreen>
         // App Tagline
         Text(
           'Professional Financial Tracking',
-          style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: AppTheme.lightTheme.colorScheme.onPrimary
-                .withValues(alpha: 0.8),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
             letterSpacing: 0.5,
+            fontSize: 14.sp,
           ),
         ),
       ],
@@ -352,8 +344,7 @@ class _SplashScreenState extends State<SplashScreen>
           width: 60.w,
           height: 4,
           decoration: BoxDecoration(
-            color: AppTheme.lightTheme.colorScheme.onPrimary
-                .withValues(alpha: 0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),
           child: FractionallySizedBox(
@@ -361,7 +352,7 @@ class _SplashScreenState extends State<SplashScreen>
             widthFactor: _loadingProgress,
             child: Container(
               decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.onPrimary,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -374,8 +365,7 @@ class _SplashScreenState extends State<SplashScreen>
         Text(
           _loadingText,
           style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: AppTheme.lightTheme.colorScheme.onPrimary
-                .withValues(alpha: 0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             letterSpacing: 0.3,
           ),
         ),
@@ -386,8 +376,7 @@ class _SplashScreenState extends State<SplashScreen>
         Text(
           '${(_loadingProgress * 100).toInt()}%',
           style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-            color: AppTheme.lightTheme.colorScheme.onPrimary
-                .withValues(alpha: 0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -402,8 +391,7 @@ class _SplashScreenState extends State<SplashScreen>
         RichText(
           text: TextSpan(
             style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-              color: AppTheme.lightTheme.colorScheme.onPrimary
-                  .withValues(alpha: 0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
             ),
@@ -426,8 +414,7 @@ class _SplashScreenState extends State<SplashScreen>
         Text(
           'COSMOS IT+ tarafından hazırlanmıştır.',
           style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-            color: AppTheme.lightTheme.colorScheme.onPrimary
-                .withValues(alpha: 0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 11.sp,
           ),
         ),

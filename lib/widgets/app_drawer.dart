@@ -42,13 +42,15 @@ class _AppDrawerState extends State<AppDrawer> {
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF4A148C), // Deep purple
-              Color(0xFF6A1B9A), // Purple
-              Color(0xFF8E24AA), // Light purple
+              Color(0xFF18214F), // Dark navy - matches header
+              Color(0xFF1E2A5E), // Intermediate color for smooth transition
+              Color(0xFF243570), // Another intermediate
+              Color(0xFF283593), // Indigo blue
             ],
+            stops: [0.0, 0.35, 0.70, 1.0], // Gradual color stops
           ),
         ),
         child: Column(
@@ -271,8 +273,12 @@ class _AppDrawerState extends State<AppDrawer> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       decoration: isActive ? BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
       ) : null,
       child: ListTile(
         leading: icon,
@@ -299,8 +305,12 @@ class _AppDrawerState extends State<AppDrawer> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       decoration: isActive ? BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
       ) : null,
       child: ListTile(
         leading: Icon(

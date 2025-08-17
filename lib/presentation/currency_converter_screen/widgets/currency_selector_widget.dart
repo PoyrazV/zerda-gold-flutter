@@ -19,6 +19,24 @@ class CurrencySelectorWidget extends StatelessWidget {
   bool _isGoldCurrency(String code) {
     return ['GRAM', 'ÇEYREK', 'YARIM', 'TAM', 'ONS'].contains(code);
   }
+  
+  String _getDisplayCode(String code) {
+    // Shorten gold currency names to 3 letters
+    switch (code) {
+      case 'GRAM':
+        return 'GRM';
+      case 'ÇEYREK':
+        return 'ÇYR';
+      case 'YARIM':
+        return 'YRM';
+      case 'TAM':
+        return 'TAM';
+      case 'ONS':
+        return 'ONS';
+      default:
+        return code;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +45,7 @@ class CurrencySelectorWidget extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
         decoration: BoxDecoration(
-          color: AppTheme.lightTheme.colorScheme.surface,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
@@ -67,7 +85,7 @@ class CurrencySelectorWidget extends StatelessWidget {
             ),
             SizedBox(width: 2.w),
             Text(
-              currencyCode,
+              _getDisplayCode(currencyCode),
               style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.lightTheme.colorScheme.onSurface,

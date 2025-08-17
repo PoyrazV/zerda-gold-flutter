@@ -7,7 +7,9 @@ import '../core/app_export.dart';
 import '../services/currency_api_service.dart';
 
 class TickerSection extends StatefulWidget {
-  const TickerSection({Key? key}) : super(key: key);
+  final bool reduceBottomPadding;
+  
+  const TickerSection({Key? key, this.reduceBottomPadding = false}) : super(key: key);
 
   @override
   State<TickerSection> createState() => _TickerSectionState();
@@ -48,11 +50,11 @@ class _TickerSectionState extends State<TickerSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 27.w, // Increased height to include bottom padding
+      height: 27.w, // Reduced height to decrease spacing
       decoration: const BoxDecoration(
         color: Color(0xFF18214F), // Dark navy background for ticker section
       ),
-      padding: EdgeInsets.only(bottom: 3.w), // Bottom padding instead of margin
+      padding: EdgeInsets.only(bottom: widget.reduceBottomPadding ? 0.5.w : 2.w), // Conditional bottom padding
       child: _featuredCurrencies.isEmpty 
         ? Center(
             child: CircularProgressIndicator(

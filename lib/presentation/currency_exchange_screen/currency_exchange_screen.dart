@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/ticker_section.dart';
 import './widgets/bottom_navigation_widget.dart';
 import './widgets/currency_table_widget.dart';
 import './widgets/header_widget.dart';
@@ -219,7 +219,7 @@ class _CurrencyExchangeScreenState extends State<CurrencyExchangeScreen>
             ),
             
             // Price ticker with API data
-            const PriceTicker(),
+            const TickerSection(reduceBottomPadding: false),
 
             // Featured currencies cards section
             Container(

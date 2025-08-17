@@ -3,7 +3,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/ticker_section.dart';
 import './widgets/interactive_chart_widget.dart';
 import './widgets/key_metrics_widget.dart';
 
@@ -242,7 +242,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
 
           // Price ticker
           // Price ticker with API data
-          const PriceTicker(),
+          const TickerSection(reduceBottomPadding: false),
 
           // Main content
           Expanded(

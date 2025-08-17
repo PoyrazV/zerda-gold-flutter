@@ -6,7 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/ticker_section.dart';
 import './widgets/segmented_control_widget.dart';
 import './widgets/timeframe_filter_widget.dart';
 import './widgets/financial_instruments_list_widget.dart';
@@ -278,7 +278,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
 
             // Price ticker
             // Price ticker with API data
-            const PriceTicker(),
+            const TickerSection(reduceBottomPadding: false),
 
             // Segmented control for Winners/Losers
             Padding(

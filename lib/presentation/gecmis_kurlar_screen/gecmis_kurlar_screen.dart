@@ -6,7 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/ticker_section.dart';
 
 class GecmisKurlarScreen extends StatefulWidget {
   const GecmisKurlarScreen({Key? key}) : super(key: key);
@@ -215,7 +215,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
             _buildHeader(),
 
             // Price ticker with API data
-            const PriceTicker(),
+            const TickerSection(reduceBottomPadding: false),
 
             // Table header
             _buildTableHeader(),

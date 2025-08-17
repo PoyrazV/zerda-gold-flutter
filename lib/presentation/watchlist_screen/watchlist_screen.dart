@@ -6,7 +6,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/price_ticker.dart';
+import '../../widgets/ticker_section.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({Key? key}) : super(key: key);
@@ -117,29 +117,83 @@ class _WatchlistScreenState extends State<WatchlistScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF18214F),
       drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: AppTheme.lightTheme.colorScheme.primary,
-        child: Column(
-          children: [
-            // Header with ZERDA branding
-            _buildHeader(),
-
-            // Price ticker
-            // Price ticker with API data
-            const PriceTicker(),
-
-            // Main content
-            Expanded(
-              child: _watchlistItems.isEmpty ? _buildEmptyState() : _buildWatchlistContent(),
+      body: Column(
+        children: [
+          // Modern Mobile-First Header
+          Container(
+            height: 13.h,
+            decoration: const BoxDecoration(
+              color: Color(0xFF18214F),
             ),
-          ],
-        ),
+            child: SafeArea(
+              top: true,
+              child: Padding(
+                padding: EdgeInsets.only(left: 4.w, right: 4.w, top: 0.5.h),
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (BuildContext context) {
+                        return IconButton(
+                          onPressed: () => Scaffold.of(context).openDrawer(),
+                          icon: Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                            size: 8.w,
+                          ),
+                        );
+                      },
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          'Takip Listem',
+                          style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Main content with fixed ticker
+          Expanded(
+            child: Column(
+              children: [
+                // Horizontal scrollable ticker cards
+                const TickerSection(reduceBottomPadding: false),
+                
+                // Products list - Scrollable
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _handleRefresh,
+                    color: const Color(0xFFFFD700),
+                    backgroundColor: Colors.white,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.lightTheme.scaffoldBackgroundColor,
+                      ),
+                      child: _watchlistItems.isEmpty ? _buildEmptyState() : _buildWatchlistContent(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Bottom navigation
+          _buildBottomNavigation(),
+        ],
       ),
       floatingActionButton: _buildFloatingActionButton(),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 

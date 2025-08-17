@@ -384,14 +384,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     return Container(
       height: 12.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: const Color(0xFF18214F),
       ),
       child: SafeArea(
         child: Padding(
@@ -414,7 +407,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
               // Title
               Text(
-                'Kıymet Ekle',
+                'Varlık Ekle',
                 style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,

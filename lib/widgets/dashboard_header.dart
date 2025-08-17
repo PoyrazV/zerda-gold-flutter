@@ -3,7 +3,16 @@ import 'package:sizer/sizer.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class DashboardHeader extends StatelessWidget {
-  const DashboardHeader({Key? key}) : super(key: key);
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
+  final Widget? rightWidget;
+  
+  const DashboardHeader({
+    Key? key,
+    this.showBackButton = false,
+    this.onBackPressed,
+    this.rightWidget,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,19 +27,28 @@ class DashboardHeader extends StatelessWidget {
           padding: EdgeInsets.only(left: 4.w, right: 4.w, top: 0.5.h), // Minimal top padding
           child: Row(
             children: [
-              // Hamburger menu icon
-              Builder(
-                builder: (BuildContext context) {
-                  return IconButton(
-                    onPressed: () => Scaffold.of(context).openDrawer(),
+              // Back button or Hamburger menu icon
+              showBackButton
+                ? IconButton(
+                    onPressed: onBackPressed ?? () => Navigator.pop(context),
                     icon: Icon(
-                      Icons.menu,
+                      Icons.arrow_back,
                       color: Colors.white,
                       size: 8.w, // Responsive size
                     ),
-                  );
-                },
-              ),
+                  )
+                : Builder(
+                    builder: (BuildContext context) {
+                      return IconButton(
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                        icon: Icon(
+                          Icons.menu,
+                          color: Colors.white,
+                          size: 8.w, // Responsive size
+                        ),
+                      );
+                    },
+                  ),
               
               // ZERDA GOLD logo - responsive SVG
               Expanded(
@@ -48,8 +66,8 @@ class DashboardHeader extends StatelessWidget {
                 ),
               ),
               
-              // Right side - placeholder for future notification icon
-              SizedBox(width: 12.w),
+              // Right side - optional widget or empty space
+              rightWidget ?? SizedBox(width: 12.w),
             ],
           ),
         ),

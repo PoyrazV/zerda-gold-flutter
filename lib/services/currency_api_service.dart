@@ -167,8 +167,8 @@ class CurrencyApiService {
         double changePercent = (DateTime.now().millisecond % 200 - 100) * 0.01;
         
         formattedData.add({
-          "code": "${key}/EUR",
-          "name": "${key}/EUR",  // Use code as name too
+          "code": key,  // Just the currency code, not the pair
+          "name": "${key}/EUR",  // Display name as pair
           "buyPrice": buyPrice,
           "sellPrice": sellPrice,
           "change": changePercent,

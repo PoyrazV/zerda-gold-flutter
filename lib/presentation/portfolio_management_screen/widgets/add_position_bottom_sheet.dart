@@ -778,7 +778,7 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    CurrencyFormatter.formatTRY((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
+                    CurrencyFormatter.formatEUR((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
@@ -1185,7 +1185,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
       ),
       child: Text(
         totalValue > 0 
-          ? '$assetCode pozisyonu toplam ${CurrencyFormatter.formatTRY(totalValue, decimalPlaces: 2)} değerinde eklenecek'
+          ? '$assetCode pozisyonu toplam ${CurrencyFormatter.formatEUR(totalValue, decimalPlaces: 2)} değerinde eklenecek'
           : 'Miktar ve fiyat girdiğinizde toplam değer burada görünecek',
         style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
           color: AppTheme.lightTheme.colorScheme.primary,
@@ -1559,7 +1559,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
       ),
       child: Text(
         totalValue > 0 
-          ? '$assetCode pozisyonu ${CurrencyFormatter.formatTRY(totalValue, decimalPlaces: 2)} değerinde güncellenecek'
+          ? '$assetCode pozisyonu ${CurrencyFormatter.formatEUR(totalValue, decimalPlaces: 2)} değerinde güncellenecek'
           : 'Miktar ve fiyat girdiğinizde toplam değer burada görünecek',
         style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
           color: AppTheme.lightTheme.colorScheme.primary,

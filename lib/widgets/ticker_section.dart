@@ -207,7 +207,7 @@ class _TickerSectionState extends State<TickerSection> {
               
               // Price
               Text(
-                CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
+                CurrencyFormatter.formatNumber(currency['buyPrice'] as double, decimalPlaces: 4),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w900,
                   fontSize: 3.5.w, // Increased font size for better readability
                   color: const Color(0xFF4B5563), // Darker gray for better visibility

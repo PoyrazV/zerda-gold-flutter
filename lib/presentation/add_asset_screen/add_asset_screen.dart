@@ -343,7 +343,7 @@ class _AddAssetScreenState extends State<AddAssetScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.attach_money,
+                  Icons.euro,
                   size: 16,
                 ),
                 SizedBox(width: 1.w),
@@ -498,7 +498,7 @@ class _AddAssetScreenState extends State<AddAssetScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    CurrencyFormatter.formatTRY(asset['buyPrice'] as double, decimalPlaces: 4),
+                    CurrencyFormatter.formatEUR(asset['buyPrice'] as double, decimalPlaces: 4),
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,

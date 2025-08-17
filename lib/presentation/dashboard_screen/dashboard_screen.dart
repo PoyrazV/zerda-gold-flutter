@@ -269,13 +269,25 @@ class _DashboardScreenState extends State<DashboardScreen>
         ? const Color(0xFFF0F0F0) // Darker gray for even rows
         : const Color(0xFFFFFFFF); // White for odd rows
     
-    return Container(
-      height: 8.h, // Reduced from 8.h to 6.h for more compact rows
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-      ),
-      child: Row(
+    return InkWell(
+      onTap: () {
+        // Navigate to asset detail screen
+        print('Dashboard: Navigating with currency code: ${currency['code']}');
+        Navigator.pushNamed(
+          context,
+          '/asset-detail-screen',
+          arguments: {
+            'code': currency['code'] as String,
+          },
+        );
+      },
+      child: Container(
+        height: 8.h, // Reduced from 8.h to 6.h for more compact rows
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+        ),
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Left section - Currency name and time
@@ -324,7 +336,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Text(
-                  CurrencyFormatter.formatExchangeRate(currency['buyPrice'] as double),
+                  CurrencyFormatter.formatNumber(currency['buyPrice'] as double, decimalPlaces: 4),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 4.w, // 1rem equivalent - responsive
@@ -348,7 +360,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 Padding(
                   padding: EdgeInsets.only(top: 1.w),
                   child: Text(
-                    CurrencyFormatter.formatExchangeRate(currency['sellPrice'] as double),
+                    CurrencyFormatter.formatNumber(currency['sellPrice'] as double, decimalPlaces: 4),
                     textAlign: TextAlign.right,
                     style: GoogleFonts.inter(
                       fontSize: 4.w, // 1rem equivalent - responsive
@@ -393,6 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }

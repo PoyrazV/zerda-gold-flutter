@@ -508,7 +508,18 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
         ? const Color(0xFFF0F0F0) // Darker gray for even rows
         : const Color(0xFFFFFFFF); // White for odd rows
     
-    return Container(
+    return InkWell(
+      onTap: () {
+        // Navigate to asset detail screen
+        Navigator.pushNamed(
+          context,
+          '/asset-detail-screen',
+          arguments: {
+            'code': gold['code'] as String,
+          },
+        );
+      },
+      child: Container(
       height: 8.h,
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
       decoration: BoxDecoration(
@@ -563,7 +574,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Text(
-                  CurrencyFormatter.formatTRY(gold['buyPrice'] as double),
+                  CurrencyFormatter.formatNumber(gold['buyPrice'] as double, decimalPlaces: 2),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 4.w,
@@ -587,7 +598,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                   Padding(
                     padding: EdgeInsets.only(top: 1.w),
                     child: Text(
-                      CurrencyFormatter.formatTRY(gold['sellPrice'] as double),
+                      CurrencyFormatter.formatNumber(gold['sellPrice'] as double, decimalPlaces: 2),
                       textAlign: TextAlign.right,
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
@@ -632,6 +643,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -786,7 +798,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                       children: [
                         Flexible(
                           child: Text(
-                            CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
+                            CurrencyFormatter.formatNumber(data['price'] as double, decimalPlaces: 4),
                             style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                               color: Colors.white,
                               fontSize: 10.sp,

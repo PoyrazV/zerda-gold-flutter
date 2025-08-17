@@ -54,7 +54,7 @@ class PortfolioSummaryCard extends StatelessWidget {
           ),
           SizedBox(height: 1.h),
           Text(
-            CurrencyFormatter.formatTRY(totalValue),
+            CurrencyFormatter.formatEUR(totalValue, decimalPlaces: 2),
             style: AppTheme.lightTheme.textTheme.headlineMedium?.copyWith(
               color: AppTheme.lightTheme.colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
@@ -128,7 +128,7 @@ class PortfolioSummaryCard extends StatelessWidget {
                         ),
                         SizedBox(width: 1.w),
                         Text(
-                          CurrencyFormatter.formatTRY(dailyChange.abs()),
+                          CurrencyFormatter.formatEUR(dailyChange.abs(), decimalPlaces: 2),
                           style: AppTheme.lightTheme.textTheme.titleMedium
                               ?.copyWith(
                             color: isPositiveDailyChange

@@ -146,7 +146,7 @@ class _PositionCardState extends State<PositionCard>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        CurrencyFormatter.formatTRY(currentValue),
+                        CurrencyFormatter.formatEUR(currentValue, decimalPlaces: 2),
                         style: AppTheme.lightTheme.textTheme.titleMedium
                             ?.copyWith(
                           fontWeight: FontWeight.w600,
@@ -263,13 +263,13 @@ class _PositionCardState extends State<PositionCard>
               Expanded(
                 child: _buildMetricItem(
                   'Ortalama Maliyet',
-                  CurrencyFormatter.formatTRY((widget.position['averageCost'] as num).toDouble()),
+                  CurrencyFormatter.formatEUR((widget.position['averageCost'] as num).toDouble(), decimalPlaces: 2),
                 ),
               ),
               Expanded(
                 child: _buildMetricItem(
                   'Gerçekleşmemiş K/Z',
-                  CurrencyFormatter.formatTRY(gainLoss),
+                  CurrencyFormatter.formatEUR(gainLoss, decimalPlaces: 2),
                   color: isPositive
                       ? AppTheme.positiveGreen
                       : AppTheme.negativeRed,
@@ -283,7 +283,7 @@ class _PositionCardState extends State<PositionCard>
               Expanded(
                 child: _buildMetricItem(
                   'Güncel Fiyat',
-                  CurrencyFormatter.formatTRY((widget.position['currentPrice'] as num).toDouble()),
+                  CurrencyFormatter.formatEUR((widget.position['currentPrice'] as num).toDouble(), decimalPlaces: 2),
                 ),
               ),
               Expanded(

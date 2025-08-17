@@ -543,7 +543,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
+                          CurrencyFormatter.formatEUR(data['price'] as double, decimalPlaces: 4),
                           style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                             color: Colors.white,
                             fontSize: 10.sp,

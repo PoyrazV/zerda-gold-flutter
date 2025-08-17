@@ -5,7 +5,7 @@ import '../theme/app_theme.dart';
 import '../services/watchlist_service.dart';
 import 'app_drawer.dart';
 import 'bottom_navigation_bar.dart';
-import 'price_ticker.dart';
+import 'ticker_section.dart';
 
 class FinancialScreenTemplate extends StatefulWidget {
   final String title;
@@ -44,7 +44,7 @@ class _FinancialScreenTemplateState extends State<FinancialScreenTemplate> {
             _buildHeader(),
 
             // Price ticker (optional) - now using API data
-            if (widget.showPriceTicker) const PriceTicker(),
+            if (widget.showPriceTicker) const TickerSection(reduceBottomPadding: false),
 
             // Main content
             Expanded(child: widget.child),

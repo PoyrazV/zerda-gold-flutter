@@ -24,69 +24,92 @@ class FinancialInstrumentsListWidget extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = data[index];
         final percentage = item['percentageChange'] as double;
-        final Color changeColor = isWinners
-            ? AppTheme.positiveGreen // Green for winners
-            : AppTheme.negativeRed; // Red for losers
-        final isLastItem = index == data.length - 1;
+        final bool isPositive = percentage > 0;
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Darker gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          height: 8.h,
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
           decoration: BoxDecoration(
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            ),
+            color: backgroundColor,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 1.2.h),
-            child: Row(
-              children: [
-                // Left Column: Instrument name and description
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        item['name'] as String,
-                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left section - Instrument name and description
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      item['name'] as String,
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E2939),
+                        height: 1.4,
                       ),
-                      if (item['description'] != null) ...[
-                        SizedBox(height: 0.2.h),
-                        Text(
-                          item['description'] as String,
-                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryLight,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w400,
-                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (item['description'] != null) ...[
+                      SizedBox(height: 0.5.h),
+                      Text(
+                        item['description'] as String,
+                        style: GoogleFonts.inter(
+                          fontSize: 3.w,
+                          fontWeight: FontWeight.normal,
+                          color: const Color(0xFF6B7280),
+                          height: 1.2,
                         ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  ),
+                  ],
                 ),
+              ),
 
-                // Right Column: Percentage change
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    CurrencyFormatter.formatPercentage(percentage),
-                    textAlign: TextAlign.right,
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: changeColor,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
+              // Right section - Percentage change with Dashboard style
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                    decoration: BoxDecoration(
+                      color: isPositive 
+                          ? const Color(0xFFECFDF5) // Green background for increase
+                          : const Color(0xFFFEF2F2), // Red background for decrease
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: isPositive 
+                            ? const Color(0x33059669) // Green border with opacity
+                            : const Color(0x1ADC2626), // Red border with opacity
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '%${percentage.abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: GoogleFonts.inter(
+                        fontSize: 3.5.w,
+                        fontWeight: FontWeight.w600,
+                        color: isPositive 
+                            ? const Color(0xFF059669) // Green text
+                            : const Color(0xFFDC2626), // Red text
+                        height: 1.2,
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

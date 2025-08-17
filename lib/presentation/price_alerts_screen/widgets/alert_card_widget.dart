@@ -177,13 +177,13 @@ class AlertCardWidget extends StatelessWidget {
                   Switch(
                     value: isEnabled,
                     onChanged: (value) => onToggle?.call(),
-                    activeColor: const Color(0xFF464D72),
-                    activeTrackColor: const Color(0xFF464D72).withOpacity(0.5),
-                    inactiveThumbColor: Colors.grey[400],
+                    activeColor: const Color(0xFF18214F),
+                    activeTrackColor: const Color(0xFF18214F).withOpacity(0.5),
+                    inactiveThumbColor: Colors.grey[500],
                     inactiveTrackColor: Colors.grey[300],
                     trackOutlineColor: MaterialStateProperty.resolveWith((states) {
                       if (states.contains(MaterialState.selected)) {
-                        return const Color(0xFF2F3761);
+                        return const Color(0xFF5A6491);
                       }
                       return Colors.grey[400];
                     }),

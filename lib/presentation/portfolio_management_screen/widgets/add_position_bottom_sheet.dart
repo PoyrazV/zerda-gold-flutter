@@ -1060,7 +1060,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
               ),
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
-              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 4.w),
+              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
               hintText: '100',
               suffixText: 'adet',
               suffixStyle: TextStyle(
@@ -1144,7 +1144,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
               ),
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
-              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 4.w),
+              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
               hintText: '₺32,50',
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,
@@ -1439,7 +1439,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
               ),
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
-              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 4.w),
+              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
               hintText: '100',
               suffixText: 'adet',
               suffixStyle: TextStyle(
@@ -1523,7 +1523,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
               ),
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
-              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 4.w),
+              contentPadding: EdgeInsets.symmetric(vertical: 1.5.h),
               hintText: '₺32,50',
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,

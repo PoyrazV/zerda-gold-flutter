@@ -103,13 +103,13 @@ class _PriceTickerState extends State<PriceTicker> {
   Widget _buildAddButton(BuildContext context) {
     return Container(
       width: 26.5.w, // Same width as ticker_section
-      height: 22.w, // Same height as ticker_section
       margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
       child: GestureDetector(
         onTap: widget.onAddPressed ?? () {
           Navigator.pushNamed(context, '/asset-selection-screen');
         },
         child: Container(
+          padding: EdgeInsets.all(2.5.w),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(6),
@@ -120,20 +120,19 @@ class _PriceTickerState extends State<PriceTicker> {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.add,
                 color: Colors.white,
-                size: 18,
+                size: 6.w,
               ),
-              SizedBox(height: 0.2.h),
+              SizedBox(height: 1.w),
               Text(
-                'Ekle',
+                'EKLE',
                 style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                   color: Colors.white,
-                  fontSize: 8.sp,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 3.w,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -157,51 +156,85 @@ class _PriceTickerState extends State<PriceTicker> {
       },
       child: Container(
         width: 26.5.w, // Same width as ticker_section
-        height: 22.w, // Same height as ticker_section
         margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+        padding: EdgeInsets.all(2.5.w),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              data['symbol'] as String? ?? '',
-              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                color: Colors.white,
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-            SizedBox(height: 0.5.h),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
+            SizedBox(height: 0.5.w),
+            Column(
               children: [
-                Flexible(
-                  child: Text(
-                    CurrencyFormatter.formatTRY(data['price'] as double? ?? 0.0, decimalPlaces: 4),
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: 10.sp,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                Text(
+                  data['symbol'] as String? ?? '',
+                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                    fontSize: 3.3.w,
+                    fontWeight: FontWeight.w700,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
                 ),
-                SizedBox(width: 0.5.w),
-                Icon(
-                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: isPositive
-                      ? AppTheme.positiveGreen
-                      : AppTheme.negativeRed,
-                  size: 10,
+                SizedBox(height: 4.w),
+                Text(
+                  CurrencyFormatter.formatTRY(data['price'] as double? ?? 0.0, decimalPlaces: 4),
+                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                    fontSize: 3.5.w,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
                 ),
               ],
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 0.5.w, vertical: 0.3.w),
+              decoration: BoxDecoration(
+                color: isPositive 
+                    ? AppTheme.positiveGreen.withOpacity(0.2)
+                    : AppTheme.negativeRed.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isPositive 
+                      ? AppTheme.positiveGreen.withOpacity(0.3)
+                      : AppTheme.negativeRed.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                      color: isPositive
+                          ? AppTheme.positiveGreen
+                          : AppTheme.negativeRed,
+                      size: 2.5.w,
+                    ),
+                    SizedBox(width: 0.5.w),
+                    Text(
+                      '%${(data['changePercent'] as double? ?? 0.0).abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                        fontSize: 2.7.w,
+                        fontWeight: FontWeight.w500,
+                        color: isPositive 
+                            ? AppTheme.positiveGreen
+                            : AppTheme.negativeRed,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

@@ -512,8 +512,9 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                 SizedBox(width: 1.w),
                 Text(
                   'Döviz',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                  style: TextStyle(
                     fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -530,8 +531,9 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                 SizedBox(width: 1.w),
                 Text(
                   'Altın',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                  style: TextStyle(
                     fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

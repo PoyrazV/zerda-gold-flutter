@@ -353,7 +353,10 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
             // Header with ZERDA branding
             _buildHeader(),
 
-            // Search bar (conditionally visible with animation)
+            // Tab bar
+            _buildTabBar(),
+
+            // Search bar (conditionally visible with animation - below tabs)
             AnimatedContainer(
               duration: Duration(milliseconds: 300),
               height: _showSearchBar ? null : 0,
@@ -361,9 +364,6 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                   ? _buildSearchBar()
                   : SizedBox.shrink(),
             ),
-
-            // Tab bar
-            _buildTabBar(),
 
             // Main content
             Expanded(
@@ -439,7 +439,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
   Widget _buildSearchBar() {
     return Container(
-      margin: EdgeInsets.all(4.w),
+      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
       decoration: BoxDecoration(
         color: AppTheme.lightTheme.colorScheme.surface,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import '../../services/financial_data_service.dart';
@@ -97,55 +98,50 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+      width: double.infinity,
+      height: 4.h,
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      decoration: const BoxDecoration(
+        color: Color(0xFF18214F), // Dark navy background
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             flex: 3,
             child: Text(
-              'Birim',
-              textAlign: TextAlign.left,
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
+              'BİRİM',
+              style: GoogleFonts.inter(
+                fontSize: 4.w,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095), // Gold text
+                height: 2,
               ),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              'Alış',
+              'ALIŞ',
               textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
+              style: GoogleFonts.inter(
+                fontSize: 4.w,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095), // Gold text
+                height: 2,
               ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Padding(
-              padding: EdgeInsets.only(left: 6.5.w),
-              child: Text(
-                'Satış',
-                textAlign: TextAlign.center,
-                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+            child: Text(
+              'SATIŞ',
+              textAlign: TextAlign.right,
+              style: GoogleFonts.inter(
+                fontSize: 4.w,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095), // Gold text
+                height: 2,
               ),
             ),
           ),

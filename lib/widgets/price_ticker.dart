@@ -69,33 +69,22 @@ class _PriceTickerState extends State<PriceTicker> {
             ),
           ),
           padding: EdgeInsets.only(bottom: 2.w),
-          child: tickerData.isEmpty
-              ? Center(
-                  child: SizedBox(
-                    width: 5.w,
-                    height: 5.w,
-                    child: const CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: 2.w),
-                  itemCount: tickerData.length + (widget.showAddButton ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    // Add button at the end
-                    if (widget.showAddButton && index == tickerData.length) {
-                      return _buildAddButton(context);
-                    }
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 2.w),
+            itemCount: tickerData.length + (widget.showAddButton ? 1 : 0),
+            itemBuilder: (context, index) {
+              // Add button at the end
+              if (widget.showAddButton && index == tickerData.length) {
+                return _buildAddButton(context);
+              }
 
-                    final data = tickerData[index];
-                    final bool isPositive = (data['change'] as double? ?? 0) >= 0;
+              final data = tickerData[index];
+              final bool isPositive = (data['change'] as double? ?? 0) >= 0;
 
-                    return _buildTickerItem(context, data, isPositive);
-                  },
-                ),
+              return _buildTickerItem(context, data, isPositive);
+            },
+          ),
         ),
       ],
     );

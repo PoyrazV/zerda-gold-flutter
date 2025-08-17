@@ -55,29 +55,18 @@ class _TickerSectionState extends State<TickerSection> {
         color: Color(0xFF18214F), // Dark navy background for ticker section
       ),
       padding: EdgeInsets.only(bottom: widget.reduceBottomPadding ? 0.5.w : 2.w), // Conditional bottom padding
-      child: _featuredCurrencies.isEmpty
-          ? Center(
-              child: SizedBox(
-                width: 5.w,
-                height: 5.w,
-                child: CircularProgressIndicator(
-                  color: const Color(0xFFFFD700),
-                  strokeWidth: 2,
-                ),
-              ),
-            )
-          : ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: 2.w),
-              itemCount: _featuredCurrencies.length + 1, // +1 for add button
-              itemBuilder: (context, index) {
-                if (index == _featuredCurrencies.length) {
-                  return _buildAddTickerCard();
-                }
-                final currency = _featuredCurrencies[index];
-                return _buildTickerCard(currency);
-              },
-            ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 2.w),
+        itemCount: _featuredCurrencies.length + 1, // +1 for add button
+        itemBuilder: (context, index) {
+          if (index == _featuredCurrencies.length) {
+            return _buildAddTickerCard();
+          }
+          final currency = _featuredCurrencies[index];
+          return _buildTickerCard(currency);
+        },
+      ),
     );
   }
 

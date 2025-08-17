@@ -34,12 +34,12 @@ class TimeframeFilterWidget extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.lightTheme.colorScheme.primary
+                    ? const Color(0xFF18214F)
                     : AppTheme.lightTheme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
-                      ? AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.8)
+                      ? const Color(0xFF18214F)
                       : AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 1,
                 ),
@@ -49,7 +49,7 @@ class TimeframeFilterWidget extends StatelessWidget {
                   timeframe,
                   style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                     color: isSelected
-                        ? Colors.white
+                        ? const Color(0xFFE8D095)
                         : AppTheme.textSecondaryLight,
                     fontSize: 10.sp,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,

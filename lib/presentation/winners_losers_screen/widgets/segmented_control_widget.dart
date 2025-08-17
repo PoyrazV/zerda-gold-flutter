@@ -37,7 +37,7 @@ class SegmentedControlWidget extends StatelessWidget {
                 margin: EdgeInsets.all(0.5.h),
                 decoration: BoxDecoration(
                   color:
-                      isSelected ? AppTheme.lightTheme.colorScheme.primary : Colors.transparent,
+                      isSelected ? const Color(0xFF18214F) : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Center(
@@ -45,7 +45,7 @@ class SegmentedControlWidget extends StatelessWidget {
                     title,
                     style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
                       color: isSelected
-                          ? Colors.white
+                          ? const Color(0xFFE8D095)
                           : AppTheme.textSecondaryLight,
                       fontSize: 14.sp,
                       fontWeight:

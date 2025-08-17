@@ -336,7 +336,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
           ),
 
           // Price ticker with API data
-          const TickerSection(reduceBottomPadding: true),
+          const TickerSection(reduceBottomPadding: false),
 
           // Main content with table
           Expanded(

@@ -149,7 +149,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             child: Column(
               children: [
                 // Horizontal scrollable ticker cards - Fixed at top
-                const TickerSection(reduceBottomPadding: true),
+                const TickerSection(reduceBottomPadding: false),
                 
                 // Table header - Fixed below ticker
                 _buildTableHeader(),

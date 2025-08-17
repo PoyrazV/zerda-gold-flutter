@@ -40,9 +40,8 @@ class GlobalTickerService extends ChangeNotifier {
   Future<void> _fetchTickerData() async {
     if (_isLoading) return;
     
-    // Don't show loading indicator
-    // _isLoading = true;
-    // notifyListeners();
+    _isLoading = true;
+    notifyListeners();
 
     try {
       // Get watchlist items

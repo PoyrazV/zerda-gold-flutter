@@ -67,7 +67,7 @@ class _PriceTickerState extends State<PriceTicker> {
     return Column(
       children: [
         Container(
-          height: 10.h,
+          height: 27.w, // Same height as ticker_section
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -78,7 +78,7 @@ class _PriceTickerState extends State<PriceTicker> {
               end: Alignment.centerRight,
             ),
           ),
-          padding: EdgeInsets.only(bottom: 2.h),
+          padding: EdgeInsets.only(bottom: 2.w),
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 2.w),
@@ -102,13 +102,14 @@ class _PriceTickerState extends State<PriceTicker> {
 
   Widget _buildAddButton(BuildContext context) {
     return Container(
+      width: 26.5.w, // Same width as ticker_section
+      height: 22.w, // Same height as ticker_section
       margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
       child: GestureDetector(
         onTap: widget.onAddPressed ?? () {
           Navigator.pushNamed(context, '/asset-selection-screen');
         },
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(6),
@@ -155,54 +156,52 @@ class _PriceTickerState extends State<PriceTicker> {
         );
       },
       child: Container(
+        width: 26.5.w, // Same width as ticker_section
+        height: 22.w, // Same height as ticker_section
         margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+        padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(
-              child: Text(
-                data['symbol'] as String? ?? '',
-                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+            Text(
+              data['symbol'] as String? ?? '',
+              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                color: Colors.white,
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w500,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
-            SizedBox(height: 0.2.h),
-            Flexible(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      CurrencyFormatter.formatTRY(data['price'] as double? ?? 0.0, decimalPlaces: 4),
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontSize: 10.sp,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+            SizedBox(height: 0.5.h),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    CurrencyFormatter.formatTRY(data['price'] as double? ?? 0.0, decimalPlaces: 4),
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                      fontSize: 10.sp,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                  SizedBox(width: 0.5.w),
-                  Icon(
-                    isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                    color: isPositive
-                        ? AppTheme.positiveGreen
-                        : AppTheme.negativeRed,
-                    size: 10,
-                  ),
-                ],
-              ),
+                ),
+                SizedBox(width: 0.5.w),
+                Icon(
+                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: isPositive
+                      ? AppTheme.positiveGreen
+                      : AppTheme.negativeRed,
+                  size: 10,
+                ),
+              ],
             ),
           ],
         ),

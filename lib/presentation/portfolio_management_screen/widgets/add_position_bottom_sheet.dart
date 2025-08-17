@@ -1014,7 +1014,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
     return Column(
       children: [
         Text(
-          'Miktar',
+          'Adet',
           style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
@@ -1062,16 +1062,6 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
               contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 3.w),
               hintText: '100',
-              suffix: Padding(
-                padding: EdgeInsets.only(right: 2.w),
-                child: Text(
-                  'adet',
-                  style: TextStyle(
-                    color: AppTheme.textSecondaryLight,
-                    fontSize: 14.sp,
-                  ),
-                ),
-              ),
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,
                 fontSize: 20.sp,
@@ -1398,7 +1388,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
     return Column(
       children: [
         Text(
-          'Miktar',
+          'Adet',
           style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
@@ -1446,16 +1436,6 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
               contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 3.w),
               hintText: '100',
-              suffix: Padding(
-                padding: EdgeInsets.only(right: 2.w),
-                child: Text(
-                  'adet',
-                  style: TextStyle(
-                    color: AppTheme.textSecondaryLight,
-                    fontSize: 14.sp,
-                  ),
-                ),
-              ),
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,
                 fontSize: 20.sp,

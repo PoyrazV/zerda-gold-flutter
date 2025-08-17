@@ -493,16 +493,20 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
   Widget _buildTabBar() {
     return Container(
-      color: AppTheme.lightTheme.colorScheme.surface,
+      color: const Color(0xFF18214F),
       child: TabBar(
         controller: _tabController,
+        indicatorColor: const Color(0xFFFFD700), // Gold indicator
+        indicatorWeight: 3,
+        labelColor: const Color(0xFFFFD700), // Gold for selected
+        unselectedLabelColor: Colors.grey, // Gray for unselected
         tabs: [
           Tab(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.attach_money,
+                  Icons.euro,
                   size: 16,
                 ),
                 SizedBox(width: 1.w),
@@ -520,7 +524,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.star,
+                  Icons.diamond,
                   size: 16,
                 ),
                 SizedBox(width: 1.w),

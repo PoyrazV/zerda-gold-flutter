@@ -104,12 +104,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           iconName: 'lock',
           onTap: _changePassword,
         ),
-        SettingsItem(
-          title: 'E-posta Tercihleri',
-          subtitle: 'Bildirim ayarlarını yönetin',
-          iconName: 'email',
-          onTap: _emailPreferences,
-        ),
       ],
     );
   }
@@ -339,10 +333,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   void _changePassword() {
     Navigator.pushNamed(context, '/change-password-screen');
-  }
-
-  void _emailPreferences() {
-    Navigator.pushNamed(context, '/email-preferences-screen');
   }
 
   void _exportPortfolioData() {

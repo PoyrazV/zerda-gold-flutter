@@ -119,6 +119,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           trailing: Switch(
             value: _notificationsEnabled,
             onChanged: _toggleNotifications,
+            activeColor: const Color(0xFF18214F),
+            activeTrackColor: const Color(0xFF18214F).withOpacity(0.5),
+            inactiveThumbColor: Colors.grey[500],
+            inactiveTrackColor: Colors.grey[300],
+            trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+              if (states.contains(MaterialState.selected)) {
+                return const Color(0xFF5A6491);
+              }
+              return Colors.grey[400];
+            }),
           ),
           showDisclosure: false,
         ),
@@ -129,6 +139,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           trailing: Switch(
             value: _soundEnabled,
             onChanged: _toggleSound,
+            activeColor: const Color(0xFF18214F),
+            activeTrackColor: const Color(0xFF18214F).withOpacity(0.5),
+            inactiveThumbColor: Colors.grey[500],
+            inactiveTrackColor: Colors.grey[300],
+            trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+              if (states.contains(MaterialState.selected)) {
+                return const Color(0xFF5A6491);
+              }
+              return Colors.grey[400];
+            }),
           ),
           showDisclosure: false,
         ),

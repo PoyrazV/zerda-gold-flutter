@@ -19,7 +19,7 @@ class CreateAlertBottomSheet extends StatefulWidget {
 class _CreateAlertBottomSheetState extends State<CreateAlertBottomSheet> {
   final TextEditingController _targetPriceController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
-  String _selectedAsset = 'USD/TRY';
+  String _selectedAsset = 'USD/EUR';
   String _selectedAssetName = 'Amerikan Doları';
   String _alertType = 'above';
   String _selectedSound = 'default';
@@ -27,16 +27,15 @@ class _CreateAlertBottomSheetState extends State<CreateAlertBottomSheet> {
 
   final List<Map<String, dynamic>> _availableAssets = [
     // Döviz kıymetleri
-    {'symbol': 'USD/TRY', 'name': 'Amerikan Doları', 'currentPrice': 34.2156},
-    {'symbol': 'EUR/TRY', 'name': 'Euro', 'currentPrice': 37.1234},
-    {'symbol': 'GBP/TRY', 'name': 'İngiliz Sterlini', 'currentPrice': 43.5678},
-    {'symbol': 'CHF/TRY', 'name': 'İsviçre Frangı', 'currentPrice': 38.4567},
-    {'symbol': 'CAD/TRY', 'name': 'Kanada Doları', 'currentPrice': 25.3456},
-    {'symbol': 'AUD/TRY', 'name': 'Avustralya Doları', 'currentPrice': 22.7890},
-    {'symbol': 'JPY/TRY', 'name': 'Japon Yeni', 'currentPrice': 0.2345},
-    {'symbol': 'SEK/TRY', 'name': 'İsveç Kronu', 'currentPrice': 3.2156},
-    {'symbol': 'NOK/TRY', 'name': 'Norveç Kronu', 'currentPrice': 3.1234},
-    {'symbol': 'DKK/TRY', 'name': 'Danimarka Kronu', 'currentPrice': 4.9876},
+    {'symbol': 'USD/EUR', 'name': 'Amerikan Doları', 'currentPrice': 1.0856},
+    {'symbol': 'GBP/EUR', 'name': 'İngiliz Sterlini', 'currentPrice': 1.1734},
+    {'symbol': 'CHF/EUR', 'name': 'İsviçre Frangı', 'currentPrice': 1.0567},
+    {'symbol': 'CAD/EUR', 'name': 'Kanada Doları', 'currentPrice': 0.7456},
+    {'symbol': 'AUD/EUR', 'name': 'Avustralya Doları', 'currentPrice': 0.6890},
+    {'symbol': 'JPY/EUR', 'name': 'Japon Yeni', 'currentPrice': 0.0067},
+    {'symbol': 'SEK/EUR', 'name': 'İsveç Kronu', 'currentPrice': 0.0934},
+    {'symbol': 'NOK/EUR', 'name': 'Norveç Kronu', 'currentPrice': 0.0876},
+    {'symbol': 'DKK/EUR', 'name': 'Danimarka Kronu', 'currentPrice': 0.1342},
     
     // Altın kıymetleri
     {'symbol': 'GRAM', 'name': 'Gram Altın', 'currentPrice': 2847.50},
@@ -254,7 +253,7 @@ class _CreateAlertBottomSheetState extends State<CreateAlertBottomSheet> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      CurrencyFormatter.formatTRY(asset['currentPrice'] as double, decimalPlaces: 4),
+                      CurrencyFormatter.formatEUR(asset['currentPrice'] as double, decimalPlaces: 4),
                       style: AppTheme.dataTextStyle(
                         isLight: true,
                         fontSize: 12.sp,
@@ -320,7 +319,7 @@ class _CreateAlertBottomSheetState extends State<CreateAlertBottomSheet> {
               SizedBox(width: 2.w),
               Expanded(
                 child: Text(
-                  'Mevcut fiyat: ${CurrencyFormatter.formatTRY(currentPrice, decimalPlaces: 4)}',
+                  'Mevcut fiyat: ${CurrencyFormatter.formatEUR(currentPrice, decimalPlaces: 4)}',
                   style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                     color: AppTheme.lightTheme.colorScheme.primary,
                     fontSize: 12.sp,
@@ -339,7 +338,7 @@ class _CreateAlertBottomSheetState extends State<CreateAlertBottomSheet> {
           ],
           decoration: InputDecoration(
             hintText: 'Hedef fiyatı girin',
-            prefixText: '₺ ',
+            prefixText: '€ ',
             prefixStyle: AppTheme.dataTextStyle(
               isLight: true,
               fontSize: 16.sp,

@@ -590,13 +590,13 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
           Expanded(
             flex: 2,
             child: Padding(
-              padding: EdgeInsets.only(right: 3.w),
+              padding: EdgeInsets.only(left: 0.5.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(top: 1.w),
+                    padding: EdgeInsets.only(top: 1.w, right: 0.5.w),
                     child: Text(
                       CurrencyFormatter.formatNumber(gold['sellPrice'] as double, decimalPlaces: 2),
                       textAlign: TextAlign.right,
@@ -610,7 +610,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                   ),
                   SizedBox(height: 1.5.w),
                   Padding(
-                    padding: EdgeInsets.only(top: 1.5.w, right: 1.w),
+                    padding: EdgeInsets.only(top: 1.5.w, right: 3.w),
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
                       decoration: BoxDecoration(

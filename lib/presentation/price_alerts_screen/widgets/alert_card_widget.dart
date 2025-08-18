@@ -24,7 +24,7 @@ class AlertCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String status = alertData['status'] as String;
-    final String assetName = alertData['assetName'] as String;
+    final String assetName = _formatAssetName(alertData['assetName'] as String);
     final double targetPrice = (alertData['targetPrice'] as num).toDouble();
     final double currentPrice = (alertData['currentPrice'] as num).toDouble();
     final String alertType = alertData['alertType'] as String;
@@ -207,7 +207,7 @@ class AlertCardWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
-                          CurrencyFormatter.formatTRY(currentPrice, decimalPlaces: 4),
+                          CurrencyFormatter.formatEUR(currentPrice, decimalPlaces: 4),
                           style: AppTheme.dataTextStyle(
                             isLight: true,
                             fontSize: 12.sp,
@@ -230,7 +230,7 @@ class AlertCardWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
-                          CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
+                          CurrencyFormatter.formatEUR(targetPrice, decimalPlaces: 4),
                           style: AppTheme.dataTextStyle(
                             isLight: true,
                             fontSize: 12.sp,
@@ -302,6 +302,34 @@ class AlertCardWidget extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _formatAssetName(String assetName) {
+    // Convert old TRY-based formats to EUR-based formats
+    const Map<String, String> assetNameMap = {
+      'USD/TRY': 'USD/EUR',
+      'EUR/TRY': 'EUR/USD', // Since EUR is base currency now
+      'GBP/TRY': 'GBP/EUR',
+      'CHF/TRY': 'CHF/EUR',
+      'CAD/TRY': 'CAD/EUR',
+      'AUD/TRY': 'AUD/EUR',
+      'JPY/TRY': 'JPY/EUR',
+      'SEK/TRY': 'SEK/EUR',
+      'NOK/TRY': 'NOK/EUR',
+      'DKK/TRY': 'DKK/EUR',
+      'USD': 'USD/EUR',
+      'EUR': 'EUR/USD',
+      'GBP': 'GBP/EUR',
+      'CHF': 'CHF/EUR',
+      'CAD': 'CAD/EUR',
+      'AUD': 'AUD/EUR',
+      'JPY': 'JPY/EUR',
+      'SEK': 'SEK/EUR',
+      'NOK': 'NOK/EUR',
+      'DKK': 'DKK/EUR',
+    };
+    
+    return assetNameMap[assetName] ?? assetName;
   }
 
 }

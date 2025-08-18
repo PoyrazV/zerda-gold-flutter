@@ -118,8 +118,18 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Header with ZERDA branding
-          const DashboardHeader(),
+          // Header with ZERDA branding and + icon
+          DashboardHeader(
+            rightWidget: IconButton(
+              onPressed: _showAddPositionBottomSheet,
+              icon: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 8.w,
+              ),
+              padding: EdgeInsets.all(2.w),
+            ),
+          ),
 
           // Spacer between logo and ticker
           Container(
@@ -292,35 +302,11 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
               childCount: _positions.length,
             ),
           ),
-          SliverToBoxAdapter(
-            child: Container(
-              margin: EdgeInsets.all(4.w),
-              alignment: Alignment.center,
-              child: _buildScrollableActionButton(),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildScrollableActionButton() {
-    return SizedBox(
-      width: 70.w,
-      child: FloatingActionButton.extended(
-        onPressed: _showAddPositionBottomSheet,
-        backgroundColor: const Color(0xFF18214F),
-        label: Text(
-          'Varlık Ekle',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildHeader() {
     return Container(
@@ -418,22 +404,22 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
         ? [
             // Default ticker data when watchlist is empty
             {
-              'symbol': 'USD/TRY',
-              'price': 34.2156,
-              'change': 0.0234,
-              'changePercent': 0.068
+              'symbol': 'USD/EUR',
+              'price': 1.0856,
+              'change': 0.0034,
+              'changePercent': 0.031
             },
             {
-              'symbol': 'EUR/TRY',
-              'price': 37.1234,
-              'change': -0.0456,
-              'changePercent': -0.123
+              'symbol': 'GBP/EUR',
+              'price': 1.1734,
+              'change': -0.0056,
+              'changePercent': -0.047
             },
             {
-              'symbol': 'GBP/TRY',
-              'price': 43.5678,
-              'change': 0.1234,
-              'changePercent': 0.284
+              'symbol': 'CHF/EUR',
+              'price': 1.0567,
+              'change': 0.0134,
+              'changePercent': 0.128
             },
             {
               'symbol': 'GOLD',

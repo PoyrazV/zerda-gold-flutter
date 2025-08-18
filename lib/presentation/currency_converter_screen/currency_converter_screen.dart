@@ -42,17 +42,17 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   bool _isLoadingRates = false;
 
   Map<String, dynamic> _fromCurrency = {
+    "code": "EUR",
+    "name": "Euro",
+    "flag": "https://flagcdn.com/w320/eu.png",
+    "symbol": "€"
+  };
+
+  Map<String, dynamic> _toCurrency = {
     "code": "USD",
     "name": "Amerikan Doları",
     "flag": "https://flagcdn.com/w320/us.png",
     "symbol": "\$"
-  };
-
-  Map<String, dynamic> _toCurrency = {
-    "code": "GRAM",
-    "name": "Gram Altın",
-    "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
-    "symbol": "gr"
   };
 
   double _exchangeRate = 1.0; // Will be calculated after API loads

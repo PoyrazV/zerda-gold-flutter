@@ -367,14 +367,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
     return Container(
       height: 8.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: const Color(0xFF18214F),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -398,7 +391,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
 
               // Title
               Text(
-                'Kıymet Seçin',
+                'Varlık Seçin',
                 style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -484,44 +477,64 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
 
   Widget _buildTabBar() {
     return Container(
-      color: AppTheme.lightTheme.colorScheme.surface,
+      color: const Color(0xFF18214F),
       child: TabBar(
         controller: _tabController,
+        indicatorColor: const Color(0xFFE8D095),
+        labelColor: const Color(0xFFE8D095),
+        unselectedLabelColor: Colors.white,
         tabs: [
           Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.attach_money,
-                  size: 16,
-                ),
-                SizedBox(width: 1.w),
-                Text(
-                  'Döviz',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                    fontSize: 12.sp,
-                  ),
-                ),
-              ],
+            child: AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                final isSelected = _tabController.index == 0;
+                final color = isSelected ? const Color(0xFFE8D095) : Colors.white;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.euro,
+                      size: 20,
+                      color: color,
+                    ),
+                    SizedBox(width: 1.w),
+                    Text(
+                      'Döviz',
+                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                        fontSize: 14.sp,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GoldBarsIcon(
-                  color: AppTheme.lightTheme.colorScheme.onSurface,
-                  size: 16,
-                ),
-                SizedBox(width: 1.w),
-                Text(
-                  'Altın',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                    fontSize: 12.sp,
-                  ),
-                ),
-              ],
+            child: AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                final isSelected = _tabController.index == 1;
+                final color = isSelected ? const Color(0xFFE8D095) : Colors.white;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GoldBarsIcon(
+                      color: color,
+                      size: 20,
+                    ),
+                    SizedBox(width: 1.w),
+                    Text(
+                      'Altın',
+                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                        fontSize: 14.sp,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -777,7 +790,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    CurrencyFormatter.formatTRY((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
+                    CurrencyFormatter.formatEUR((asset['buyPrice'] as double? ?? 0.0), decimalPlaces: 4),
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,

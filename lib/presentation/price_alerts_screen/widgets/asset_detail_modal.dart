@@ -31,7 +31,7 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
     super.initState();
     // Use initial target price if provided (editing mode), otherwise use current price
     _targetPrice = widget.initialTargetPrice ?? (widget.selectedAsset['currentPrice'] as double);
-    _priceController.text = '₺${_targetPrice.toStringAsFixed(2)}';
+    _priceController.text = '€${_targetPrice.toStringAsFixed(2)}';
   }
 
   @override
@@ -198,7 +198,7 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
               contentPadding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-              hintText: '₺0,00',
+              hintText: '€0,00',
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,
                 fontSize: 28.sp,
@@ -207,7 +207,7 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
             ),
             onChanged: (value) {
               // Parse the price when user types
-              final cleanValue = value.replaceAll('₺', '').replaceAll(',', '.');
+              final cleanValue = value.replaceAll('€', '').replaceAll(',', '.');
               final newPrice = double.tryParse(cleanValue);
               if (newPrice != null && newPrice > 0) {
                 setState(() {
@@ -218,7 +218,7 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
             },
             inputFormatters: [
               // Allow only numbers, dots, commas, and ₺ symbol
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,₺]')),
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,€]')),
             ],
           ),
         ),
@@ -239,7 +239,7 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
                   _selectedPercentage = percentage;
                   final basePrice = widget.selectedAsset['currentPrice'] as double;
                   _targetPrice = basePrice * (1 + (percentage / 100));
-                  _priceController.text = '₺${_targetPrice.toStringAsFixed(2)}';
+                  _priceController.text = '€${_targetPrice.toStringAsFixed(2)}';
                 });
               },
               style: ElevatedButton.styleFrom(
@@ -289,7 +289,7 @@ class _AssetDetailModalState extends State<AssetDetailModal> {
         ),
       ),
       child: Text(
-        '$assetCode fiyatı her ${CurrencyFormatter.formatTRY(_targetPrice, decimalPlaces: 2)} olduğunda haberdar ol',
+        '$assetCode fiyatı her ${CurrencyFormatter.formatEUR(_targetPrice, decimalPlaces: 2)} olduğunda haberdar ol',
         style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
           color: AppTheme.lightTheme.colorScheme.primary,
           fontSize: 14.sp,

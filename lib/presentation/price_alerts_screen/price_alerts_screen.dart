@@ -125,8 +125,18 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Header with ZERDA branding
-          const DashboardHeader(),
+          // Header with ZERDA branding and + icon
+          DashboardHeader(
+            rightWidget: IconButton(
+              onPressed: _showAssetSelectionModal,
+              icon: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 8.w,
+              ),
+              padding: EdgeInsets.all(2.w),
+            ),
+          ),
           
           // Spacer between logo and ticker
           Container(
@@ -227,17 +237,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
     if (_activeAlerts.isEmpty) {
       return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          children: [
-            Container(
-              margin: EdgeInsets.all(4.w),
-              alignment: Alignment.center,
-              child: _buildScrollableActionButton(),
-            ),
-            EmptyAlertsWidget(
-              onCreateAlert: _showAssetSelectionModal,
-            ),
-          ],
+        child: EmptyAlertsWidget(
+          onCreateAlert: _showAssetSelectionModal,
         ),
       );
     }
@@ -247,17 +248,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       color: AppTheme.lightTheme.colorScheme.primary,
       child: ListView.builder(
         padding: EdgeInsets.only(top: 1.h, bottom: 1.h),
-        itemCount: _activeAlerts.length + 1,
+        itemCount: _activeAlerts.length,
         itemBuilder: (context, index) {
-          // Add button as the last item
-          if (index == _activeAlerts.length) {
-            return Container(
-              margin: EdgeInsets.all(4.w),
-              alignment: Alignment.center,
-              child: _buildScrollableActionButton(),
-            );
-          }
-          
           final alert = _activeAlerts[index];
           return AlertCardWidget(
             alertData: alert,
@@ -303,23 +295,6 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
     );
   }
 
-  Widget _buildScrollableActionButton() {
-    return SizedBox(
-      width: 70.w,
-      child: FloatingActionButton.extended(
-        onPressed: _showAssetSelectionModal,
-        backgroundColor: const Color(0xFF18214F),
-        label: Text(
-          'Alarm Ekle',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showAssetSelectionModal() {
     showModalBottomSheet(

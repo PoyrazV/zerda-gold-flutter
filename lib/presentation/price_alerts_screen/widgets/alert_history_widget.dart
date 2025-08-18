@@ -72,7 +72,7 @@ class AlertHistoryWidget extends StatelessWidget {
   }
 
   Widget _buildHistoryCard(Map<String, dynamic> alert) {
-    final String assetName = alert['assetName'] as String;
+    final String assetName = _formatAssetName(alert['assetName'] as String);
     final String assetFullName = alert['assetFullName'] as String;
     final double targetPrice = (alert['targetPrice'] as num).toDouble();
     final double triggeredPrice = (alert['triggeredPrice'] as num).toDouble();
@@ -205,7 +205,7 @@ class AlertHistoryWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
-                          CurrencyFormatter.formatTRY(triggeredPrice, decimalPlaces: 4),
+                          CurrencyFormatter.formatEUR(triggeredPrice, decimalPlaces: 4),
                           style: AppTheme.dataTextStyle(
                             isLight: true,
                             fontSize: 12.sp,
@@ -227,7 +227,7 @@ class AlertHistoryWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
-                          CurrencyFormatter.formatTRY(targetPrice, decimalPlaces: 4),
+                          CurrencyFormatter.formatEUR(targetPrice, decimalPlaces: 4),
                           style: AppTheme.dataTextStyle(
                             isLight: true,
                             fontSize: 12.sp,
@@ -262,5 +262,33 @@ class AlertHistoryWidget extends StatelessWidget {
     } else {
       return 'Az önce';
     }
+  }
+
+  String _formatAssetName(String assetName) {
+    // Convert old TRY-based formats to EUR-based formats
+    const Map<String, String> assetNameMap = {
+      'USD/TRY': 'USD/EUR',
+      'EUR/TRY': 'EUR/USD',
+      'GBP/TRY': 'GBP/EUR',
+      'CHF/TRY': 'CHF/EUR',
+      'CAD/TRY': 'CAD/EUR',
+      'AUD/TRY': 'AUD/EUR',
+      'JPY/TRY': 'JPY/EUR',
+      'SEK/TRY': 'SEK/EUR',
+      'NOK/TRY': 'NOK/EUR',
+      'DKK/TRY': 'DKK/EUR',
+      'USD': 'USD/EUR',
+      'EUR': 'EUR/USD',
+      'GBP': 'GBP/EUR',
+      'CHF': 'CHF/EUR',
+      'CAD': 'CAD/EUR',
+      'AUD': 'AUD/EUR',
+      'JPY': 'JPY/EUR',
+      'SEK': 'SEK/EUR',
+      'NOK': 'NOK/EUR',
+      'DKK': 'DKK/EUR',
+    };
+    
+    return assetNameMap[assetName] ?? assetName;
   }
 }

@@ -331,6 +331,9 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
             // Header with ZERDA branding
             _buildHeader(),
 
+            // Tab bar
+            _buildTabBar(),
+
             // Search bar (conditionally visible with animation)
             AnimatedContainer(
               duration: Duration(milliseconds: 300),
@@ -338,12 +341,6 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
               child: _showSearchBar 
                   ? _buildSearchBar()
                   : Container(),
-            ),
-
-            // Tab bar (reduced top spacing)
-            Transform.translate(
-              offset: Offset(0, _showSearchBar ? 0 : 0.h),
-              child: _buildTabBar(),
             ),
 
             // Main content
@@ -368,14 +365,7 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
     return Container(
       height: 8.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: const Color(0xFF18214F),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -485,44 +475,64 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
 
   Widget _buildTabBar() {
     return Container(
-      color: AppTheme.lightTheme.colorScheme.surface,
+      color: const Color(0xFF18214F),
       child: TabBar(
         controller: _tabController,
+        indicatorColor: const Color(0xFFE8D095),
+        labelColor: const Color(0xFFE8D095),
+        unselectedLabelColor: Colors.white,
         tabs: [
           Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.attach_money,
-                  size: 16,
-                ),
-                SizedBox(width: 1.w),
-                Text(
-                  'Döviz',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                    fontSize: 12.sp,
-                  ),
-                ),
-              ],
+            child: AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                final isSelected = _tabController.index == 0;
+                final color = isSelected ? const Color(0xFFE8D095) : Colors.white;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.euro,
+                      size: 20,
+                      color: color,
+                    ),
+                    SizedBox(width: 1.w),
+                    Text(
+                      'Döviz',
+                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                        fontSize: 14.sp,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GoldBarsIcon(
-                  color: AppTheme.lightTheme.colorScheme.onSurface,
-                  size: 16,
-                ),
-                SizedBox(width: 1.w),
-                Text(
-                  'Altın',
-                  style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
-                    fontSize: 12.sp,
-                  ),
-                ),
-              ],
+            child: AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                final isSelected = _tabController.index == 1;
+                final color = isSelected ? const Color(0xFFE8D095) : Colors.white;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GoldBarsIcon(
+                      color: color,
+                      size: 20,
+                    ),
+                    SizedBox(width: 1.w),
+                    Text(
+                      'Altın',
+                      style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
+                        fontSize: 14.sp,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -863,7 +873,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
     final currentPrice = widget.asset['buyPrice'] as double? ?? 0.0;
     if (currentPrice > 0) {
       _price = currentPrice;
-      _priceController.text = '₺${currentPrice.toStringAsFixed(2)}';
+      _priceController.text = '€${currentPrice.toStringAsFixed(2)}';
     }
   }
 
@@ -1140,7 +1150,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
               contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 3.w),
-              hintText: '₺32,50',
+              hintText: '€32,50',
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,
                 fontSize: 20.sp,
@@ -1148,7 +1158,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
               ),
             ),
             onChanged: (value) {
-              final cleanValue = value.replaceAll('₺', '').replaceAll(',', '.');
+              final cleanValue = value.replaceAll('€', '').replaceAll(',', '.');
               final newPrice = double.tryParse(cleanValue);
               if (newPrice != null && newPrice > 0) {
                 setState(() {
@@ -1161,7 +1171,7 @@ class _PositionDetailsDialogState extends State<_PositionDetailsDialog> {
               }
             },
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,₺]')),
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,€]')),
             ],
           ),
         ),
@@ -1259,7 +1269,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
              (widget.position['averageCost'] as num?)?.toDouble() ?? 0.0;
     
     _quantityController.text = _quantity.toString();
-    _priceController.text = '₺${_price.toStringAsFixed(2)}';
+    _priceController.text = '€${_price.toStringAsFixed(2)}';
   }
 
   @override
@@ -1514,7 +1524,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
               filled: true,
               fillColor: AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
               contentPadding: EdgeInsets.symmetric(vertical: 1.5.h, horizontal: 3.w),
-              hintText: '₺32,50',
+              hintText: '€32,50',
               hintStyle: TextStyle(
                 color: AppTheme.textSecondaryLight,
                 fontSize: 20.sp,
@@ -1522,7 +1532,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
               ),
             ),
             onChanged: (value) {
-              final cleanValue = value.replaceAll('₺', '').replaceAll(',', '.');
+              final cleanValue = value.replaceAll('€', '').replaceAll(',', '.');
               final newPrice = double.tryParse(cleanValue);
               if (newPrice != null && newPrice > 0) {
                 setState(() {
@@ -1535,7 +1545,7 @@ class _EditPositionDetailsDialogState extends State<EditPositionDetailsDialog> {
               }
             },
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,₺]')),
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,€]')),
             ],
           ),
         ),

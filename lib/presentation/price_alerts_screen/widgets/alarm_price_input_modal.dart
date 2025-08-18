@@ -156,7 +156,7 @@ class _AlarmPriceInputModalState extends State<AlarmPriceInputModal> {
               ),
               SizedBox(height: 0.5.h),
               Text(
-                CurrencyFormatter.formatTRY(widget.selectedAsset['currentPrice'] as double, decimalPlaces: 4),
+                CurrencyFormatter.formatEUR(widget.selectedAsset['currentPrice'] as double, decimalPlaces: 4),
                 style: AppTheme.dataTextStyle(
                   isLight: true,
                   fontSize: 14.sp,
@@ -193,7 +193,7 @@ class _AlarmPriceInputModalState extends State<AlarmPriceInputModal> {
           ],
           decoration: InputDecoration(
             hintText: 'Hedef fiyatı girin',
-            prefixText: '₺ ',
+            prefixText: '€ ',
             prefixStyle: AppTheme.dataTextStyle(
               isLight: true,
               fontSize: 18.sp,

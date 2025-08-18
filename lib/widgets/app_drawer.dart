@@ -81,7 +81,7 @@ class _AppDrawerState extends State<AppDrawer> {
                           ),
                         ),
                       ),
-                      if (isLoggedIn) 
+                      if (isLoggedIn && _featureConfig.isProfileEnabled) 
                         GestureDetector(
                           onTap: () {
                             Navigator.of(context).pop();

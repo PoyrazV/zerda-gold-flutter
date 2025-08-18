@@ -5,6 +5,8 @@ import '../../core/app_export.dart';
 import './widgets/logout_button_widget.dart';
 import './widgets/profile_header_widget.dart';
 import './widgets/settings_section_widget.dart';
+import '../../services/feature_config_service.dart';
+import '../../widgets/feature_wrapper.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({Key? key}) : super(key: key);
@@ -73,6 +75,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   SizedBox(height: 2.h),
                   _buildAccountSection(),
                   _buildAppSettingsSection(),
+                  _buildFeatureManagementSection(),
                   _buildSupportSection(),
                   SizedBox(height: 2.h),
                   LogoutButtonWidget(
@@ -508,6 +511,177 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildFeatureManagementSection() {
+    final featureConfig = FeatureConfigService();
+    final configInfo = featureConfig.getConfigInfo();
+    
+    return SettingsSectionWidget(
+      title: 'Özellik Yönetimi (Admin)',
+      items: [
+        SettingsItem(
+          title: 'Özellik Durumu',
+          subtitle: '${configInfo['enabledFeatures']}/${configInfo['totalFeatures']} özellik aktif',
+          iconName: 'settings',
+          onTap: _showFeatureStatus,
+        ),
+        SettingsItem(
+          title: 'Tüm Özellikleri Aç',
+          subtitle: 'Geliştirme için tüm özellikleri aktif et',
+          iconName: 'check_circle',
+          onTap: _enableAllFeatures,
+        ),
+        SettingsItem(
+          title: 'Admin Panel\'den Sync',
+          subtitle: 'Ayarları admin panel\'den çek',
+          iconName: 'sync',
+          onTap: _syncFromAdminPanel,
+        ),
+        SettingsItem(
+          title: 'Varsayılana Sıfırla',
+          subtitle: 'Özellik ayarlarını varsayılan duruma getir',
+          iconName: 'refresh',
+          onTap: _resetFeatureConfig,
+        ),
+      ],
+    );
+  }
+
+  void _showFeatureStatus() {
+    final featureConfig = FeatureConfigService();
+    final features = featureConfig.getAllFeatures();
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          height: 70.h,
+          padding: EdgeInsets.all(4.w),
+          child: Column(
+            children: [
+              Container(
+                width: 10.w,
+                height: 0.5.h,
+                decoration: BoxDecoration(
+                  color: AppTheme.lightTheme.dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                'Özellik Durumu',
+                style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: features.length,
+                  itemBuilder: (context, index) {
+                    final entry = features.entries.elementAt(index);
+                    final featureName = entry.key;
+                    final isEnabled = entry.value;
+                    
+                    return Card(
+                      margin: EdgeInsets.only(bottom: 1.h),
+                      child: ListTile(
+                        title: Text(
+                          _getFeatureDisplayName(featureName),
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text('ID: $featureName'),
+                        trailing: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
+                          decoration: BoxDecoration(
+                            color: isEnabled ? Colors.green : Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            isEnabled ? 'AKTİF' : 'PASİF',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 2.h),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Kapat'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF18214F),
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 6.h),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getFeatureDisplayName(String featureName) {
+    const Map<String, String> displayNames = {
+      'dashboard': 'Ana Sayfa (Döviz)',
+      'goldPrices': 'Altın Fiyatları',
+      'converter': 'Döviz Çevirici',
+      'alarms': 'Alarm Sistemi',
+      'portfolio': 'Portföy Yönetimi',
+      'profile': 'Profil Ayarları',
+      'watchlist': 'Takip Listem',
+      'profitLossCalculator': 'Kar/Zarar Hesaplama',
+      'performanceHistory': 'Performans Geçmişi',
+      'sarrafiyeIscilik': 'Sarrafiye İşçilikleri',
+      'gecmisKurlar': 'Geçmiş Kurlar',
+    };
+    return displayNames[featureName] ?? featureName;
+  }
+
+  void _enableAllFeatures() async {
+    try {
+      await FeatureConfigService().enableAllFeatures();
+      _showSettingChangedSnackBar('Tüm özellikler aktif edildi!');
+      setState(() {}); // Trigger rebuild to update UI
+    } catch (e) {
+      _showSettingChangedSnackBar('Hata: Özellikler aktif edilemedi');
+    }
+  }
+
+  void _syncFromAdminPanel() async {
+    try {
+      final success = await FeatureConfigService().syncNow();
+      if (success) {
+        _showSettingChangedSnackBar('Admin panel\'den başarıyla sync edildi!');
+        setState(() {}); // Trigger rebuild to update UI
+      } else {
+        _showSettingChangedSnackBar('Admin panel\'e bağlanılamadı');
+      }
+    } catch (e) {
+      _showSettingChangedSnackBar('Hata: Sync işlemi başarısız');
+    }
+  }
+
+  void _resetFeatureConfig() async {
+    try {
+      await FeatureConfigService().resetToDefaults();
+      _showSettingChangedSnackBar('Ayarlar varsayılan duruma getirildi');
+      setState(() {}); // Trigger rebuild to update UI
+    } catch (e) {
+      _showSettingChangedSnackBar('Hata: Ayarlar sıfırlanamadı');
+    }
   }
 
   void _handleLogout() {

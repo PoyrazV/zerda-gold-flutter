@@ -7,6 +7,7 @@ import 'widgets/custom_error_widget.dart';
 import 'services/auth_service.dart';
 import 'services/global_ticker_service.dart';
 import 'services/watchlist_service.dart';
+import 'services/feature_config_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,7 @@ void main() async {
   // Initialize services after app starts
   AuthService().initialize();
   GlobalTickerService().initialize();
+  FeatureConfigService().initialize();
 }
 
 class MyApp extends StatelessWidget {

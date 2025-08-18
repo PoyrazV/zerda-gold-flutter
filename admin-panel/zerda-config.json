@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-08-18T13:43:31.959Z",
+  "features": {
+    "dashboard": true,
+    "goldPrices": true,
+    "converter": true,
+    "alarms": true,
+    "portfolio": true,
+    "profile": true,
+    "watchlist": true,
+    "profitLossCalculator": true,
+    "performanceHistory": true,
+    "sarrafiyeIscilik": true,
+    "gecmisKurlar": true
+  }
+}

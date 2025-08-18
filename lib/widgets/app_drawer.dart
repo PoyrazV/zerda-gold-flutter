@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'gold_bars_icon.dart';
 import '../services/auth_service.dart';
+import '../services/feature_config_service.dart';
 
 class AppDrawer extends StatefulWidget {
   const AppDrawer({Key? key}) : super(key: key);
@@ -12,21 +13,31 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   late AuthService _authService;
+  late FeatureConfigService _featureConfig;
 
   @override
   void initState() {
     super.initState();
     _authService = AuthService();
+    _featureConfig = FeatureConfigService();
     _authService.addListener(_onAuthStateChanged);
+    _featureConfig.addListener(_onFeatureConfigChanged);
   }
 
   @override
   void dispose() {
     _authService.removeListener(_onAuthStateChanged);
+    _featureConfig.removeListener(_onFeatureConfigChanged);
     super.dispose();
   }
 
   void _onAuthStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _onFeatureConfigChanged() {
     if (mounted) {
       setState(() {});
     }
@@ -124,111 +135,8 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
             ),
             
-            // Menu items
-            _buildMenuItem(
-              Icons.euro, 
-              'Döviz', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/dashboard-screen');
-              },
-              currentRoute == '/dashboard-screen'
-            ),
-            
-            _buildMenuItemCustomIcon(
-              GoldBarsIcon(
-                color: currentRoute == '/gold-coin-prices-screen' 
-                    ? const Color(0xFFE8D095)
-                    : Colors.white.withOpacity(0.9),
-                size: 22,
-              ), 
-              'Altın', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/gold-coin-prices-screen');
-              },
-              currentRoute == '/gold-coin-prices-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.swap_horiz, 
-              'Döviz/Altın Çevirici', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/currency-converter-screen');
-              },
-              currentRoute == '/currency-converter-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.notifications_active, 
-              'Alarmlar', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/price-alerts-screen');
-              },
-              currentRoute == '/price-alerts-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.account_balance_wallet, 
-              'Portföyüm', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/portfolio-management-screen');
-              },
-              currentRoute == '/portfolio-management-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.bookmark, 
-              'Takip Listem', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/watchlist-screen');
-              },
-              currentRoute == '/watchlist-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.trending_up, 
-              'Kar / Zarar Hesaplama', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/profit-loss-calculator-screen');
-              },
-              currentRoute == '/profit-loss-calculator-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.receipt_long, 
-              'Performans Geçmişi', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/winners-losers-screen');
-              },
-              currentRoute == '/winners-losers-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.currency_exchange, 
-              'Sarrafiye İşçilikleri', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/sarrafiye-iscilik-screen');
-              },
-              currentRoute == '/sarrafiye-iscilik-screen'
-            ),
-            
-            _buildMenuItem(
-              Icons.history, 
-              'Geçmiş Kurlar', 
-              () {
-                Navigator.of(context).pop();
-                Navigator.pushNamed(context, '/gecmis-kurlar-screen');
-              },
-              currentRoute == '/gecmis-kurlar-screen'
-            ),
+            // Menu items - only show if feature is enabled
+            ..._buildEnabledMenuItems(currentRoute),
                 ],
               ),
             ),
@@ -260,6 +168,147 @@ class _AppDrawerState extends State<AppDrawer> {
         ),
       ),
     );
+  }
+
+  List<Widget> _buildEnabledMenuItems(String? currentRoute) {
+    List<Widget> menuItems = [];
+
+    // Dashboard (Döviz)
+    if (_featureConfig.isDashboardEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.euro, 
+        'Döviz', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/dashboard-screen');
+        },
+        currentRoute == '/dashboard-screen'
+      ));
+    }
+
+    // Gold Prices (Altın)
+    if (_featureConfig.isGoldPricesEnabled) {
+      menuItems.add(_buildMenuItemCustomIcon(
+        GoldBarsIcon(
+          color: currentRoute == '/gold-coin-prices-screen' 
+              ? const Color(0xFFE8D095)
+              : Colors.white.withOpacity(0.9),
+          size: 22,
+        ), 
+        'Altın', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/gold-coin-prices-screen');
+        },
+        currentRoute == '/gold-coin-prices-screen'
+      ));
+    }
+
+    // Currency Converter (Çevirici)
+    if (_featureConfig.isConverterEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.swap_horiz, 
+        'Döviz/Altın Çevirici', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/currency-converter-screen');
+        },
+        currentRoute == '/currency-converter-screen'
+      ));
+    }
+
+    // Alarms (Alarmlar)
+    if (_featureConfig.isAlarmsEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.notifications_active, 
+        'Alarmlar', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/price-alerts-screen');
+        },
+        currentRoute == '/price-alerts-screen'
+      ));
+    }
+
+    // Portfolio (Portföyüm)
+    if (_featureConfig.isPortfolioEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.account_balance_wallet, 
+        'Portföyüm', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/portfolio-management-screen');
+        },
+        currentRoute == '/portfolio-management-screen'
+      ));
+    }
+
+    // Watchlist (Takip Listem)
+    if (_featureConfig.isWatchlistEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.bookmark, 
+        'Takip Listem', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/watchlist-screen');
+        },
+        currentRoute == '/watchlist-screen'
+      ));
+    }
+
+    // Profit/Loss Calculator (Kar/Zarar Hesaplama)
+    if (_featureConfig.isProfitLossCalculatorEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.trending_up, 
+        'Kar / Zarar Hesaplama', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/profit-loss-calculator-screen');
+        },
+        currentRoute == '/profit-loss-calculator-screen'
+      ));
+    }
+
+    // Performance History (Performans Geçmişi)
+    if (_featureConfig.isPerformanceHistoryEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.receipt_long, 
+        'Performans Geçmişi', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/winners-losers-screen');
+        },
+        currentRoute == '/winners-losers-screen'
+      ));
+    }
+
+    // Sarrafiye İşçilikleri
+    if (_featureConfig.isSarrafiyeIscilikEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.currency_exchange, 
+        'Sarrafiye İşçilikleri', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/sarrafiye-iscilik-screen');
+        },
+        currentRoute == '/sarrafiye-iscilik-screen'
+      ));
+    }
+
+    // Geçmiş Kurlar
+    if (_featureConfig.isGecmisKurlarEnabled) {
+      menuItems.add(_buildMenuItem(
+        Icons.history, 
+        'Geçmiş Kurlar', 
+        () {
+          Navigator.of(context).pop();
+          Navigator.pushNamed(context, '/gecmis-kurlar-screen');
+        },
+        currentRoute == '/gecmis-kurlar-screen'
+      ));
+    }
+
+    return menuItems;
   }
   
   Widget _buildMenuItemCustomIcon(Widget icon, String title, VoidCallback onTap, [bool isActive = false]) {

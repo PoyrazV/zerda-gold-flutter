@@ -7,6 +7,8 @@ import '../presentation/gold_coin_prices_screen/gold_coin_prices_screen.dart';
 import '../presentation/currency_converter_screen/currency_converter_screen.dart';
 import '../presentation/price_alerts_screen/price_alerts_screen.dart';
 import '../presentation/portfolio_management_screen/portfolio_management_screen.dart';
+import '../services/feature_config_service.dart';
+import 'feature_wrapper.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final String currentRoute;
@@ -16,46 +18,73 @@ class CustomBottomNavigationBar extends StatelessWidget {
     required this.currentRoute,
   }) : super(key: key);
 
-  static final List<Map<String, dynamic>> _navItems = [
+  static final List<Map<String, dynamic>> _allNavItems = [
     {
       'title': 'Döviz',
       'icon': Icons.euro,
       'route': '/dashboard-screen',
+      'feature': 'dashboard',
     },
     {
       'title': 'Altın',
       'icon': Icons.diamond,
       'route': '/gold-coin-prices-screen',
+      'feature': 'goldPrices',
     },
     {
       'title': 'Çevirici',
       'icon': Icons.swap_horiz,
       'route': '/currency-converter-screen',
+      'feature': 'converter',
     },
     {
       'title': 'Alarm',
       'icon': Icons.notifications,
       'route': '/price-alerts-screen',
+      'feature': 'alarms',
     },
     {
       'title': 'Portföy',
       'icon': Icons.account_balance_wallet,
       'route': '/portfolio-management-screen',
+      'feature': 'portfolio',
     },
   ];
+
+  List<Map<String, dynamic>> get _enabledNavItems {
+    final featureConfig = FeatureConfigService();
+    return _allNavItems.where((item) {
+      return featureConfig.isFeatureEnabled(item['feature'] as String);
+    }).toList();
+  }
 
   Widget _getPageForRoute(String route) {
     switch (route) {
       case '/dashboard-screen':
-        return const DashboardScreen();
+        return FeatureWrapper(
+          featureName: 'dashboard',
+          child: const DashboardScreen(),
+        );
       case '/gold-coin-prices-screen':
-        return const GoldCoinPricesScreen();
+        return FeatureWrapper(
+          featureName: 'goldPrices',
+          child: const GoldCoinPricesScreen(),
+        );
       case '/currency-converter-screen':
-        return const CurrencyConverterScreen();
+        return FeatureWrapper(
+          featureName: 'converter',
+          child: const CurrencyConverterScreen(),
+        );
       case '/price-alerts-screen':
-        return const PriceAlertsScreen();
+        return FeatureWrapper(
+          featureName: 'alarms',
+          child: const PriceAlertsScreen(),
+        );
       case '/portfolio-management-screen':
-        return const PortfolioManagementScreen();
+        return FeatureWrapper(
+          featureName: 'portfolio',
+          child: const PortfolioManagementScreen(),
+        );
       default:
         return const DashboardScreen();
     }
@@ -79,7 +108,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         child: SizedBox(
           height: 8.h,
           child: Row(
-            children: _navItems.asMap().entries.map((entry) {
+            children: _enabledNavItems.asMap().entries.map((entry) {
               final index = entry.key;
               final item = entry.value;
               final isActive = currentRoute == item['route'];

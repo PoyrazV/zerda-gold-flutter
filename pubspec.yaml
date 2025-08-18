@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter # 🚨 CRITICAL: Required for every Flutter project - DO NOT REMOVE
   
   # 🚨 CRITICAL: Core UI and responsive design - DO NOT REMOVE OR MODIFY
-  sizer: ^2.0.15             # Required for responsive design system
+  sizer: ^2.0.15            # Required for responsive design system
   flutter_svg: ^2.0.9        # Required for SVG icon support
   google_fonts: ^6.1.0       # Required for typography (replaces local fonts)
   shared_preferences: ^2.2.2 # Required for local data storage
@@ -49,6 +49,6 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/app_icon.png"
-  adaptive_icon_background: "#5E35B1"
-  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+  image_path: "assets/images/zerda-logo-z.png"
+  adaptive_icon_background: "#18214F"
+  adaptive_icon_foreground: "assets/images/zerda-logo-z.png"

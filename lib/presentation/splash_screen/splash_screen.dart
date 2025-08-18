@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/app_export.dart';
 
@@ -288,40 +289,43 @@ class _SplashScreenState extends State<SplashScreen>
   Widget _buildAppLogo() {
     return Column(
       children: [
-        // App Icon/Logo - Simplified without shadows for faster rendering
-        Container(
-          width: 25.w,
-          height: 25.w,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Center(
-            child: Text(
-              'Z',
-              style: TextStyle(
-                color: const Color(0xFF18214F),
-                fontWeight: FontWeight.bold,
-                fontSize: 48.sp,
+        // App Icon/Logo - Try SVG first, fallback to container
+        FutureBuilder(
+          future: Future.delayed(Duration.zero),
+          builder: (context, snapshot) {
+            return Container(
+              width: 25.w,
+              height: 25.w,
+              child: SvgPicture.asset(
+                'assets/images/zerda-logo-z.svg',
+                width: 25.w,
+                height: 25.w,
+                fit: BoxFit.contain,
+                colorFilter: null, // Remove color filter to use original SVG colors
+                placeholderBuilder: (BuildContext context) => Container(
+                  width: 25.w,
+                  height: 25.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Z',
+                      style: TextStyle(
+                        color: const Color(0xFF18214F),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 48.sp,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }
         ),
 
         SizedBox(height: 3.h),
-
-        // App Name
-        Text(
-          'ZERDA',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-            fontSize: 24.sp,
-          ),
-        ),
-
-        SizedBox(height: 1.h),
 
         // App Tagline
         Text(

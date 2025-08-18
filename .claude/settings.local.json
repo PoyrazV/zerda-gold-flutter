@@ -34,7 +34,11 @@
       "Bash(git checkout:*)",
       "WebFetch(domain:api.exchangerate-api.com)",
       "Bash(git commit:*)",
-      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\widgets\\main_layout.dart\")"
+      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\widgets\\main_layout.dart\")",
+      "Bash(dir:*)",
+      "Bash(npm install)",
+      "Bash(npm start)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

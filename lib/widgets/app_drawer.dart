@@ -42,17 +42,7 @@ class _AppDrawerState extends State<AppDrawer> {
     return Drawer(
       child: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF18214F), // Dark navy - matches header
-              Color(0xFF1E2A5E), // Intermediate color for smooth transition
-              Color(0xFF243570), // Another intermediate
-              Color(0xFF283593), // Indigo blue
-            ],
-            stops: [0.0, 0.35, 0.70, 1.0], // Gradual color stops
-          ),
+          color: Color(0xFF18214F),
         ),
         child: Column(
           children: [
@@ -136,7 +126,7 @@ class _AppDrawerState extends State<AppDrawer> {
             
             // Menu items
             _buildMenuItem(
-              Icons.attach_money, 
+              Icons.euro, 
               'Döviz', 
               () {
                 Navigator.of(context).pop();
@@ -148,7 +138,7 @@ class _AppDrawerState extends State<AppDrawer> {
             _buildMenuItemCustomIcon(
               GoldBarsIcon(
                 color: currentRoute == '/gold-coin-prices-screen' 
-                    ? Colors.white 
+                    ? const Color(0xFFE8D095)
                     : Colors.white.withOpacity(0.9),
                 size: 22,
               ), 
@@ -274,7 +264,7 @@ class _AppDrawerState extends State<AppDrawer> {
   
   Widget _buildMenuItemCustomIcon(Widget icon, String title, VoidCallback onTap, [bool isActive = false]) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: isActive ? BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
@@ -288,7 +278,7 @@ class _AppDrawerState extends State<AppDrawer> {
         title: Text(
           title,
           style: TextStyle(
-            color: Colors.white,
+            color: isActive ? const Color(0xFFE8D095) : Colors.white,
             fontSize: 16,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -306,7 +296,7 @@ class _AppDrawerState extends State<AppDrawer> {
   
   Widget _buildMenuItem(IconData icon, String title, VoidCallback onTap, [bool isActive = false]) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: isActive ? BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
@@ -318,13 +308,13 @@ class _AppDrawerState extends State<AppDrawer> {
       child: ListTile(
         leading: Icon(
           icon,
-          color: isActive ? Colors.white : Colors.white.withOpacity(0.9),
+          color: isActive ? const Color(0xFFE8D095) : Colors.white.withOpacity(0.9),
           size: 22,
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: Colors.white,
+            color: isActive ? const Color(0xFFE8D095) : Colors.white,
             fontSize: 16,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
           ),

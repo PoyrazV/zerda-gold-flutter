@@ -22,6 +22,13 @@ class SegmentedControlWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.lightTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: tabs.asMap().entries.map((entry) {
@@ -39,6 +46,13 @@ class SegmentedControlWidget extends StatelessWidget {
                   color:
                       isSelected ? const Color(0xFF18214F) : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: const Color(0xFF18214F).withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ] : null,
                 ),
                 child: Center(
                   child: Text(

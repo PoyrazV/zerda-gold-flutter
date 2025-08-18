@@ -161,4 +161,21 @@ class CurrencyFormatter {
       return formatNumber(price, decimalPlaces: 4); // Four decimals for smaller values
     }
   }
+
+  /// Formats price with smart decimal places based on integer part digits
+  /// If integer part has 3 or 4 digits (100-9999), show 2 decimal places
+  /// Otherwise use default 4 decimal places
+  /// Example: 123.1040 → 123,10, 1234.1040 → 1.234,10, 12.1040 → 12,1040
+  static String formatSmartPrice(double price, {int defaultDecimalPlaces = 4}) {
+    int integerPart = price.truncate();
+    int integerDigits = integerPart.toString().length;
+    
+    if (integerDigits == 3 || integerDigits == 4) {
+      // 3 or 4 digits in integer part (100-9999): use 2 decimal places
+      return formatNumber(price, decimalPlaces: 2);
+    } else {
+      // Otherwise use default decimal places
+      return formatNumber(price, decimalPlaces: defaultDecimalPlaces);
+    }
+  }
 }

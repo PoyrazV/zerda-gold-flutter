@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/currency_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
@@ -21,54 +23,57 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   bool _isRefreshing = false;
   String _selectedType = 'DOVIZ'; // DOVIZ or ALTIN
   String _selectedDate = '31.07.2025';
+  final CurrencyApiService _currencyApiService = CurrencyApiService();
+  List<Map<String, dynamic>> _allCurrencyData = [];
+  bool _isLoading = true;
 
   // Geçmiş döviz kurları (EUR bazlı)
   final Map<String, List<Map<String, dynamic>>> _historicalData = {
     'DOVIZ': [
       {
-        'code': 'USDEUR',
+        'code': 'USD/EUR',
         'name': 'Amerikan Doları',
         'buyPrice': 0.8789,
         'sellPrice': 0.8772,
       },
       {
-        'code': 'TRYEUR',
+        'code': 'TRY/EUR',
         'name': 'Türk Lirası',
         'buyPrice': 0.0217,
         'sellPrice': 0.0216,
       },
       {
-        'code': 'GBPEUR',
+        'code': 'GBP/EUR',
         'name': 'İngiliz Sterlini',
         'buyPrice': 1.1551,
         'sellPrice': 1.1596,
       },
       {
-        'code': 'CHFEUR',
+        'code': 'CHF/EUR',
         'name': 'İsviçre Frangı',
         'buyPrice': 1.0671,
         'sellPrice': 1.0746,
       },
       {
-        'code': 'AUDEUR',
+        'code': 'AUD/EUR',
         'name': 'Avustralya Doları',
         'buyPrice': 0.5477,
         'sellPrice': 0.5628,
       },
       {
-        'code': 'CADEUR',
+        'code': 'CAD/EUR',
         'name': 'Kanada Doları',
         'buyPrice': 0.6238,
         'sellPrice': 0.6397,
       },
       {
-        'code': 'SAREUR',
+        'code': 'SAR/EUR',
         'name': 'Suudi Riyali',
         'buyPrice': 0.2309,
         'sellPrice': 0.2371,
       },
       {
-        'code': 'JPYEUR',
+        'code': 'JPY/EUR',
         'name': 'Japon Yeni',
         'buyPrice': 0.0058,
         'sellPrice': 0.0059,
@@ -129,6 +134,27 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     );
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    // Load currency data from API
+    _loadCurrencyData();
+  }
+  
+  Future<void> _loadCurrencyData() async {
+    try {
+      final currencies = await _currencyApiService.getFormattedCurrencyData();
+      if (mounted) {
+        setState(() {
+          _allCurrencyData = currencies;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading currency data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _updateTicker() {
@@ -154,8 +180,8 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
+    // Reload data from API
+    await _loadCurrencyData();
 
     setState(() {
       _isRefreshing = false;
@@ -198,45 +224,50 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFF18214F),
       drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: AppTheme.lightTheme.colorScheme.primary,
-        child: Column(
-          children: [
-            // Header with ZERDA branding
-            _buildHeader(),
+      body: Column(
+        children: [
+          // Header with ZERDA branding
+          _buildHeader(),
 
-            // Price ticker with API data
-            const TickerSection(reduceBottomPadding: false),
+          // Price ticker with API data
+          const TickerSection(reduceBottomPadding: false),
 
-            // Table header
-            _buildTableHeader(),
+          // Main content with fixed controls and header
+          Expanded(
+            child: Column(
+              children: [
+                SizedBox(height: 2.h),
+                
+                // Type selector and date picker - FIXED
+                _buildControls(),
 
-            // Main content
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    SizedBox(height: 2.h),
-                    
-                    // Type selector and date picker
-                    _buildControls(),
+                SizedBox(height: 1.h),
 
-                    SizedBox(height: 2.h),
+                // Table header - FIXED
+                _buildTableHeader(),
 
-                    // Historical rates list
-                    _buildHistoricalRatesList(),
-
-                    SizedBox(height: 2.h),
-                  ],
+                // Historical rates list - SCROLLABLE
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _handleRefresh,
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          _buildHistoricalRatesList(),
+                          SizedBox(height: 2.h),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -464,98 +495,135 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   Widget _buildControls() {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 4.w),
-      child: Column(
-        children: [
-          // Type selector
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedType = 'DOVIZ';
-                    });
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 1.5.h),
-                    decoration: BoxDecoration(
-                      color: _selectedType == 'DOVIZ' 
-                          ? AppTheme.lightTheme.colorScheme.primary
-                          : AppTheme.lightTheme.colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'DÖVİZ',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                        color: _selectedType == 'DOVIZ' 
-                            ? Colors.white
-                            : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 2.w),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedType = 'ALTIN';
-                    });
-                  },
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 1.5.h),
-                    decoration: BoxDecoration(
-                      color: _selectedType == 'ALTIN' 
-                          ? AppTheme.lightTheme.colorScheme.primary
-                          : AppTheme.lightTheme.colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'ALTIN',
-                      textAlign: TextAlign.center,
-                      style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                        color: _selectedType == 'ALTIN' 
-                            ? Colors.white
-                            : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+      height: 5.5.h,
+      decoration: BoxDecoration(
+        color: AppTheme.lightTheme.colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.shadowLight,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          SizedBox(height: 2.h),
-          // Date picker
-          GestureDetector(
-            onTap: _selectDate,
-            child: Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Date picker at the start
+          Expanded(
+            flex: 4,
+            child: GestureDetector(
+              onTap: _selectDate,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    bottomLeft: Radius.circular(10),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: const Color(0xFF18214F),
+                      size: 15.sp,
+                    ),
+                    SizedBox(width: 1.5.w),
+                    Text(
+                      _selectedDate,
+                      style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11.sp,
+                        color: AppTheme.lightTheme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    size: 20,
-                  ),
-                  SizedBox(width: 2.w),
-                  Text(
-                    _selectedDate,
+            ),
+          ),
+          
+          // Divider
+          Container(
+            width: 1,
+            height: 3.h,
+            color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
+          ),
+          
+          // DÖVİZ button in the middle
+          Expanded(
+            flex: 3,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedType = 'DOVIZ';
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _selectedType == 'DOVIZ' 
+                      ? Colors.white
+                      : Colors.transparent,
+                ),
+                child: Center(
+                  child: Text(
+                    'DÖVİZ',
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      color: _selectedType == 'DOVIZ' 
+                          ? const Color(0xFF18214F)
+                          : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                      fontWeight: _selectedType == 'DOVIZ' 
+                          ? FontWeight.w900
+                          : FontWeight.w600,
+                      fontSize: 14.sp,
                     ),
                   ),
-                ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Divider
+          Container(
+            width: 1,
+            height: 3.h,
+            color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
+          ),
+          
+          // ALTIN button
+          Expanded(
+            flex: 3,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedType = 'ALTIN';
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _selectedType == 'ALTIN' 
+                      ? Colors.white
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    'ALTIN',
+                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                      color: _selectedType == 'ALTIN' 
+                          ? const Color(0xFF18214F)
+                          : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                      fontWeight: _selectedType == 'ALTIN' 
+                          ? FontWeight.w900
+                          : FontWeight.w600,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -566,55 +634,48 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
 
   Widget _buildTableHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.8.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+      height: 4.h,
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      decoration: const BoxDecoration(
+        color: Color(0xFF18214F),
       ),
       child: Row(
         children: [
           Expanded(
             flex: 3,
             child: Text(
-              'Birim',
-              textAlign: TextAlign.left,
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
+              'PRODUKT',
+              style: GoogleFonts.inter(
+                fontSize: 4.w,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095),
+                height: 2,
               ),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              'Alış',
+              'ANKAUF',
               textAlign: TextAlign.center,
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
+              style: GoogleFonts.inter(
+                fontSize: 4.w,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095),
+                height: 2,
               ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Padding(
-              padding: EdgeInsets.only(left: 6.5.w),
-              child: Text(
-                'Satış',
-                textAlign: TextAlign.center,
-                style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+            child: Text(
+              'VERKAUF',
+              textAlign: TextAlign.right,
+              style: GoogleFonts.inter(
+                fontSize: 4.w,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFE8D095),
+                height: 2,
               ),
             ),
           ),
@@ -624,101 +685,125 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   }
 
   Widget _buildHistoricalRatesList() {
-    final data = _historicalData[_selectedType] ?? [];
+    if (_isLoading) {
+      return Container(
+        height: 20.h,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: const Color(0xFFFFD700),
+          ),
+        ),
+      );
+    }
     
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      itemCount: data.length,
-      itemBuilder: (context, index) {
-        final item = data[index];
-        final displayPrice = _selectedType == 'DOVIZ' ? 4 : 2;
-        final isLastItem = index == data.length - 1;
+    // Filter data based on selected type - show all currencies for DOVIZ, gold data for ALTIN
+    List<Map<String, dynamic>> data;
+    final displayPrice = 4; // Always show 4 decimal places for currencies
+    
+    if (_selectedType == 'DOVIZ') {
+      // Show all currencies from API
+      data = _allCurrencyData;
+    } else {
+      // Show gold data from historical data
+      data = _historicalData[_selectedType] ?? [];
+    }
+    
+    return Column(
+      children: data.asMap().entries.map((entry) {
+        int index = entry.key;
+        Map<String, dynamic> item = entry.value;
+        final currentDisplayPrice = _selectedType == 'DOVIZ' ? 4 : 2;
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Darker gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
         
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          height: 8.h,
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.w),
           decoration: BoxDecoration(
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            ),
+            color: backgroundColor,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 1.2.h, horizontal: 0.w),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Code and name
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        item['code'] as String,
-                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left section - Currency code or name
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _selectedType == 'DOVIZ' 
+                          ? (item['name'] as String)
+                          : (item['code'] as String),
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1E2939),
+                        height: 1.4,
                       ),
-                      SizedBox(height: 0.1.h),
-                      Text(
-                        item['name'] as String,
-                        style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondaryLight,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ],
-                  ),
-                ),
-                // Buy price
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      '€${CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: displayPrice)}',
-                      style: AppTheme.dataTextStyle(
-                        isLight: true,
-                        fontSize: 12.sp,
-                      ).copyWith(fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              // Middle section - Buy price
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: EdgeInsets.only(top: 5.w),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Text(
+                      _selectedType == 'DOVIZ' 
+                          ? CurrencyFormatter.formatSmartPrice(item['buyPrice'] as double)
+                          : CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: currentDisplayPrice),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E2939),
+                        height: 1.8,
+                      ),
                     ),
                   ),
                 ),
-                // Sell price
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    alignment: Alignment.centerRight,
-                    padding: EdgeInsets.only(right: 2.w),
+              ),
+              // Right section - Sell price
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 3.w, top: 5.w),
+                  child: Align(
+                    alignment: Alignment.topRight,
                     child: Text(
-                      '€${CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: displayPrice)}',
-                      style: AppTheme.dataTextStyle(
-                        isLight: true,
-                        fontSize: 12.sp,
-                      ).copyWith(fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                      _selectedType == 'DOVIZ' 
+                          ? CurrencyFormatter.formatSmartPrice(
+                              item['sellPrice'] as double? ?? (item['buyPrice'] as double) * 1.002
+                            )
+                          : CurrencyFormatter.formatNumber(
+                              item['sellPrice'] as double, 
+                              decimalPlaces: currentDisplayPrice
+                            ),
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.inter(
+                        fontSize: 4.w,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E2939),
+                        height: 1.8,
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
-      },
+      }).toList(),
     );
   }
 

@@ -336,7 +336,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Text(
-                  CurrencyFormatter.formatNumber(currency['buyPrice'] as double, decimalPlaces: 4),
+                  CurrencyFormatter.formatSmartPrice(currency['buyPrice'] as double),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 4.w, // 1rem equivalent - responsive
@@ -360,7 +360,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 Padding(
                   padding: EdgeInsets.only(top: 1.w),
                   child: Text(
-                    CurrencyFormatter.formatNumber(currency['sellPrice'] as double, decimalPlaces: 4),
+                    CurrencyFormatter.formatSmartPrice(currency['sellPrice'] as double),
                     textAlign: TextAlign.right,
                     style: GoogleFonts.inter(
                       fontSize: 4.w, // 1rem equivalent - responsive

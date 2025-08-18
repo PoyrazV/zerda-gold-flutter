@@ -43,6 +43,15 @@ class TimeframeFilterWidget extends StatelessWidget {
                       : AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected 
+                        ? const Color(0xFF18214F).withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.08),
+                    blurRadius: isSelected ? 6 : 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Center(
                 child: Text(

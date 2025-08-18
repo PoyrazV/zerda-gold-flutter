@@ -24,14 +24,7 @@ class ProfileHeaderWidget extends StatelessWidget {
         maxHeight: 28.h,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.lightTheme.primaryColor,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-        ),
+        color: const Color(0xFF18214F),
       ),
       child: SafeArea(
         child: Stack(

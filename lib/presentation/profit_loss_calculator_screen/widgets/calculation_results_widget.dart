@@ -76,7 +76,7 @@ class CalculationResultsWidget extends StatelessWidget {
                   ),
                   SizedBox(width: 3.w),
                   Text(
-                    '${isPositive ? '+' : ''}${CurrencyFormatter.formatNumber(profitLoss, decimalPlaces: 0)} TRY',
+                    '${isPositive ? '+' : ''}${CurrencyFormatter.formatNumber(profitLoss, decimalPlaces: 0)} EUR',
                     style: TextStyle(
                       color: AppTheme.lightTheme.colorScheme.onSurface,
                       fontSize: 16.sp,
@@ -134,7 +134,7 @@ class CalculationResultsWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${CurrencyFormatter.formatExchangeRate(results['pastRate'] as double)} TRY',
+                    '${CurrencyFormatter.formatExchangeRate(results['pastRate'] as double)} EUR',
                     style: TextStyle(
                       color: AppTheme.lightTheme.colorScheme.onSurface,
                       fontSize: 14.sp,
@@ -156,7 +156,7 @@ class CalculationResultsWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${CurrencyFormatter.formatNumber(results['pastValue'] as double)} ${results['action'] == 'ALSAYDIM' ? results['currency'] : 'TRY'}',
+                    '${CurrencyFormatter.formatNumber(results['pastValue'] as double)} ${results['action'] == 'ALSAYDIM' ? results['currency'] : 'EUR'}',
                     style: TextStyle(
                       color: AppTheme.lightTheme.colorScheme.onSurface,
                       fontSize: 12.sp,
@@ -214,7 +214,7 @@ class CalculationResultsWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${CurrencyFormatter.formatExchangeRate(results['currentRate'] as double)} TRY',
+                    '${CurrencyFormatter.formatExchangeRate(results['currentRate'] as double)} EUR',
                     style: TextStyle(
                       color: AppTheme.lightTheme.colorScheme.onSurface,
                       fontSize: 14.sp,
@@ -236,7 +236,7 @@ class CalculationResultsWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${CurrencyFormatter.formatNumber(results['currentValue'] as double)} ${results['action'] == 'ALSAYDIM' ? 'TRY' : 'TRY'}',
+                    '${CurrencyFormatter.formatNumber(results['currentValue'] as double)} ${results['action'] == 'ALSAYDIM' ? 'EUR' : 'EUR'}',
                     style: TextStyle(
                       color: AppTheme.lightTheme.colorScheme.onSurface,
                       fontSize: 12.sp,

@@ -22,106 +22,100 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   String _selectedType = 'DOVIZ'; // DOVIZ or ALTIN
   String _selectedDate = '31.07.2025';
 
-  // Geçmiş döviz kurları
+  // Geçmiş döviz kurları (EUR bazlı)
   final Map<String, List<Map<String, dynamic>>> _historicalData = {
     'DOVIZ': [
       {
-        'code': 'USDTRY',
+        'code': 'USDEUR',
         'name': 'Amerikan Doları',
-        'buyPrice': 40.503,
-        'sellPrice': 40.596,
+        'buyPrice': 0.8789,
+        'sellPrice': 0.8772,
       },
       {
-        'code': 'EURTRY',
-        'name': 'Euro',
-        'buyPrice': 46.096,
-        'sellPrice': 46.285,
+        'code': 'TRYEUR',
+        'name': 'Türk Lirası',
+        'buyPrice': 0.0217,
+        'sellPrice': 0.0216,
       },
       {
-        'code': 'EURUSD',
-        'name': 'Euro / Dolar',
-        'buyPrice': 1.1381,
-        'sellPrice': 1.1401,
-      },
-      {
-        'code': 'GBPTRY',
+        'code': 'GBPEUR',
         'name': 'İngiliz Sterlini',
-        'buyPrice': 53.258,
-        'sellPrice': 53.655,
+        'buyPrice': 1.1551,
+        'sellPrice': 1.1596,
       },
       {
-        'code': 'CHFTRY',
+        'code': 'CHFEUR',
         'name': 'İsviçre Frangı',
-        'buyPrice': 49.190,
-        'sellPrice': 49.707,
+        'buyPrice': 1.0671,
+        'sellPrice': 1.0746,
       },
       {
-        'code': 'AUDTRY',
+        'code': 'AUDEUR',
         'name': 'Avustralya Doları',
-        'buyPrice': 25.246,
-        'sellPrice': 26.042,
+        'buyPrice': 0.5477,
+        'sellPrice': 0.5628,
       },
       {
-        'code': 'CADTRY',
+        'code': 'CADEUR',
         'name': 'Kanada Doları',
-        'buyPrice': 28.752,
-        'sellPrice': 29.589,
+        'buyPrice': 0.6238,
+        'sellPrice': 0.6397,
       },
       {
-        'code': 'SARTRY',
+        'code': 'SAREUR',
         'name': 'Suudi Riyali',
-        'buyPrice': 10.645,
-        'sellPrice': 10.972,
+        'buyPrice': 0.2309,
+        'sellPrice': 0.2371,
       },
       {
-        'code': 'JPYTRY',
+        'code': 'JPYEUR',
         'name': 'Japon Yeni',
-        'buyPrice': 0.2670,
-        'sellPrice': 0.2710,
+        'buyPrice': 0.0058,
+        'sellPrice': 0.0059,
       },
     ],
     'ALTIN': [
       {
         'code': 'GRAM',
         'name': 'Gram Altın',
-        'buyPrice': 2847.50,
-        'sellPrice': 2849.20,
+        'buyPrice': 61.78,
+        'sellPrice': 61.82,
       },
       {
         'code': 'YÇEYREK',
         'name': 'Yeni Çeyrek Altın',
-        'buyPrice': 2891.75,
-        'sellPrice': 2893.45,
+        'buyPrice': 62.73,
+        'sellPrice': 62.77,
       },
       {
         'code': 'EÇEYREK',
         'name': 'Eski Çeyrek Altın',
-        'buyPrice': 2860.40,
-        'sellPrice': 2862.10,
+        'buyPrice': 62.05,
+        'sellPrice': 62.09,
       },
       {
         'code': 'YYARIM',
         'name': 'Yeni Yarım Altın',
-        'buyPrice': 5783.50,
-        'sellPrice': 5786.90,
+        'buyPrice': 125.47,
+        'sellPrice': 125.54,
       },
       {
         'code': 'EYARIM',
         'name': 'Eski Yarım Altın',
-        'buyPrice': 5720.80,
-        'sellPrice': 5724.20,
+        'buyPrice': 124.11,
+        'sellPrice': 124.18,
       },
       {
         'code': 'YTAM',
         'name': 'Yeni Tam Altın',
-        'buyPrice': 11567.00,
-        'sellPrice': 11573.80,
+        'buyPrice': 250.93,
+        'sellPrice': 251.08,
       },
       {
         'code': 'ETAM',
         'name': 'Eski Tam Altın',
-        'buyPrice': 11441.60,
-        'sellPrice': 11448.40,
+        'buyPrice': 248.22,
+        'sellPrice': 248.37,
       },
     ],
   };
@@ -693,7 +687,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                   child: Container(
                     alignment: Alignment.center,
                     child: Text(
-                      '₺${CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: displayPrice)}',
+                      '€${CurrencyFormatter.formatNumber(item['buyPrice'] as double, decimalPlaces: displayPrice)}',
                       style: AppTheme.dataTextStyle(
                         isLight: true,
                         fontSize: 12.sp,
@@ -710,7 +704,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                     alignment: Alignment.centerRight,
                     padding: EdgeInsets.only(right: 2.w),
                     child: Text(
-                      '₺${CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: displayPrice)}',
+                      '€${CurrencyFormatter.formatNumber(item['sellPrice'] as double, decimalPlaces: displayPrice)}',
                       style: AppTheme.dataTextStyle(
                         isLight: true,
                         fontSize: 12.sp,

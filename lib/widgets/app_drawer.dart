@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'gold_bars_icon.dart';
 import '../services/auth_service.dart';
 
@@ -68,13 +69,15 @@ class _AppDrawerState extends State<AppDrawer> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'ZERDA',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: SvgPicture.asset(
+                          'assets/images/zerda-gold-logo.svg',
+                          height: 48,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFFE8D095),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                       if (isLoggedIn) 

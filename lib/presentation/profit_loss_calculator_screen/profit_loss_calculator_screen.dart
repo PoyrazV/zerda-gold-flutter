@@ -26,7 +26,7 @@ class _ProfitLossCalculatorScreenState
   final TextEditingController _amountController = TextEditingController();
 
   String _selectedPeriod = '30 Gün';
-  String _selectedCurrency = 'USDTRY';
+  String _selectedCurrency = 'USDEUR';
   String _selectedAction = 'Alsaydım';
   bool _isCalculating = false;
   bool _showResults = false;
@@ -81,20 +81,20 @@ class _ProfitLossCalculatorScreenState
     final amount = double.tryParse(_amountController.text) ?? 0;
     final periodDays = int.parse(_selectedPeriod.split(' ')[0]);
 
-    // Mock historical rates (simplified)
-    double pastRate = 32.15;
-    double currentRate = 32.85;
+    // Mock historical rates (EUR as base currency)
+    double pastRate = 1.0850;
+    double currentRate = 1.0920;
 
-    // Adjust rates based on currency
-    if (_selectedCurrency == 'EUR') {
-      pastRate = 35.20;
-      currentRate = 36.10;
-    } else if (_selectedCurrency == 'GBP') {
-      pastRate = 42.80;
-      currentRate = 43.60;
-    } else if (_selectedCurrency == 'JPY') {
-      pastRate = 0.22;
-      currentRate = 0.23;
+    // Adjust rates based on currency (EUR as base)
+    if (_selectedCurrency == 'TRYEUR') {
+      pastRate = 0.0277;  // 1 TRY = 0.0277 EUR
+      currentRate = 0.0271;  // 1 TRY = 0.0271 EUR
+    } else if (_selectedCurrency == 'GBPEUR') {
+      pastRate = 1.1820;
+      currentRate = 1.1750;
+    } else if (_selectedCurrency == 'JPYEUR') {
+      pastRate = 0.00625;
+      currentRate = 0.00635;
     }
 
     double pastValue = amount;
@@ -103,13 +103,13 @@ class _ProfitLossCalculatorScreenState
     double profitLossPercentage = 0;
 
     if (_selectedAction == 'Alsaydım') {
-      // If bought foreign currency with TRY
+      // If bought foreign currency with EUR
       pastValue = amount / pastRate;
       currentValue = pastValue * currentRate;
       profitLoss = currentValue - amount;
       profitLossPercentage = ((currentValue - amount) / amount) * 100;
     } else {
-      // If sold foreign currency for TRY
+      // If sold foreign currency for EUR
       pastValue = amount * pastRate;
       currentValue = amount * currentRate;
       profitLoss = currentValue - pastValue;

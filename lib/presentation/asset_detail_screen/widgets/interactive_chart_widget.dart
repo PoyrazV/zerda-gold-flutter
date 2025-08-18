@@ -18,7 +18,7 @@ class InteractiveChartWidget extends StatefulWidget {
 
 class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
   String selectedTimeframe = '1D';
-  final List<String> timeframes = ['1D', '1W', '1M', '3M', '1Y'];
+  final List<String> timeframes = ['1D', '1W', '1M', '3M', '1Y', '5Y'];
 
   final Map<String, List<FlSpot>> chartData = {
     '1D': [
@@ -66,6 +66,14 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
       FlSpot(300, 33.90),
       FlSpot(365, 34.35),
     ],
+    '5Y': [
+      FlSpot(0, 18.50),
+      FlSpot(365, 22.20),
+      FlSpot(730, 25.80),
+      FlSpot(1095, 28.50),
+      FlSpot(1460, 31.20),
+      FlSpot(1825, 34.35),
+    ],
   };
 
   @override
@@ -96,7 +104,7 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
 
   Widget _buildTimeframeSelector() {
     return Container(
-      height: 5.h,
+      height: 4.h,
       decoration: BoxDecoration(
         color: AppTheme.lightTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
@@ -118,16 +126,16 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.lightTheme.primaryColor
+                      ? const Color(0xFF18214F)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Center(
                   child: Text(
                     timeframe,
-                    style: AppTheme.lightTheme.textTheme.labelMedium?.copyWith(
+                    style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
                       color: isSelected
-                          ? Colors.white
+                          ? const Color(0xFFE8D095)
                           : AppTheme.lightTheme.colorScheme.onSurface,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -290,6 +298,9 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
         ];
         final monthIndex = (value / 30).round();
         return monthIndex < months.length ? months[monthIndex] : '';
+      case '5Y':
+        final year = (value / 365).round() + 2020;
+        return year.toString();
       default:
         return value.toString();
     }

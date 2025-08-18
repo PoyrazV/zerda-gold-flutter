@@ -169,20 +169,31 @@ class _TickerSectionState extends State<TickerSection> {
     final bool isPositive = currency['isPositive'] as bool;
     final double change = currency['change'] as double;
     
-    return Container(
-      width: 26.5.w, // Further increased width for larger text
-      height: 22.w, // Moderate height for balanced spacing
-      margin: EdgeInsets.only(right: 2.w),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB), // Light gray background (original)
-        borderRadius: BorderRadius.circular(8), // 0.5rem equivalent
-        border: Border.all(
-          color: const Color(0x1A6B7280), // #6B72801A (semi-transparent gray)
-          width: 1,
+    return GestureDetector(
+      onTap: () {
+        // Navigate to asset detail screen with the currency code
+        Navigator.pushNamed(
+          context,
+          '/asset-detail-screen',
+          arguments: {
+            'code': currency['code'] as String,
+          },
+        );
+      },
+      child: Container(
+        width: 26.5.w, // Further increased width for larger text
+        height: 22.w, // Moderate height for balanced spacing
+        margin: EdgeInsets.only(right: 2.w),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB), // Light gray background (original)
+          borderRadius: BorderRadius.circular(8), // 0.5rem equivalent
+          border: Border.all(
+            color: const Color(0x1A6B7280), // #6B72801A (semi-transparent gray)
+            width: 1,
+          ),
         ),
-      ),
-      padding: EdgeInsets.all(2.5.w), // Further reduced padding
-      child: Column(
+        padding: EdgeInsets.all(2.5.w), // Further reduced padding
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space between elements
         crossAxisAlignment: CrossAxisAlignment.center, // Center horizontally
         children: [
@@ -252,6 +263,7 @@ class _TickerSectionState extends State<TickerSection> {
                 ),
           ),
         ],
+      ),
       ),
     );
   }

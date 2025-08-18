@@ -47,121 +47,175 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 
   double _getBasePriceForSymbol(String symbol) {
+    // Handle currency pairs with /EUR format
     switch (symbol) {
-      // Currency pairs
-      case 'USDTRY':
+      // EUR-based currency pairs
+      case 'USD/EUR':
+      case 'USDEUR':
       case 'USD':
-        return 34.5958;
-      case 'EURTRY':
-      case 'EUR':
-        return 37.4891;
-      case 'GBPTRY':
+        return 0.9235;  // USD to EUR rate
+      case 'GBP/EUR':
+      case 'GBPEUR':
       case 'GBP':
-        return 43.8056;
-      case 'CHFTRY':
+        return 1.1682;  // GBP to EUR rate
+      case 'CHF/EUR':
+      case 'CHFEUR':
       case 'CHF':
-        return 39.2267;
-      case 'AUDTRY':
+        return 1.0456;  // CHF to EUR rate
+      case 'AUD/EUR':
+      case 'AUDEUR':
       case 'AUD':
-        return 22.9012;
-      case 'CADTRY':
+        return 0.6109;  // AUD to EUR rate
+      case 'CAD/EUR':
+      case 'CADEUR':
       case 'CAD':
-        return 25.9501;
-      case 'JPYTRY':
+        return 0.6923;  // CAD to EUR rate
+      case 'JPY/EUR':
+      case 'JPYEUR':
       case 'JPY':
-        return 0.2324;
-      case 'SEKTRY':
+        return 0.0062;  // JPY to EUR rate
+      case 'SEK/EUR':
+      case 'SEKEUR':
       case 'SEK':
-        return 3.1267;
-      case 'NOKTRY':
+        return 0.0834;  // SEK to EUR rate
+      case 'NOK/EUR':
+      case 'NOKEUR':
       case 'NOK':
-        return 3.0878;
-      case 'DKKTRY':
+        return 0.0824;  // NOK to EUR rate
+      case 'DKK/EUR':
+      case 'DKKEUR':
       case 'DKK':
-        return 5.0267;
-      case 'RUBTRY':
+        return 0.1341;  // DKK to EUR rate
+      case 'RUB/EUR':
+      case 'RUBEUR':
       case 'RUB':
-        return 0.3478;
-      case 'CNYTRY':
+        return 0.0093;  // RUB to EUR rate
+      case 'CNY/EUR':
+      case 'CNYEUR':
       case 'CNY':
-        return 4.7267;
-      case 'KRWTRY':
+        return 0.1261;  // CNY to EUR rate
+      case 'KRW/EUR':
+      case 'KRWEUR':
       case 'KRW':
-        return 0.0254;
-      case 'SGDTRY':
+        return 0.0007;  // KRW to EUR rate
+      case 'SGD/EUR':
+      case 'SGDEUR':
       case 'SGD':
-        return 25.4789;
-      case 'AEDTRY':
+        return 0.6798;  // SGD to EUR rate
+      case 'AED/EUR':
+      case 'AEDEUR':
       case 'AED':
-        return 9.4156;
-      // Additional currencies that might come from Dashboard
+        return 0.2512;  // AED to EUR rate
+      case 'TRY/EUR':
+      case 'TRYEUR':
+      case 'TRY':
+        return 0.0267;  // TRY to EUR rate
+      case 'EUR':
+      case 'EURTRY':
+        return 1.0000;  // EUR to EUR rate
+      // Additional EUR-based currencies
+      case 'PLN/EUR':
+      case 'PLNEUR':
       case 'PLN':
-        return 8.7456;
+        return 0.2332;  // PLN to EUR rate
+      case 'HRK/EUR':
+      case 'HRKEUR':
       case 'HRK':
-        return 5.1234;
+        return 0.1313;  // HRK to EUR rate
+      case 'CZK/EUR':
+      case 'CZKEUR':
       case 'CZK':
-        return 1.5678;
+        return 0.0384;  // CZK to EUR rate
+      case 'HUF/EUR':
+      case 'HUFEUR':
       case 'HUF':
-        return 0.0987;
+        return 0.0025;  // HUF to EUR rate
+      case 'BGN/EUR':
+      case 'BGNEUR':
       case 'BGN':
-        return 19.2345;
+        return 0.5120;  // BGN to EUR rate
+      case 'RON/EUR':
+      case 'RONEUR':
       case 'RON':
-        return 7.6543;
+        return 0.2007;  // RON to EUR rate
+      case 'ISK/EUR':
+      case 'ISKEUR':
       case 'ISK':
-        return 0.2567;
+        return 0.0066;  // ISK to EUR rate
+      case 'THB/EUR':
+      case 'THBEUR':
       case 'THB':
-        return 1.0234;
+        return 0.0260;  // THB to EUR rate
+      case 'MYR/EUR':
+      case 'MYREUR':
       case 'MYR':
-        return 7.8901;
+        return 0.1973;  // MYR to EUR rate
+      case 'ZAR/EUR':
+      case 'ZAREUR':
       case 'ZAR':
-        return 1.9234;
+        return 0.0487;  // ZAR to EUR rate
+      case 'INR/EUR':
+      case 'INREUR':
       case 'INR':
-        return 0.4156;
+        return 0.0109;  // INR to EUR rate
+      case 'IDR/EUR':
+      case 'IDREUR':
       case 'IDR':
-        return 0.0022;
+        return 0.00006;  // IDR to EUR rate
+      case 'PHP/EUR':
+      case 'PHPEUR':
       case 'PHP':
-        return 0.6234;
+        return 0.0162;  // PHP to EUR rate
+      case 'MXN/EUR':
+      case 'MXNEUR':
       case 'MXN':
-        return 2.0156;
+        return 0.0529;  // MXN to EUR rate
+      case 'BRL/EUR':
+      case 'BRLEUR':
       case 'BRL':
-        return 7.1234;
-      // Gold types
+        return 0.1810;  // BRL to EUR rate
+      // Gold types in EUR
       case 'GRAM':
-        return 2654.30;
+        return 75.91;  // Gram gold in EUR
       case 'YÇEYREK':
-        return 2891.75;
+        return 77.11;  // Quarter gold in EUR
       case 'EÇEYREK':
-        return 2860.40;
+        return 76.27;  // Old quarter gold in EUR
       case 'YYARIM':
-        return 5783.50;
+        return 154.23;  // Half gold in EUR
       case 'EYARIM':
-        return 5720.80;
+        return 152.55;  // Old half gold in EUR
       case 'YTAM':
-        return 11567.00;
+        return 308.45;  // Full gold in EUR
       case 'ETAM':
-        return 11441.60;
+        return 305.11;  // Old full gold in EUR
       case 'YATA':
-        return 11485.75;
+        return 493.58;  // Ata gold in EUR
       case 'EATA':
-        return 11362.40;
+        return 488.18;  // Old Ata gold in EUR
       case 'CUMHUR':
-        return 11610.30;
+        return 513.20;  // Republic gold in EUR
       case '22AYAR':
-        return 2668.75;
+        return 71.17;  // 22 karat in EUR
       case '18AYAR':
-        return 2178.25;
+        return 58.09;  // 18 karat in EUR
       case '14AYAR':
-        return 1698.50;
+        return 45.29;  // 14 karat in EUR
       case 'GUMUS':
-        return 34.25;
+        return 0.91;  // Silver in EUR
       case 'ONSALTIN':
-        return 2746.85;
+        return 73.25;  // Ounce gold in EUR
       default:
-        return 34.5958; // Default USD/TRY
+        return 0.9235; // Default USD/EUR
     }
   }
 
   String _getCurrencyNameForSymbol(String symbol) {
+    // If the symbol already contains /EUR, return as is
+    if (symbol.contains('/EUR')) {
+      return symbol;
+    }
+    
     switch (symbol) {
       case 'USDTRY':
       case 'USD':

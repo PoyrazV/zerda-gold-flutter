@@ -15,24 +15,24 @@ class CurrencyDropdownWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Combined list of currencies and gold types
+    // Combined list of currencies and gold types (EUR as base)
     final assets = [
       // Döviz currencies
-      {'code': 'USDTRY', 'name': 'USDTRY'},
-      {'code': 'EURTRY', 'name': 'EURTRY'},
-      {'code': 'GBPTRY', 'name': 'GBPTRY'},
-      {'code': 'CHFTRY', 'name': 'CHFTRY'},
-      {'code': 'AUDTRY', 'name': 'AUDTRY'},
-      {'code': 'CADTRY', 'name': 'CADTRY'},
-      {'code': 'JPYTRY', 'name': 'JPYTRY'},
-      {'code': 'SEKTRY', 'name': 'SEKTRY'},
-      {'code': 'NOKTRY', 'name': 'NOKTRY'},
-      {'code': 'DKKTRY', 'name': 'DKKTRY'},
-      {'code': 'RUBTRY', 'name': 'RUBTRY'},
-      {'code': 'CNYТRY', 'name': 'CNYТRY'},
-      {'code': 'KRWTRY', 'name': 'KRWTRY'},
-      {'code': 'SGDTRY', 'name': 'SGDTRY'},
-      {'code': 'AEDTRY', 'name': 'AEDTRY'},
+      {'code': 'USDEUR', 'name': 'USDEUR'},
+      {'code': 'TRYEUR', 'name': 'TRYEUR'},
+      {'code': 'GBPEUR', 'name': 'GBPEUR'},
+      {'code': 'CHFEUR', 'name': 'CHFEUR'},
+      {'code': 'AUDEUR', 'name': 'AUDEUR'},
+      {'code': 'CADEUR', 'name': 'CADEUR'},
+      {'code': 'JPYEUR', 'name': 'JPYEUR'},
+      {'code': 'SEKEUR', 'name': 'SEKEUR'},
+      {'code': 'NOKEUR', 'name': 'NOKEUR'},
+      {'code': 'DKKEUR', 'name': 'DKKEUR'},
+      {'code': 'RUBEUR', 'name': 'RUBEUR'},
+      {'code': 'CNYEUR', 'name': 'CNYEUR'},
+      {'code': 'KRWEUR', 'name': 'KRWEUR'},
+      {'code': 'SGDEUR', 'name': 'SGDEUR'},
+      {'code': 'AEDEUR', 'name': 'AEDEUR'},
       // Gold types
       {'code': 'GRAM', 'name': 'Gram Altın'},
       {'code': 'YÇEYREK', 'name': 'Yeni Çeyrek Altın'},

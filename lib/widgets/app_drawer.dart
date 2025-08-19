@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sizer/sizer.dart';
 import 'gold_bars_icon.dart';
 import '../services/auth_service.dart';
 import '../services/feature_config_service.dart';
+import '../theme/app_colors.dart';
+import '../services/theme_config_service.dart';
 
 class AppDrawer extends StatefulWidget {
   const AppDrawer({Key? key}) : super(key: key);
@@ -22,12 +25,14 @@ class _AppDrawerState extends State<AppDrawer> {
     _featureConfig = FeatureConfigService();
     _authService.addListener(_onAuthStateChanged);
     _featureConfig.addListener(_onFeatureConfigChanged);
+    ThemeConfigService().addListener(_onThemeChanged);
   }
 
   @override
   void dispose() {
     _authService.removeListener(_onAuthStateChanged);
     _featureConfig.removeListener(_onFeatureConfigChanged);
+    ThemeConfigService().removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -43,6 +48,14 @@ class _AppDrawerState extends State<AppDrawer> {
     }
   }
 
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Auto-detect current route
@@ -52,8 +65,8 @@ class _AppDrawerState extends State<AppDrawer> {
     final isLoggedIn = _authService.isLoggedIn;
     return Drawer(
       child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF18214F),
+        decoration: BoxDecoration(
+          color: AppColors.drawerBackground,
         ),
         child: Column(
           children: [
@@ -75,8 +88,8 @@ class _AppDrawerState extends State<AppDrawer> {
                         child: SvgPicture.asset(
                           'assets/images/zerda-gold-logo.svg',
                           height: 48,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFFE8D095),
+                          colorFilter: ColorFilter.mode(
+                            AppColors.drawerActive,
                             BlendMode.srcIn,
                           ),
                         ),
@@ -191,7 +204,7 @@ class _AppDrawerState extends State<AppDrawer> {
       menuItems.add(_buildMenuItemCustomIcon(
         GoldBarsIcon(
           color: currentRoute == '/gold-coin-prices-screen' 
-              ? const Color(0xFFE8D095)
+              ? AppColors.drawerActive
               : Colors.white.withOpacity(0.9),
           size: 22,
         ), 
@@ -327,7 +340,7 @@ class _AppDrawerState extends State<AppDrawer> {
         title: Text(
           title,
           style: TextStyle(
-            color: isActive ? const Color(0xFFE8D095) : Colors.white,
+            color: isActive ? AppColors.drawerActive : AppColors.drawerInactive,
             fontSize: 16,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -357,13 +370,13 @@ class _AppDrawerState extends State<AppDrawer> {
       child: ListTile(
         leading: Icon(
           icon,
-          color: isActive ? const Color(0xFFE8D095) : Colors.white.withOpacity(0.9),
+          color: isActive ? AppColors.drawerActive : AppColors.drawerInactive,
           size: 22,
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: isActive ? const Color(0xFFE8D095) : Colors.white,
+            color: isActive ? AppColors.drawerActive : AppColors.drawerInactive,
             fontSize: 16,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
           ),

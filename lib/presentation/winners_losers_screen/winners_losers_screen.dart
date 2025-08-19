@@ -7,6 +7,7 @@ import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
+import '../../widgets/dashboard_header.dart';
 import './widgets/segmented_control_widget.dart';
 import './widgets/timeframe_filter_widget.dart';
 import './widgets/financial_instruments_list_widget.dart';
@@ -174,6 +175,9 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
   }
 
   void _updateTicker() {
@@ -182,9 +186,18 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
     }
   }
 
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
+
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     _refreshController.dispose();
     super.dispose();
   }
@@ -226,7 +239,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Veriler güncellendi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -270,11 +283,11 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        color: AppTheme.lightTheme.colorScheme.primary,
+        color: AppColors.primary,
         child: Column(
           children: [
             // Header with ZERDA branding
-            _buildHeader(),
+            const DashboardHeader(),
 
             // Price ticker
             // Price ticker with API data
@@ -413,14 +426,7 @@ class _WinnersLosersScreenState extends State<WinnersLosersScreen>
     return Container(
       height: 10.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: AppColors.headerBackground,
       ),
       padding: EdgeInsets.only(bottom: 2.h),
       child: ListView.builder(

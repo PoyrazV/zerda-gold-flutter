@@ -26,10 +26,22 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+    
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
+  }
+
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
   }
 
   @override
   void dispose() {
+    ThemeConfigService().removeListener(_onThemeChanged);
     _refreshController.dispose();
     super.dispose();
   }
@@ -57,7 +69,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Sarrafiye işçilikleri güncellendi'),
-          backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+          backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );

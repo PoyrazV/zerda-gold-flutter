@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'theme_config_service.dart';
 
 class FeatureConfigService {
   static final FeatureConfigService _instance = FeatureConfigService._internal();
@@ -15,16 +17,27 @@ class FeatureConfigService {
   bool _isInitialized = false;
   late Dio _dio;
   
-  // Admin panel API URL'i - Android emulator için 10.0.2.2 kullan
-  static const String _apiBaseUrl = 'http://10.0.2.2:3002/api';
+  // Admin panel API URL'i - Yeni gelişmiş backend (port 3009)
+  static const String _apiBaseUrl = 'http://10.0.2.2:3009/api';
+  static const String _wsBaseUrl = 'ws://10.0.2.2:3009';
+  
+  // Multi-tenant customer ID (varsayılan olarak demo customer)
+  String _customerId = 'default';
   
   // Periodic sync için timer
   Timer? _syncTimer;
+  
+  // WebSocket connection
+  WebSocketChannel? _wsChannel;
+  bool _wsConnected = false;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      print('🔧 FeatureConfigService initializing...');
+      print('📡 API Base URL: $_apiBaseUrl');
+      
       // Dio client'ı başlat
       _dio = Dio(BaseOptions(
         baseUrl: _apiBaseUrl,
@@ -38,11 +51,16 @@ class FeatureConfigService {
       // Periodic sync başlat (5 saniyede bir)
       _startPeriodicSync();
       
-      print('FeatureConfigService initialized successfully');
+      // WebSocket bağlantısını başlat
+      await _initializeWebSocket();
+      
+      print('✅ FeatureConfigService initialized successfully');
+      print('📊 Loaded ${_features.length} features: $_features');
     } catch (e) {
-      print('Error initializing FeatureConfigService: $e');
+      print('❌ Error initializing FeatureConfigService: $e');
       _setDefaultConfiguration();
       _isInitialized = true;
+      print('🔄 Using default configuration: $_features');
     }
   }
 
@@ -88,10 +106,23 @@ class FeatureConfigService {
     _setDefaultConfiguration();
   }
 
-  // Admin panel API'sinden config yükle
+  // Admin panel API'sinden config yükle (Yeni multi-tenant API)
   Future<bool> _loadFromAdminPanel() async {
     try {
-      final response = await _dio.get('/features');
+      print('🌐 Loading from Admin Panel API...');
+      
+      // İlk olarak customer ID'yi belirle
+      await _initializeCustomerId();
+      print('👤 Using Customer ID: $_customerId');
+      
+      // Yeni endpoint: /api/customers/{id}/features
+      final url = '/customers/$_customerId/features';
+      print('📞 Calling: $_apiBaseUrl$url');
+      
+      final response = await _dio.get(url);
+      
+      print('📡 Response Status: ${response.statusCode}');
+      print('📋 Response Data: ${response.data}');
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         Map<String, dynamic> features = response.data['features'];
@@ -100,10 +131,51 @@ class FeatureConfigService {
         // Local cache'e de kaydet
         await _cacheConfiguration();
         
+        print('✅ Features loaded from Multi-tenant API (Customer: $_customerId)');
+        print('📊 Features: $_features');
+        return true;
+      } else {
+        print('⚠️ API responded with error: ${response.data}');
+      }
+    } catch (e) {
+      print('❌ Could not load config from Admin Panel: $e');
+      print('🔄 Trying legacy API fallback...');
+      // Fallback: Eski API'yi dene
+      return await _loadFromLegacyAPI();
+    }
+    return false;
+  }
+  
+  // Customer ID'yi initialize et
+  Future<void> _initializeCustomerId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Force new customer ID - eski cache'i temizle
+      _customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+      await prefs.setString('customer_id', _customerId);
+      print('🔄 Customer ID forced to: $_customerId');
+    } catch (e) {
+      print('Error initializing customer ID, using hardcoded: $e');
+      _customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+    }
+  }
+  
+  // Eski API ile uyumluluk (Backwards compatibility)
+  Future<bool> _loadFromLegacyAPI() async {
+    try {
+      final response = await _dio.get('/features');
+      
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        Map<String, dynamic> features = response.data['features'];
+        _features = Map<String, bool>.from(features);
+        
+        await _cacheConfiguration();
+        print('✅ Features loaded from Legacy API');
         return true;
       }
     } catch (e) {
-      print('Could not load config from Admin Panel: $e');
+      print('Legacy API also failed: $e');
     }
     return false;
   }
@@ -131,12 +203,13 @@ class FeatureConfigService {
     });
   }
 
-  // Admin panel ile sync
+  // Admin panel ile sync (Yeni multi-tenant API)
   Future<void> _syncWithAdminPanel() async {
     try {
       if (!_isInitialized) return;
       
-      final response = await _dio.get('/features');
+      // Yeni endpoint kullan
+      final response = await _dio.get('/customers/$_customerId/features');
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         Map<String, dynamic> newFeatures = response.data['features'];
@@ -152,22 +225,49 @@ class FeatureConfigService {
         }
         
         if (hasChanges) {
+          Map<String, bool> oldFeatures = Map<String, bool>.from(_features);
           _features = updatedFeatures;
           await _cacheConfiguration();
-          print('🔄 Features updated from Admin Panel:');
+          
+          print('🔄 Features updated from Admin Panel (Customer: $_customerId):');
           for (String key in updatedFeatures.keys) {
-            if (_features[key] != updatedFeatures[key]) {
-              print('   $key: ${_features[key]} → ${updatedFeatures[key]}');
+            if (oldFeatures[key] != updatedFeatures[key]) {
+              print('   $key: ${oldFeatures[key]} → ${updatedFeatures[key]}');
             }
           }
           
-          // Burada UI'a notification gönderilebilir
+          // UI'a notification gönderilebilir
           _notifyFeatureChanges();
         }
       }
     } catch (e) {
-      print('Error syncing with Admin Panel: $e');
+      // Fallback: eski API'yi dene
+      try {
+        final response = await _dio.get('/features');
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          Map<String, dynamic> newFeatures = response.data['features'];
+          Map<String, bool> updatedFeatures = Map<String, bool>.from(newFeatures);
+          
+          if (!_compareMaps(_features, updatedFeatures)) {
+            _features = updatedFeatures;
+            await _cacheConfiguration();
+            _notifyFeatureChanges();
+            print('🔄 Features synced via Legacy API');
+          }
+        }
+      } catch (legacyError) {
+        print('Error syncing with Admin Panel (both APIs failed): $e, $legacyError');
+      }
     }
+  }
+  
+  // Map karşılaştırma helper metodu
+  bool _compareMaps(Map<String, bool> map1, Map<String, bool> map2) {
+    if (map1.length != map2.length) return false;
+    for (String key in map1.keys) {
+      if (map1[key] != map2[key]) return false;
+    }
+    return true;
   }
 
   // Feature değişiklikleri için listener listesi
@@ -194,6 +294,108 @@ class FeatureConfigService {
   void stopSync() {
     _syncTimer?.cancel();
     _syncTimer = null;
+    _wsChannel?.sink.close();
+    _wsChannel = null;
+    _wsConnected = false;
+  }
+
+  // WebSocket bağlantısını başlat
+  Future<void> _initializeWebSocket() async {
+    try {
+      print('🔌 Initializing WebSocket connection...');
+      
+      final wsUrl = Uri.parse('$_wsBaseUrl/socket.io/?EIO=4&transport=websocket');
+      print('🌐 WebSocket URL: $wsUrl');
+      
+      _wsChannel = WebSocketChannel.connect(wsUrl);
+      
+      // WebSocket mesajlarını dinle
+      _wsChannel!.stream.listen(
+        (data) {
+          print('📨 WebSocket received: $data');
+          _handleWebSocketMessage(data);
+        },
+        onError: (error) {
+          print('❌ WebSocket error: $error');
+          _wsConnected = false;
+          // 5 saniye sonra yeniden bağlanmayı dene
+          Timer(const Duration(seconds: 5), () => _initializeWebSocket());
+        },
+        onDone: () {
+          print('📤 WebSocket connection closed');
+          _wsConnected = false;
+        },
+      );
+      
+      _wsConnected = true;
+      
+      // Customer room'a katıl
+      _wsChannel!.sink.add('42["join_customer","$_customerId"]');
+      
+      print('✅ WebSocket connected successfully');
+    } catch (e) {
+      print('❌ Failed to initialize WebSocket: $e');
+      _wsConnected = false;
+    }
+  }
+
+  // WebSocket mesajlarını işle
+  void _handleWebSocketMessage(dynamic data) {
+    try {
+      final String message = data.toString();
+      
+      // Socket.io mesaj formatını parse et
+      if (message.startsWith('42')) {
+        final jsonStr = message.substring(2);
+        final parsed = json.decode(jsonStr);
+        
+        if (parsed is List && parsed.length >= 2) {
+          final eventName = parsed[0];
+          final eventData = parsed[1];
+          
+          if (eventName == 'feature_updated') {
+            print('🔄 Feature update received: $eventData');
+            _handleFeatureUpdate(eventData);
+          } else if (eventName == 'theme_updated') {
+            print('🎨 Theme update received: $eventData');
+            _handleThemeUpdate(eventData);
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ Error parsing WebSocket message: $e');
+    }
+  }
+
+  // Feature güncellemelerini işle
+  void _handleFeatureUpdate(Map<String, dynamic> data) {
+    try {
+      final featureName = data['featureName'] as String?;
+      final enabled = data['enabled'] as bool?;
+      
+      if (featureName != null && enabled != null) {
+        _features[featureName] = enabled;
+        _cacheConfiguration();
+        _notifyFeatureChanges();
+        
+        print('🔄 Feature updated via WebSocket: $featureName = $enabled');
+      }
+    } catch (e) {
+      print('❌ Error handling feature update: $e');
+    }
+  }
+
+  // Theme güncellemelerini işle  
+  void _handleThemeUpdate(Map<String, dynamic> data) {
+    print('🎨 Theme update received, notifying ThemeConfigService');
+    
+    // ThemeConfigService'a bildir
+    try {
+      ThemeConfigService().syncNow();
+      print('✅ ThemeConfigService sync triggered');
+    } catch (e) {
+      print('❌ Error triggering theme sync: $e');
+    }
   }
 
   void _setDefaultConfiguration() {
@@ -281,6 +483,26 @@ class FeatureConfigService {
   Future<bool> syncNow() async {
     return await _loadFromAdminPanel();
   }
+  
+  // Customer ID değiştirme (Multi-tenant destek)
+  Future<void> setCustomerId(String customerId) async {
+    if (customerId != _customerId) {
+      _customerId = customerId;
+      
+      // Customer ID'yi kaydet
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('customer_id', customerId);
+      
+      // Yeni customer için feature'ları yükle
+      await _loadFromAdminPanel();
+      _notifyFeatureChanges();
+      
+      print('✅ Customer changed to: $customerId');
+    }
+  }
+  
+  // Aktif customer ID'yi al
+  String get customerId => _customerId;
 
   // Remote config loading (for future use)
   Future<void> loadRemoteConfiguration(String url) async {

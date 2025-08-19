@@ -212,6 +212,9 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
   }
 
   void _updateTicker() {
@@ -220,9 +223,18 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     }
   }
 
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
+
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     _refreshController.dispose();
     super.dispose();
   }
@@ -267,7 +279,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Altın fiyatları güncellendi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -277,7 +289,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Menü açıldı'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -290,51 +302,9 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Header with ZERDA branding with reduced bottom spacing
-          Container(
-            height: 13.h,
-            decoration: const BoxDecoration(
-              color: Color(0xFF18214F),
-            ),
-            child: SafeArea(
-              top: true,
-              child: Padding(
-                padding: EdgeInsets.only(left: 4.w, right: 4.w, top: 0.5.h), // Aligned with DashboardHeader widget
-                child: Row(
-                  children: [
-                    Builder(
-                      builder: (BuildContext context) {
-                        return IconButton(
-                          onPressed: () => Scaffold.of(context).openDrawer(),
-                          icon: Icon(
-                            Icons.menu,
-                            color: Colors.white,
-                            size: 8.w,
-                          ),
-                        );
-                      },
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: SvgPicture.asset(
-                          'assets/images/zerda-gold-logo.svg',
-                          height: 5.h,
-                          width: 25.w,
-                          fit: BoxFit.contain,
-                          placeholderBuilder: (context) => SizedBox(
-                            height: 5.h,
-                            width: 25.w,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
+          // DashboardHeader with custom padding for Gold screen
+          DashboardHeader(customTopPadding: 3.1.h), // 3.h padding for lower logo position
+          
           // Price ticker with API data
           const TickerSection(reduceBottomPadding: false),
 
@@ -351,8 +321,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                       width: double.infinity,
                       height: 4.h,
                       padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF18214F), // Dark navy background
+                      decoration: BoxDecoration(
+                        color: AppColors.headerBackground, // Dynamic color
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -364,7 +334,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 4.w,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFE8D095), // Gold text
+                                color: Colors.white, // White text for header
                                 height: 2,
                               ),
                             ),
@@ -377,7 +347,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 4.w,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFE8D095), // Gold text
+                                color: Colors.white, // White text for header
                                 height: 2,
                               ),
                             ),
@@ -390,7 +360,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 4.w,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFE8D095), // Gold text
+                                color: Colors.white, // White text for header
                                 height: 2,
                               ),
                             ),
@@ -403,8 +373,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: _handleRefresh,
-                        color: const Color(0xFFFFD700),
-                        backgroundColor: Colors.white,
+                        color: AppColors.gold,
+                        backgroundColor: AppColors.white,
                         child: SingleChildScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           child: _buildGoldList(),
@@ -427,14 +397,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     return Container(
       height: 12.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: AppColors.headerBackground,
       ),
       child: SafeArea(
         child: Padding(
@@ -483,7 +446,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
         height: 20.h,
         child: Center(
           child: CircularProgressIndicator(
-            color: const Color(0xFFFFD700),
+            color: AppColors.gold,
           ),
         ),
       );
@@ -505,8 +468,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     
     // Alternating row colors
     final Color backgroundColor = index.isEven 
-        ? const Color(0xFFF0F0F0) // Darker gray for even rows
-        : const Color(0xFFFFFFFF); // White for odd rows
+        ? AppColors.inputBackground // Light gray for even rows
+        : AppColors.white; // White for odd rows
     
     return InkWell(
       onTap: () {
@@ -543,7 +506,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                     style: GoogleFonts.inter(
                       fontSize: 4.w,
                       fontWeight: FontWeight.bold, // Bold weight for name
-                      color: const Color(0xFF1E2939),
+                      color: AppColors.text,
                       height: 1.4,
                     ),
                     maxLines: 1,
@@ -558,7 +521,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                     style: GoogleFonts.inter(
                       fontSize: 3.w,
                       fontWeight: FontWeight.normal,
-                      color: const Color(0xFF6B7280),
+                      color: AppColors.disabled,
                       height: 1.2,
                     ),
                   ),
@@ -603,7 +566,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w600, // Semi-bold weight
-                        color: const Color(0xFF1E2939),
+                        color: AppColors.text,
                         height: 1.6,
                       ),
                     ),
@@ -615,8 +578,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                       padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
                       decoration: BoxDecoration(
                         color: isPositive 
-                            ? const Color(0xFFECFDF5) // Green background for increase
-                            : const Color(0xFFFEF2F2), // Red background for decrease
+                            ? AppColors.positive.withOpacity(0.1) // Green background for increase
+                            : AppColors.negative.withOpacity(0.1), // Red background for decrease
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
                           color: isPositive 
@@ -631,8 +594,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                           fontSize: 2.7.w,
                           fontWeight: FontWeight.w500, // Medium weight
                           color: isPositive 
-                              ? const Color(0xFF047857) // Green text
-                              : const Color(0xFFB91C1C), // Red text
+                              ? AppColors.positive // Green text
+                              : AppColors.negative, // Red text
                           height: 1.0,
                         ),
                       ),

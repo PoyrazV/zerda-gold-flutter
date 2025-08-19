@@ -11,6 +11,7 @@ import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
 import '../../widgets/ticker_section.dart';
+import '../../widgets/debug_panel.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -41,8 +42,19 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
     // Load currency data from API
     _loadCurrencyData();
+  }
+  
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+        print('🎨 Dashboard rebuilding with new theme colors');
+      });
+    }
   }
   
   Future<void> _loadCurrencyData() async {
@@ -69,6 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   void dispose() {
     _refreshController.dispose();
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -94,16 +107,19 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final themeService = ThemeConfigService();
+    final primaryColor = themeService.primaryColor;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF18214F),
+      backgroundColor: primaryColor,
       drawer: const AppDrawer(),
       body: Column(
         children: [
           // Modern Mobile-First Header with reduced bottom spacing
           Container(
             height: 13.h,
-            decoration: const BoxDecoration(
-              color: Color(0xFF18214F),
+            decoration: BoxDecoration(
+              color: primaryColor,
             ),
             child: SafeArea(
               top: true,
@@ -148,6 +164,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           Expanded(
             child: Column(
               children: [
+                // DEBUG PANEL - Add temporarily for testing
+                DebugPanel(),
+                
                 // Horizontal scrollable ticker cards - Fixed at top
                 const TickerSection(reduceBottomPadding: false),
                 
@@ -185,12 +204,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
 
   Widget _buildTableHeader() {
+    final primaryColor = ThemeConfigService().primaryColor;
+    
     return Container(
       width: double.infinity,
       height: 4.h, // 5-6% of screen height
       padding: EdgeInsets.symmetric(horizontal: 4.w),
-      decoration: const BoxDecoration(
-        color: Color(0xFF18214F), // Dark navy background
+      decoration: BoxDecoration(
+        color: primaryColor, // Dynamic primary color from theme service
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

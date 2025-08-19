@@ -9,6 +9,7 @@ import '../../services/currency_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
+import '../../widgets/dashboard_header.dart';
 
 class GecmisKurlarScreen extends StatefulWidget {
   const GecmisKurlarScreen({Key? key}) : super(key: key);
@@ -134,6 +135,8 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     );
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
     // Load currency data from API
     _loadCurrencyData();
   }
@@ -163,10 +166,19 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     }
   }
 
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
+
   @override
   void dispose() {
     _refreshController.dispose();
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -192,7 +204,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Geçmiş kurlar güncellendi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -229,7 +241,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
       body: Column(
         children: [
           // Header with ZERDA branding
-          _buildHeader(),
+          const DashboardHeader(),
 
           // Price ticker with API data
           const TickerSection(reduceBottomPadding: false),
@@ -252,7 +264,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _handleRefresh,
-                    color: AppTheme.lightTheme.colorScheme.primary,
+                    color: AppColors.primary,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
@@ -273,224 +285,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      height: 12.h,
-      decoration: BoxDecoration(
-        color: const Color(0xFF18214F),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Menu button (hamburger)
-              Builder(
-                builder: (context) => IconButton(
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: Icon(
-                    Icons.menu,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  padding: EdgeInsets.all(2.w),
-                ),
-              ),
 
-              // Title
-              Text(
-                'Geçmiş Kurlar',
-                style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20.sp,
-                  letterSpacing: 1.2,
-                ),
-              ),
-
-              // Empty space for symmetry
-              SizedBox(width: 48),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPriceTicker() {
-    // Show watchlist items in ticker
-    final watchlistItems = WatchlistService.getWatchlistItems();
-    final tickerData = watchlistItems.isEmpty 
-        ? [
-            // Default ticker data when watchlist is empty
-            {
-              'symbol': 'USD/TRY',
-              'price': 34.2156,
-              'change': 0.0234,
-              'changePercent': 0.068
-            },
-            {
-              'symbol': 'EUR/TRY',
-              'price': 37.1234,
-              'change': -0.0456,
-              'changePercent': -0.123
-            },
-            {
-              'symbol': 'GBP/TRY',
-              'price': 43.5678,
-              'change': 0.1234,
-              'changePercent': 0.284
-            },
-            {
-              'symbol': 'GOLD',
-              'price': 2847.50,
-              'change': -12.50,
-              'changePercent': -0.437
-            },
-          ]
-        : watchlistItems.map((item) => {
-            'symbol': item['code'],
-            'price': item['buyPrice'],
-            'change': item['change'],
-            'changePercent': item['changePercent']
-          }).toList();
-
-    return Container(
-      height: 10.h,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-      ),
-      padding: EdgeInsets.only(bottom: 2.h),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 2.w),
-        itemCount: tickerData.length + 1, // +1 for add button
-        itemBuilder: (context, index) {
-          // Add button at the end
-          if (index == tickerData.length) {
-            return Container(
-              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/asset-selection-screen');
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 0.5.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      SizedBox(height: 0.2.h),
-                      Text(
-                        'Ekle',
-                        style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white,
-                          fontSize: 8.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-
-          final data = tickerData[index]; // Remove the % operation
-          final bool isPositive = (data['change'] as double) >= 0;
-
-          return GestureDetector(
-            onTap: () {
-              // Navigate to asset detail screen
-              Navigator.pushNamed(
-                context,
-                '/asset-detail-screen',
-                arguments: {
-                  'code': data['symbol'] as String,
-                },
-              );
-            },
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
-              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 0.5.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      data['symbol'] as String,
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                  SizedBox(height: 0.2.h),
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            CurrencyFormatter.formatTRY(data['price'] as double, decimalPlaces: 4),
-                            style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white,
-                              fontSize: 10.sp,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                        SizedBox(width: 0.5.w),
-                        Icon(
-                          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                          color: isPositive
-                              ? AppTheme.positiveGreen
-                              : AppTheme.negativeRed,
-                          size: 10,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildControls() {
     return Container(

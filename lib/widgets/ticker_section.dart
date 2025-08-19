@@ -32,6 +32,7 @@ class _TickerSectionState extends State<TickerSection> {
   @override
   void initState() {
     super.initState();
+    ThemeConfigService().addListener(_onThemeChanged);
     _loadTickerData();
     // Listen to watchlist changes
     WatchlistService.addListener(_updateTicker);
@@ -40,7 +41,16 @@ class _TickerSectionState extends State<TickerSection> {
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     super.dispose();
+  }
+
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
   }
   
   void _updateTicker() {
@@ -92,8 +102,8 @@ class _TickerSectionState extends State<TickerSection> {
   Widget build(BuildContext context) {
     return Container(
       height: 27.w, // Reduced height to decrease spacing
-      decoration: const BoxDecoration(
-        color: Color(0xFF18214F), // Dark navy background for ticker section
+      decoration: BoxDecoration(
+        color: AppColors.tickerBackground,
       ),
       padding: EdgeInsets.only(bottom: widget.reduceBottomPadding ? 0.5.w : 2.w), // Conditional bottom padding
       child: _tickerData.isEmpty
@@ -102,7 +112,7 @@ class _TickerSectionState extends State<TickerSection> {
                 width: 5.w,
                 height: 5.w,
                 child: CircularProgressIndicator(
-                  color: const Color(0xFFFFD700),
+                  color: AppColors.gold,
                   strokeWidth: 2,
                 ),
               ),

@@ -6,6 +6,7 @@ import '../services/watchlist_service.dart';
 import 'app_drawer.dart';
 import 'bottom_navigation_bar.dart';
 import 'ticker_section.dart';
+import 'dashboard_header.dart';
 
 class FinancialScreenTemplate extends StatefulWidget {
   final String title;
@@ -41,7 +42,7 @@ class _FinancialScreenTemplateState extends State<FinancialScreenTemplate> {
         child: Column(
           children: [
             // Header with ZERDA branding
-            _buildHeader(),
+            const DashboardHeader(),
 
             // Price ticker (optional) - now using API data
             if (widget.showPriceTicker) const TickerSection(reduceBottomPadding: false),
@@ -55,70 +56,5 @@ class _FinancialScreenTemplateState extends State<FinancialScreenTemplate> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      height: 12.h,
-      decoration: BoxDecoration(
-        color: const Color(0xFF18214F),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Menu button (hamburger)
-              Builder(
-                builder: (context) => IconButton(
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: Icon(
-                    Icons.menu,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  padding: EdgeInsets.all(2.w),
-                ),
-              ),
-
-              // Title
-              Text(
-                widget.title,
-                style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20.sp,
-                  letterSpacing: 0.5,
-                ),
-              ),
-
-              // Refresh button or empty space
-              widget.onRefresh != null
-                  ? IconButton(
-                      onPressed: widget.isRefreshing ? null : widget.onRefresh,
-                      icon: widget.isRefreshing
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Icon(
-                              Icons.refresh,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                      padding: EdgeInsets.all(2.w),
-                    )
-                  : SizedBox(width: 48),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_colors.dart';
+import '../services/theme_config_service.dart';
 import 'gold_bars_icon.dart';
 import '../presentation/dashboard_screen/dashboard_screen.dart';
 import '../presentation/gold_coin_prices_screen/gold_coin_prices_screen.dart';
@@ -10,13 +12,39 @@ import '../presentation/portfolio_management_screen/portfolio_management_screen.
 import '../services/feature_config_service.dart';
 import 'feature_wrapper.dart';
 
-class CustomBottomNavigationBar extends StatelessWidget {
+class CustomBottomNavigationBar extends StatefulWidget {
   final String currentRoute;
   
   const CustomBottomNavigationBar({
     Key? key,
     required this.currentRoute,
   }) : super(key: key);
+
+  @override
+  State<CustomBottomNavigationBar> createState() => _CustomBottomNavigationBarState();
+}
+
+class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
+
+  @override
+  void initState() {
+    super.initState();
+    ThemeConfigService().addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    ThemeConfigService().removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
 
   static final List<Map<String, dynamic>> _allNavItems = [
     {
@@ -94,7 +122,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF18214F), // Dark navy background
+        color: AppColors.navigationBackground,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -111,13 +139,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
             children: _enabledNavItems.asMap().entries.map((entry) {
               final index = entry.key;
               final item = entry.value;
-              final isActive = currentRoute == item['route'];
+              final isActive = widget.currentRoute == item['route'];
 
               return Expanded(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                      if (currentRoute != item['route']) {
+                      if (widget.currentRoute != item['route']) {
                         Navigator.pushReplacement(
                           context,
                           PageRouteBuilder(
@@ -144,14 +172,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
                             child: item['title'] == 'Altın' 
                               ? GoldBarsIcon(
                                   color: isActive
-                                      ? const Color(0xFFE8D095) // Gold color for active
+                                      ? AppColors.navigationActive
                                       : Colors.white, // White for inactive
                                   size: 25,
                                 )
                               : Icon(
                                   item['icon'] as IconData,
                                   color: isActive
-                                      ? const Color(0xFFE8D095) // Gold color for active
+                                      ? AppColors.navigationActive
                                       : Colors.white, // White for inactive
                                   size: 25,
                                 ),
@@ -163,7 +191,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
                               item['title'] as String,
                               style: TextStyle(
                                 color: isActive
-                                    ? const Color(0xFFE8D095) // Gold color for active
+                                    ? AppColors.navigationActive
                                     : Colors.white, // White for inactive
                                 fontSize: 10.sp,
                                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,

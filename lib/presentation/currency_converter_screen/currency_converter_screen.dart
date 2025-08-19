@@ -393,8 +393,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
 
           // Spacer between logo and ticker
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF18214F), // Dark navy background
+            decoration: BoxDecoration(
+              color: DynamicThemeColors.primaryColor, // Dynamic primary color
             ),
           ),
 
@@ -469,7 +469,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                                 child: Container(
                                   padding: EdgeInsets.all(3.w),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF18214F),
+                                    color: DynamicThemeColors.primaryColor,
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(

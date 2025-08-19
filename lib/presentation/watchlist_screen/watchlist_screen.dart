@@ -7,6 +7,7 @@ import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
+import '../../widgets/dashboard_header.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({Key? key}) : super(key: key);
@@ -33,6 +34,9 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
   }
 
   void _updateTicker() {
@@ -42,9 +46,18 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     }
   }
 
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
+
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     _refreshController.dispose();
     super.dispose();
   }
@@ -75,7 +88,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Takip listesi güncellendi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+        backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -121,48 +134,8 @@ class _WatchlistScreenState extends State<WatchlistScreen>
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Modern Mobile-First Header
-          Container(
-            height: 13.h,
-            decoration: const BoxDecoration(
-              color: Color(0xFF18214F),
-            ),
-            child: SafeArea(
-              top: true,
-              child: Padding(
-                padding: EdgeInsets.only(left: 4.w, right: 4.w, top: 0.5.h),
-                child: Row(
-                  children: [
-                    Builder(
-                      builder: (BuildContext context) {
-                        return IconButton(
-                          onPressed: () => Scaffold.of(context).openDrawer(),
-                          icon: Icon(
-                            Icons.menu,
-                            color: Colors.white,
-                            size: 8.w,
-                          ),
-                        );
-                      },
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          'Takip Listem',
-                          style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18.sp,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // Use DashboardHeader instead of custom header
+          const DashboardHeader(),
           
           // Main content with fixed ticker
           Expanded(
@@ -233,7 +206,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
               icon: Icon(Icons.add),
               label: Text('Kıymet Ekle'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
               ),
@@ -400,59 +373,6 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      height: 12.h,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Menu button (hamburger)
-              Builder(
-                builder: (context) => IconButton(
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: Icon(
-                    Icons.menu,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  padding: EdgeInsets.all(2.w),
-                ),
-              ),
-
-              // Title
-              Text(
-                'Takip Listem',
-                style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 20.sp,
-                  letterSpacing: 1.2,
-                ),
-              ),
-
-              // Empty space for symmetry
-              SizedBox(width: 48),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildPriceTicker() {
     // Show watchlist items in ticker
@@ -494,14 +414,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     return Container(
       height: 10.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: AppColors.tickerBackground,
       ),
       padding: EdgeInsets.only(bottom: 2.h),
       child: ListView.builder(

@@ -7,6 +7,7 @@ import '../../services/watchlist_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
+import '../../widgets/dashboard_header.dart';
 import './widgets/time_period_dropdown_widget.dart';
 import './widgets/amount_input_widget.dart';
 import './widgets/currency_dropdown_widget.dart';
@@ -37,6 +38,9 @@ class _ProfitLossCalculatorScreenState
   @override
   void initState() {
     super.initState();
+    
+    // Listen to theme changes
+    ThemeConfigService().addListener(_onThemeChanged);
     _amountController.text = '1000';
     
     // Listen to watchlist changes to update ticker
@@ -50,8 +54,18 @@ class _ProfitLossCalculatorScreenState
   }
 
   @override
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
+  }
+
+  @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    ThemeConfigService().removeListener(_onThemeChanged);
     _amountController.dispose();
     super.dispose();
   }
@@ -61,7 +75,7 @@ class _ProfitLossCalculatorScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lütfen bir miktar girin'),
-          backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+          backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -142,7 +156,7 @@ class _ProfitLossCalculatorScreenState
       body: Column(
         children: [
           // Compact Header with ZERDA branding
-          _buildCompactHeader(),
+          const DashboardHeader(),
 
           // Price ticker
           // Price ticker with API data
@@ -240,7 +254,7 @@ class _ProfitLossCalculatorScreenState
                       child: ElevatedButton(
                       onPressed: _isCalculating ? null : _calculateProfitLoss,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: AppTheme.lightTheme.colorScheme.outline,
                         padding: EdgeInsets.symmetric(vertical: 1.8.h),
@@ -303,7 +317,7 @@ class _ProfitLossCalculatorScreenState
             Icon(
               icon,
               color: isSelected
-                  ? AppTheme.lightTheme.colorScheme.primary
+                  ? AppColors.primary
                   : AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
               size: 24,
             ),
@@ -312,7 +326,7 @@ class _ProfitLossCalculatorScreenState
               label,
               style: TextStyle(
                 color: isSelected
-                    ? AppTheme.lightTheme.colorScheme.primary
+                    ? AppColors.primary
                     : AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 10.sp,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -413,14 +427,7 @@ class _ProfitLossCalculatorScreenState
     return Container(
       height: 10.h,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.primary,
-            AppTheme.lightTheme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: AppColors.tickerBackground,
       ),
       padding: EdgeInsets.only(bottom: 2.h),
       child: ListView.builder(

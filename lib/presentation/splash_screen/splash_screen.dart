@@ -227,14 +227,14 @@ class _SplashScreenState extends State<SplashScreen>
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xFF18214F), // Dark navy - matches header
-                Color(0xFF1E2A5E), // Smooth transition
-                Color(0xFF283593), // Indigo blue
+                DynamicThemeColors.primaryColor, // Dynamic primary color
+                DynamicThemeColors.primaryColor.withOpacity(0.8), // Smooth transition
+                DynamicThemeColors.primaryColor.withOpacity(0.6), // Lighter shade
               ],
             ),
           ),
@@ -313,7 +313,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Text(
                       'Z',
                       style: TextStyle(
-                        color: const Color(0xFF18214F),
+                        color: DynamicThemeColors.primaryColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 48.sp,
                       ),
@@ -329,7 +329,7 @@ class _SplashScreenState extends State<SplashScreen>
 
         // App Tagline
         Text(
-          'Professional Financial Tracking',
+          'Profesyonel Finans Takip Uygulaması',
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.9),
             letterSpacing: 0.5,

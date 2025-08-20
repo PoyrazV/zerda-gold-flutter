@@ -48,7 +48,8 @@
       "WebFetch(domain:localhost)",
       "Bash(sqlite3:*)",
       "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\services\\background_notification_service.dart\")",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

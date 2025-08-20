@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const admin = require('firebase-admin');
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,33 @@ const io = socketIo(server, {
 const PORT = 3009;
 const DB_PATH = path.join(__dirname, 'zerda_admin.db');
 const JWT_SECRET = process.env.JWT_SECRET || 'zerda-admin-secret-key-2024';
+
+// Initialize Firebase Admin SDK
+let firebaseInitialized = false;
+try {
+  // For development, we'll use a placeholder service account
+  // In production, you would use: admin.initializeApp({ credential: admin.credential.applicationDefault() });
+  // Or provide a real service account key file
+  console.log('📝 Firebase Admin SDK: Using placeholder configuration');
+  console.log('⚠️ To enable FCM, add your Firebase service account key to firebase-service-account.json');
+  
+  // Check if service account file exists
+  const serviceAccountPath = path.join(__dirname, 'firebase-service-account.json');
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = require(serviceAccountPath);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: serviceAccount.project_id
+    });
+    firebaseInitialized = true;
+    console.log('🔥 Firebase Admin SDK initialized with service account');
+  } else {
+    console.log('⚠️ Firebase service account not found. FCM notifications will not work.');
+    console.log('📝 Create firebase-service-account.json in admin-panel folder to enable FCM');
+  }
+} catch (error) {
+  console.log('❌ Failed to initialize Firebase Admin:', error.message);
+}
 
 // Middleware
 app.use(helmet({
@@ -528,6 +556,89 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ============= FCM HELPER FUNCTIONS =============
+
+async function sendFCMNotification(customerId, notificationData) {
+  if (!firebaseInitialized) {
+    console.log('⚠️ Firebase not initialized, skipping FCM notification');
+    return { success: false, reason: 'firebase_not_initialized' };
+  }
+
+  return new Promise((resolve) => {
+    // Get FCM tokens for the customer
+    db.all(
+      'SELECT fcm_token FROM fcm_tokens WHERE customer_id = ?',
+      [customerId],
+      async (err, tokens) => {
+        if (err) {
+          console.error('Error fetching FCM tokens:', err);
+          return resolve({ success: false, error: err.message });
+        }
+
+        if (!tokens || tokens.length === 0) {
+          console.log(`No FCM tokens found for customer ${customerId}`);
+          return resolve({ success: false, reason: 'no_tokens' });
+        }
+
+        const fcmTokens = tokens.map(t => t.fcm_token);
+        console.log(`🔥 Sending FCM to ${fcmTokens.length} tokens for customer ${customerId}`);
+
+        try {
+          const message = {
+            notification: {
+              title: notificationData.title,
+              body: notificationData.message,
+            },
+            data: {
+              type: notificationData.type || 'info',
+              id: notificationData.id || '',
+              timestamp: new Date().toISOString(),
+            },
+            tokens: fcmTokens,
+          };
+
+          const response = await admin.messaging().sendMulticast(message);
+          
+          console.log(`🔥 FCM sent successfully: ${response.successCount} success, ${response.failureCount} failures`);
+          
+          // Clean up invalid tokens
+          if (response.failureCount > 0) {
+            const invalidTokens = [];
+            response.responses.forEach((resp, idx) => {
+              if (!resp.success && (resp.error?.code === 'messaging/invalid-registration-token' || resp.error?.code === 'messaging/registration-token-not-registered')) {
+                invalidTokens.push(fcmTokens[idx]);
+              }
+            });
+            
+            // Remove invalid tokens from database
+            if (invalidTokens.length > 0) {
+              const placeholders = invalidTokens.map(() => '?').join(',');
+              db.run(`DELETE FROM fcm_tokens WHERE fcm_token IN (${placeholders})`, invalidTokens, (err) => {
+                if (err) {
+                  console.error('Error cleaning up invalid FCM tokens:', err);
+                } else {
+                  console.log(`🧹 Cleaned up ${invalidTokens.length} invalid FCM tokens`);
+                }
+              });
+            }
+          }
+          
+          resolve({
+            success: true,
+            successCount: response.successCount,
+            failureCount: response.failureCount,
+            responses: response.responses
+          });
+          
+        } catch (fcmError) {
+          console.error('FCM sending error:', fcmError);
+          resolve({ success: false, error: fcmError.message });
+        }
+      }
+    );
+  });
+}
+
 // ============= NOTIFICATION MANAGEMENT ROUTES =============
 
 // GET - Müşteri bildirimlerini listele
@@ -609,12 +720,21 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
           timestamp: now
         });
 
+        // FCM push notification gönder
+        const fcmResult = await sendFCMNotification(customerId, {
+          id: notificationId,
+          title,
+          message,
+          type
+        });
+
         console.log(`📱 Push Notification Gönderildi:
           Customer: ${customerId}
           Title: ${title}
           Message: ${message}
           Type: ${type}
-          Target: ${target}`);
+          Target: ${target}
+          FCM: ${fcmResult.success ? `✅ ${fcmResult.successCount} sent` : `❌ ${fcmResult.reason || fcmResult.error}`}`);
       } catch (updateError) {
         console.error(`❌ Notification status update failed for ${notificationId}:`, updateError);
       }
@@ -772,13 +892,22 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
           timestamp: now
         });
 
+        // FCM push notification gönder
+        const fcmResult = await sendFCMNotification(customer.id, {
+          id: notificationId,
+          title,
+          message,
+          type
+        });
+
         sentNotifications.push({
           customerId: customer.id,
           notificationId,
-          status: 'sent'
+          status: 'sent',
+          fcm: fcmResult.success ? `✅ ${fcmResult.successCount}` : `❌ ${fcmResult.reason || fcmResult.error}`
         });
 
-        console.log(`📱 Broadcast Notification Gönderildi - Customer: ${customer.id}`);
+        console.log(`📱 Broadcast Notification Gönderildi - Customer: ${customer.id}, FCM: ${fcmResult.success ? `✅ ${fcmResult.successCount} sent` : `❌ ${fcmResult.reason || fcmResult.error}`}`);
       } catch (dbError) {
         failedNotifications.push({
           customerId: customer.id,
@@ -920,6 +1049,60 @@ app.get('/api/mobile/notifications/:customerId', (req, res) => {
         timestamp: new Date().toISOString()
       });
     });
+  }
+});
+
+// FCM Token Registration - Mobile API endpoint
+app.post('/api/mobile/register-fcm-token', async (req, res) => {
+  const { customerId, fcmToken, platform, deviceId } = req.body;
+
+  if (!customerId || !fcmToken) {
+    return res.status(400).json({ success: false, error: 'Missing customerId or fcmToken' });
+  }
+
+  const tokenId = uuidv4();
+  
+  try {
+    // First, try to update existing token
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE fcm_tokens SET fcm_token = ?, platform = ?, device_id = ?, updated_at = CURRENT_TIMESTAMP 
+         WHERE customer_id = ? AND (fcm_token = ? OR device_id = ?)`,
+        [fcmToken, platform || 'flutter', deviceId || null, customerId, fcmToken, deviceId || null],
+        function(err) {
+          if (err) return reject(err);
+          resolve(this.changes);
+        }
+      );
+    }).then((changes) => {
+      // If no rows were updated, insert new token
+      if (changes === 0) {
+        return new Promise((resolve, reject) => {
+          db.run(
+            `INSERT OR REPLACE INTO fcm_tokens (id, customer_id, fcm_token, platform, device_id) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [tokenId, customerId, fcmToken, platform || 'flutter', deviceId || null],
+            function(err) {
+              if (err) return reject(err);
+              resolve();
+            }
+          );
+        });
+      }
+    });
+
+    console.log(`🔥 FCM token registered for customer ${customerId}: ${fcmToken.substring(0, 20)}...`);
+    
+    res.json({
+      success: true,
+      message: 'FCM token registered successfully',
+      tokenId,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('FCM token registration error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

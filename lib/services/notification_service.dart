@@ -6,6 +6,22 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+// Top-level function for background message handling
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialize Firebase if it hasn't been initialized yet
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
+  
+  print('🔥 Background message received: ${message.notification?.title}');
+  
+  // You can handle background messages here if needed
+  // For example, save to local storage, show notification, etc.
+}
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -24,6 +40,11 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   bool _notificationsInitialized = false;
   
+  // Firebase Cloud Messaging
+  FirebaseMessaging? _firebaseMessaging;
+  String? _fcmToken;
+  bool _fcmInitialized = false;
+  
   // Notification listeners
   final List<Function(Map<String, dynamic>)> _notificationListeners = [];
   
@@ -32,13 +53,74 @@ class NotificationService {
 
   Future<void> initialize() async {
     print('🔔 NotificationService initializing...');
+    
+    // Initialize Firebase and FCM first
+    await _initializeFirebase();
+    
+    // Initialize local notifications
     await _initializeNotifications();
     await _loadLastNotificationId();
     
-    // Start foreground polling
+    // Start foreground polling for backward compatibility
     _startPolling();
     
-    print('🔔 Foreground notification polling started. Background polling will be handled separately.');
+    print('🔔 NotificationService fully initialized with FCM support');
+  }
+
+  Future<void> _initializeFirebase() async {
+    if (_fcmInitialized) return;
+    
+    try {
+      print('🔥 Initializing Firebase...');
+      
+      // Initialize Firebase if not already initialized
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+        print('🔥 Firebase Core initialized');
+      }
+      
+      // Initialize Firebase Messaging
+      _firebaseMessaging = FirebaseMessaging.instance;
+      
+      // Register background message handler
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      
+      // Request notification permissions
+      NotificationSettings settings = await _firebaseMessaging!.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      
+      print('🔥 FCM Permission status: ${settings.authorizationStatus}');
+      
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Get FCM token
+        _fcmToken = await _firebaseMessaging!.getToken();
+        print('🔥 FCM Token: $_fcmToken');
+        
+        // Save token to server
+        await _registerFCMToken(_fcmToken!);
+        
+        // Listen for token refresh
+        _firebaseMessaging!.onTokenRefresh.listen(_handleTokenRefresh);
+        
+        // Set up message handlers
+        await _setupFCMHandlers();
+        
+        _fcmInitialized = true;
+        print('🔥 Firebase Cloud Messaging initialized successfully');
+      } else {
+        print('⚠️ FCM permission denied');
+      }
+    } catch (e) {
+      print('❌ Failed to initialize Firebase: $e');
+      // Don't block the app if FCM fails - fallback to HTTP polling
+    }
   }
 
   Future<void> _loadLastNotificationId() async {
@@ -373,6 +455,87 @@ class NotificationService {
       _showInAppNotification(data);
     }
   }
+
+  Future<void> _setupFCMHandlers() async {
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    
+    // Handle background messages (when app is in background but not terminated)
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
+    
+    // Handle messages when app is completely terminated
+    RemoteMessage? initialMessage = await _firebaseMessaging!.getInitialMessage();
+    if (initialMessage != null) {
+      _handleTerminatedAppMessage(initialMessage);
+    }
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    print('🔥 FCM foreground message: ${message.notification?.title}');
+    
+    // Convert FCM message to our notification format
+    final notificationData = _fcmMessageToNotificationData(message);
+    _handleNotificationReceived(notificationData);
+  }
+
+  void _handleBackgroundMessage(RemoteMessage message) {
+    print('🔥 FCM background message opened: ${message.notification?.title}');
+    
+    // Convert and handle notification
+    final notificationData = _fcmMessageToNotificationData(message);
+    _handleNotificationReceived(notificationData);
+  }
+
+  void _handleTerminatedAppMessage(RemoteMessage message) {
+    print('🔥 FCM terminated app message: ${message.notification?.title}');
+    
+    // Convert and handle notification
+    final notificationData = _fcmMessageToNotificationData(message);
+    _handleNotificationReceived(notificationData);
+  }
+
+  Map<String, dynamic> _fcmMessageToNotificationData(RemoteMessage message) {
+    return {
+      'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'title': message.notification?.title ?? 'Zerda Gold',
+      'message': message.notification?.body ?? 'Yeni bildirim',
+      'type': message.data['type'] ?? 'info',
+      'timestamp': DateTime.now().toIso8601String(),
+      'data': message.data,
+    };
+  }
+
+  Future<void> _registerFCMToken(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/mobile/register-fcm-token'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'customerId': _customerId,
+          'fcmToken': token,
+          'platform': 'flutter',
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        print('✅ FCM token registered successfully');
+      } else {
+        print('❌ Failed to register FCM token: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error registering FCM token: $e');
+    }
+  }
+
+  void _handleTokenRefresh(String token) {
+    print('🔥 FCM token refreshed: $token');
+    _fcmToken = token;
+    _registerFCMToken(token);
+  }
+
+  // Public API for FCM
+  String? get fcmToken => _fcmToken;
+  bool get isFCMInitialized => _fcmInitialized;
 
   void dispose() {
     _pollingTimer?.cancel();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
@@ -18,6 +19,16 @@ void main() async {
   
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE  
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  
+  // Initialize Firebase - No need to wait, services will handle it
+  try {
+    print('🔥 Initializing Firebase Core...');
+    await Firebase.initializeApp();
+    print('🔥 Firebase Core initialized successfully');
+  } catch (e) {
+    print('❌ Firebase Core initialization failed: $e');
+    // Continue without Firebase - app should still work with HTTP polling
+  }
   
   // Run app immediately, initialize services in background
   runApp(MyApp());

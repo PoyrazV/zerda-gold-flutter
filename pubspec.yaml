@@ -25,6 +25,9 @@ dependencies:
   fl_chart: ^1.0.0
   intl: ^0.20.2                # Required for Turkish currency formatting
   web_socket_channel: ^3.0.3  # WebSocket support for real-time data
+  flutter_local_notifications: ^17.2.1  # Push notification support
+  permission_handler: ^11.3.1  # Permission handling for notifications
+  http: ^1.1.0  # HTTP client for API calls
 
 dev_dependencies:
   flutter_test:    # 🚨 CRITICAL: Required for Flutter project testing - DO NOT REMOVE

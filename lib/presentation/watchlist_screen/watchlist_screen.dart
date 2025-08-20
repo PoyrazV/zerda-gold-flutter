@@ -134,8 +134,21 @@ class _WatchlistScreenState extends State<WatchlistScreen>
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          // Use DashboardHeader instead of custom header
-          const DashboardHeader(),
+          // Header with ZERDA branding and + icon
+          DashboardHeader(
+            customTopPadding: 3.1.h, // Consistent padding with other pages
+            rightWidget: IconButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/asset-selection-screen');
+              },
+              icon: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 8.w,
+              ),
+              padding: EdgeInsets.all(2.w),
+            ),
+          ),
           
           // Main content with fixed ticker
           Expanded(
@@ -166,7 +179,6 @@ class _WatchlistScreenState extends State<WatchlistScreen>
           _buildBottomNavigation(),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
@@ -192,7 +204,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
             ),
             SizedBox(height: 1.h),
             Text(
-              'Ticker\'daki + butonuna tıklayarak takip listesine kıymet ekleyebilirsiniz.',
+              'Üst kısımdaki + butonuna tıklayarak takip listesine kıymet ekleyebilirsiniz.',
               textAlign: TextAlign.center,
               style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                 color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -538,19 +550,6 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: () {
-        Navigator.pushNamed(context, '/asset-selection-screen');
-      },
-      backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-      child: Icon(
-        Icons.add,
-        color: Colors.white,
-        size: 24,
-      ),
-    );
-  }
 
   Widget _buildBottomNavigation() {
     return CustomBottomNavigationBar(currentRoute: '/watchlist-screen');

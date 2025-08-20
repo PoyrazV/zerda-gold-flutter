@@ -1479,6 +1479,484 @@
                 );
             };
 
+            // Notifications Component
+            const Notifications = () => {
+                const [notifications, setNotifications] = useState([]);
+                const [notificationForm, setNotificationForm] = useState({
+                    title: '',
+                    message: '',
+                    type: 'info',
+                    target: 'all',
+                    scheduled_time: ''
+                });
+                const [stats, setStats] = useState({ total: 0, sent: 0, pending: 0, failed: 0 });
+                const [showForm, setShowForm] = useState(false);
+                const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+                useEffect(() => {
+                    if (selectedCustomer) {
+                        loadNotifications();
+                        loadNotificationStats();
+                    }
+                }, [selectedCustomer]);
+
+                const loadNotifications = async () => {
+                    if (!selectedCustomer) return;
+                    
+                    setLoadingNotifications(true);
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications?limit=50`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            setNotifications(data.data || []);
+                        }
+                    } catch (error) {
+                        console.error('Error loading notifications:', error);
+                        showNotification('Bildirimler yüklenirken hata oluştu', 'error');
+                    } finally {
+                        setLoadingNotifications(false);
+                    }
+                };
+
+                const loadNotificationStats = async () => {
+                    if (!selectedCustomer) return;
+                    
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications/stats`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            setStats(data.data.totals);
+                        }
+                    } catch (error) {
+                        console.error('Error loading notification stats:', error);
+                    }
+                };
+
+                const handleFormChange = (field, value) => {
+                    setNotificationForm(prev => ({
+                        ...prev,
+                        [field]: value
+                    }));
+                };
+
+                const sendNotification = async () => {
+                    if (!selectedCustomer || !notificationForm.title || !notificationForm.message) {
+                        showNotification('Başlık ve mesaj gerekli', 'error');
+                        return;
+                    }
+
+                    try {
+                        const payload = {
+                            ...notificationForm,
+                            scheduled_time: notificationForm.scheduled_time || null
+                        };
+
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification('Bildirim başarıyla gönderildi!', 'success');
+                            setNotificationForm({ title: '', message: '', type: 'info', target: 'all', scheduled_time: '' });
+                            setShowForm(false);
+                            loadNotifications();
+                            loadNotificationStats();
+                        } else {
+                            showNotification('Bildirim gönderilemedi: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error sending notification:', error);
+                        showNotification('Bildirim gönderme hatası', 'error');
+                    }
+                };
+
+                const sendBroadcast = async () => {
+                    if (!notificationForm.title || !notificationForm.message) {
+                        showNotification('Başlık ve mesaj gerekli', 'error');
+                        return;
+                    }
+
+                    try {
+                        const payload = {
+                            title: notificationForm.title,
+                            message: notificationForm.message,
+                            type: notificationForm.type
+                        };
+
+                        const response = await fetch('/api/notifications/broadcast', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification(`Toplu bildirim gönderildi! (${data.data.totalSent} müşteri)`, 'success');
+                            setNotificationForm({ title: '', message: '', type: 'info', target: 'all', scheduled_time: '' });
+                            setShowForm(false);
+                            loadNotifications();
+                            loadNotificationStats();
+                        } else {
+                            showNotification('Toplu bildirim gönderilemedi: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error sending broadcast:', error);
+                        showNotification('Toplu bildirim gönderme hatası', 'error');
+                    }
+                };
+
+                const deleteNotification = async (notificationId) => {
+                    if (!confirm('Bu bildirimi silmek istediğinizden emin misiniz?')) return;
+
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications/${notificationId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification('Bildirim silindi', 'success');
+                            loadNotifications();
+                            loadNotificationStats();
+                        } else {
+                            showNotification('Bildirim silinemedi: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting notification:', error);
+                        showNotification('Bildirim silme hatası', 'error');
+                    }
+                };
+
+                const formatDate = (dateString) => {
+                    return new Date(dateString).toLocaleString('tr-TR');
+                };
+
+                const getTypeIcon = (type) => {
+                    switch (type) {
+                        case 'success': return 'fa-check-circle';
+                        case 'warning': return 'fa-exclamation-triangle';
+                        case 'error': return 'fa-times-circle';
+                        default: return 'fa-info-circle';
+                    }
+                };
+
+                const getTypeColor = (type) => {
+                    switch (type) {
+                        case 'success': return '#28a745';
+                        case 'warning': return '#ffc107';
+                        case 'error': return '#dc3545';
+                        default: return '#007bff';
+                    }
+                };
+
+                if (!selectedCustomer) {
+                    return (
+                        <div className="section-card">
+                            <div className="section-content">
+                                <p>Bildirim yönetimi için önce bir müşteri seçin.</p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div>
+                        {/* İstatistikler */}
+                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '30px' }}>
+                            <div className="stat-card" style={{ borderLeftColor: '#007bff' }}>
+                                <div className="stat-icon" style={{ color: '#007bff' }}>
+                                    <i className="fas fa-bell"></i>
+                                </div>
+                                <div className="stat-number">{stats.total}</div>
+                                <div className="stat-label">Toplam Bildirim</div>
+                            </div>
+                            <div className="stat-card" style={{ borderLeftColor: '#28a745' }}>
+                                <div className="stat-icon" style={{ color: '#28a745' }}>
+                                    <i className="fas fa-check"></i>
+                                </div>
+                                <div className="stat-number">{stats.sent}</div>
+                                <div className="stat-label">Gönderilen</div>
+                            </div>
+                            <div className="stat-card" style={{ borderLeftColor: '#ffc107' }}>
+                                <div className="stat-icon" style={{ color: '#ffc107' }}>
+                                    <i className="fas fa-clock"></i>
+                                </div>
+                                <div className="stat-number">{stats.pending}</div>
+                                <div className="stat-label">Beklemede</div>
+                            </div>
+                            <div className="stat-card" style={{ borderLeftColor: '#dc3545' }}>
+                                <div className="stat-icon" style={{ color: '#dc3545' }}>
+                                    <i className="fas fa-times"></i>
+                                </div>
+                                <div className="stat-number">{stats.failed}</div>
+                                <div className="stat-label">Başarısız</div>
+                            </div>
+                        </div>
+
+                        {/* Bildirim Gönderme Formu */}
+                        <div className="section-card" style={{ marginBottom: '30px' }}>
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-paper-plane" style={{ marginRight: '10px' }}></i>
+                                    Yeni Bildirim Gönder
+                                </h2>
+                                <button 
+                                    className="save-btn" 
+                                    onClick={() => setShowForm(!showForm)}
+                                    style={{ padding: '8px 16px', fontSize: '14px' }}
+                                >
+                                    <i className={`fas ${showForm ? 'fa-minus' : 'fa-plus'}`}></i>
+                                    {showForm ? 'Kapat' : 'Yeni Bildirim'}
+                                </button>
+                            </div>
+                            
+                            {showForm && (
+                                <div className="section-content">
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-heading" style={{ marginRight: '8px' }}></i>
+                                                Başlık:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={notificationForm.title}
+                                                onChange={(e) => handleFormChange('title', e.target.value)}
+                                                placeholder="Bildirim başlığı..."
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-tag" style={{ marginRight: '8px' }}></i>
+                                                Tip:
+                                            </label>
+                                            <select
+                                                value={notificationForm.type}
+                                                onChange={(e) => handleFormChange('type', e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    backgroundColor: 'white'
+                                                }}
+                                            >
+                                                <option value="info">Bilgi</option>
+                                                <option value="success">Başarı</option>
+                                                <option value="warning">Uyarı</option>
+                                                <option value="error">Hata</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-users" style={{ marginRight: '8px' }}></i>
+                                                Hedef:
+                                            </label>
+                                            <select
+                                                value={notificationForm.target}
+                                                onChange={(e) => handleFormChange('target', e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    backgroundColor: 'white'
+                                                }}
+                                            >
+                                                <option value="all">Tüm Kullanıcılar</option>
+                                                <option value="active">Aktif Kullanıcılar</option>
+                                                <option value="inactive">Pasif Kullanıcılar</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-calendar" style={{ marginRight: '8px' }}></i>
+                                                Zamanlanmış Gönderim (İsteğe Bağlı):
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                value={notificationForm.scheduled_time}
+                                                onChange={(e) => handleFormChange('scheduled_time', e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '20px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                            <i className="fas fa-comment" style={{ marginRight: '8px' }}></i>
+                                            Mesaj:
+                                        </label>
+                                        <textarea
+                                            value={notificationForm.message}
+                                            onChange={(e) => handleFormChange('message', e.target.value)}
+                                            placeholder="Bildirim mesajı..."
+                                            rows="4"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '8px',
+                                                fontSize: '14px',
+                                                resize: 'vertical'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                        <button 
+                                            className="reset-btn" 
+                                            onClick={() => setNotificationForm({ title: '', message: '', type: 'info', target: 'all', scheduled_time: '' })}
+                                        >
+                                            <i className="fas fa-eraser"></i>
+                                            Temizle
+                                        </button>
+                                        <button className="save-btn" onClick={sendBroadcast}>
+                                            <i className="fas fa-broadcast-tower"></i>
+                                            Tüm Müşterilere Gönder
+                                        </button>
+                                        <button className="save-btn" onClick={sendNotification}>
+                                            <i className="fas fa-paper-plane"></i>
+                                            Seçili Müşteriye Gönder
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bildirim Geçmişi */}
+                        <div className="section-card">
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-history" style={{ marginRight: '10px' }}></i>
+                                    Bildirim Geçmişi ({selectedCustomer.display_name})
+                                </h2>
+                                <button className="save-btn" onClick={loadNotifications} style={{ padding: '8px 16px', fontSize: '14px' }}>
+                                    <i className="fas fa-sync"></i>
+                                    Yenile
+                                </button>
+                            </div>
+                            
+                            <div className="section-content">
+                                {loadingNotifications ? (
+                                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                                        <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px', color: '#18214F' }}></i>
+                                        <p style={{ marginTop: '10px' }}>Bildirimler yükleniyor...</p>
+                                    </div>
+                                ) : notifications.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                                        <i className="fas fa-bell-slash" style={{ fontSize: '48px', marginBottom: '20px' }}></i>
+                                        <p>Henüz bildirim gönderilmemiş.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gap: '15px' }}>
+                                        {notifications.map(notification => (
+                                            <div key={notification.id} style={{
+                                                background: '#f8f9fa',
+                                                border: '1px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                padding: '20px',
+                                                borderLeft: `4px solid ${getTypeColor(notification.type)}`
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <i className={`fas ${getTypeIcon(notification.type)}`} 
+                                                           style={{ color: getTypeColor(notification.type), fontSize: '18px' }}></i>
+                                                        <h4 style={{ margin: 0, color: '#18214F' }}>{notification.title}</h4>
+                                                        <span style={{
+                                                            padding: '4px 8px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            backgroundColor: notification.status === 'sent' ? '#d4edda' : 
+                                                                             notification.status === 'pending' ? '#fff3cd' : '#f8d7da',
+                                                            color: notification.status === 'sent' ? '#155724' : 
+                                                                   notification.status === 'pending' ? '#856404' : '#721c24'
+                                                        }}>
+                                                            {notification.status === 'sent' ? 'Gönderildi' : 
+                                                             notification.status === 'pending' ? 'Beklemede' : 'Başarısız'}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                                        <button 
+                                                            onClick={() => deleteNotification(notification.id)}
+                                                            style={{
+                                                                background: '#dc3545',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                padding: '6px 10px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '12px'
+                                                            }}
+                                                            title="Sil"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <p style={{ margin: '10px 0', color: '#495057', lineHeight: '1.5' }}>
+                                                    {notification.message}
+                                                </p>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6c757d' }}>
+                                                    <span>
+                                                        <i className="fas fa-users" style={{ marginRight: '5px' }}></i>
+                                                        Hedef: {notification.target === 'all' ? 'Tüm Kullanıcılar' : notification.target}
+                                                    </span>
+                                                    <span>
+                                                        <i className="fas fa-clock" style={{ marginRight: '5px' }}></i>
+                                                        {notification.sent_at ? `Gönderildi: ${formatDate(notification.sent_at)}` : 
+                                                         `Oluşturuldu: ${formatDate(notification.created_at)}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
             if (loading) {
                 return (
                     <div className="loading">
@@ -1517,6 +1995,10 @@
                                   onClick={() => setActiveTab('theme')}>
                                 <i className="fas fa-palette"></i> Marka Özelleştirme
                             </a></li>
+                            <li><a href="#" className={activeTab === 'notifications' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('notifications')}>
+                                <i className="fas fa-bell"></i> Bildirim Yönetimi
+                            </a></li>
                             <li><a href="#" className={activeTab === 'assets' ? 'active' : ''} 
                                   onClick={() => setActiveTab('assets')}>
                                 <i className="fas fa-cloud-upload-alt"></i> Derleme ve Yayın
@@ -1535,6 +2017,7 @@
                                 {activeTab === 'customers' && 'Müşteri Yönetimi'}
                                 {activeTab === 'features' && 'Özellik Yönetimi'}
                                 {activeTab === 'theme' && 'Marka Özelleştirme'}
+                                {activeTab === 'notifications' && 'Bildirim Yönetimi'}
                                 {activeTab === 'assets' && 'Derleme ve Yayın'}
                                 {activeTab === 'analytics' && 'Takip ve Raporlama'}
                             </h1>
@@ -1552,6 +2035,7 @@
                             {activeTab === 'customers' && <div className="section-card"><div className="section-content"><p>Müşteri yönetimi yakında geliyor...</p></div></div>}
                             {activeTab === 'features' && <Features />}
                             {activeTab === 'theme' && <ThemeCustomization />}
+                            {activeTab === 'notifications' && <Notifications />}
                             {activeTab === 'assets' && <div className="section-card"><div className="section-content"><p>Derleme ve Yayın özellikleri yakında geliyor...</p></div></div>}
                             {activeTab === 'analytics' && <div className="section-card"><div className="section-content"><p>Takip ve Raporlama özellikleri yakında geliyor...</p></div></div>}
                         </div>

@@ -10,6 +10,7 @@ import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
 import '../../widgets/dashboard_header.dart';
+import '../../theme/app_colors.dart';
 
 class GecmisKurlarScreen extends StatefulWidget {
   const GecmisKurlarScreen({Key? key}) : super(key: key);
@@ -236,7 +237,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF18214F),
+      backgroundColor: AppColors.primary,
       drawer: const AppDrawer(),
       body: Column(
         children: [
@@ -321,7 +322,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                   children: [
                     Icon(
                       Icons.calendar_today,
-                      color: const Color(0xFF18214F),
+                      color: AppColors.primary,
                       size: 15.sp,
                     ),
                     SizedBox(width: 1.5.w),
@@ -366,7 +367,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                     'DÖVİZ',
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       color: _selectedType == 'DOVIZ' 
-                          ? const Color(0xFF18214F)
+                          ? AppColors.primary
                           : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
                       fontWeight: _selectedType == 'DOVIZ' 
                           ? FontWeight.w900
@@ -410,7 +411,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                     'ALTIN',
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       color: _selectedType == 'ALTIN' 
-                          ? const Color(0xFF18214F)
+                          ? AppColors.primary
                           : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
                       fontWeight: _selectedType == 'ALTIN' 
                           ? FontWeight.w900
@@ -431,8 +432,8 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
     return Container(
       height: 4.h,
       padding: EdgeInsets.symmetric(horizontal: 4.w),
-      decoration: const BoxDecoration(
-        color: Color(0xFF18214F),
+      decoration: BoxDecoration(
+        color: AppColors.headerBackground,
       ),
       child: Row(
         children: [
@@ -443,7 +444,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095),
+                color: Colors.white,
                 height: 2,
               ),
             ),
@@ -456,7 +457,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095),
+                color: Colors.white,
                 height: 2,
               ),
             ),
@@ -469,7 +470,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095),
+                color: Colors.white,
                 height: 2,
               ),
             ),
@@ -485,7 +486,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
         height: 20.h,
         child: Center(
           child: CircularProgressIndicator(
-            color: const Color(0xFFFFD700),
+            color: AppColors.gold,
           ),
         ),
       );
@@ -537,7 +538,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E2939),
+                        color: AppColors.text,
                         height: 1.4,
                       ),
                       maxLines: 1,
@@ -561,7 +562,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E2939),
+                        color: AppColors.text,
                         height: 1.8,
                       ),
                     ),
@@ -588,7 +589,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E2939),
+                        color: AppColors.text,
                         height: 1.8,
                       ),
                     ),

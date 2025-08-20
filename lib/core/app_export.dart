@@ -8,6 +8,7 @@ export 'currency_formatter.dart';
 // Services
 export '../services/feature_config_service.dart';
 export '../services/theme_config_service.dart';
+export '../services/notification_service.dart';
 
 // Dynamic Theme
 export '../theme/dynamic_colors.dart';

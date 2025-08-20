@@ -136,6 +136,25 @@ function createDatabase() {
           else console.log('✅ Sessions tablosu oluşturuldu');
         });
 
+        // 8. Notifications tablosu (Push notifications)
+        db.run(`CREATE TABLE IF NOT EXISTS notifications (
+          id TEXT PRIMARY KEY,
+          customer_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          message TEXT NOT NULL,
+          type TEXT DEFAULT 'info',
+          target TEXT DEFAULT 'all',
+          status TEXT DEFAULT 'pending',
+          scheduled_time DATETIME,
+          sent_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (customer_id) REFERENCES customers (id)
+        )`, (err) => {
+          if (err) console.error('Notifications tablosu hatası:', err);
+          else console.log('✅ Notifications tablosu oluşturuldu');
+        });
+
         console.log('🎉 Tüm tablolar başarıyla oluşturuldu!');
         db.close((err) => {
           if (err) reject(err);

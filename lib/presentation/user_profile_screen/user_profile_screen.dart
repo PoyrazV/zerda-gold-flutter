@@ -515,6 +515,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildFeatureManagementSection() {
     final featureConfig = FeatureConfigService();
+    
+    // Admin panel özelliği kapalıysa hiç gösterme
+    if (!featureConfig.isAdminPanelEnabled) {
+      return const SizedBox.shrink();
+    }
+    
     final configInfo = featureConfig.getConfigInfo();
     
     return SettingsSectionWidget(
@@ -543,6 +549,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           subtitle: 'Özellik ayarlarını varsayılan duruma getir',
           iconName: 'refresh',
           onTap: _resetFeatureConfig,
+        ),
+        SettingsItem(
+          title: 'Test Bildirim',
+          subtitle: 'Bildirim sistemini test et',
+          iconName: 'notifications',
+          onTap: _sendTestNotification,
         ),
       ],
     );
@@ -646,6 +658,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       'performanceHistory': 'Performans Geçmişi',
       'sarrafiyeIscilik': 'Sarrafiye İşçilikleri',
       'gecmisKurlar': 'Geçmiş Kurlar',
+      'adminPanel': 'Admin Paneli',
     };
     return displayNames[featureName] ?? featureName;
   }
@@ -681,6 +694,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() {}); // Trigger rebuild to update UI
     } catch (e) {
       _showSettingChangedSnackBar('Hata: Ayarlar sıfırlanamadı');
+    }
+  }
+
+  void _sendTestNotification() {
+    try {
+      NotificationService().sendTestNotification();
+      _showSettingChangedSnackBar('Test bildirimi gönderildi!');
+    } catch (e) {
+      _showSettingChangedSnackBar('Test bildirimi gönderilemedi: $e');
     }
   }
 

@@ -528,6 +528,401 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ============= NOTIFICATION MANAGEMENT ROUTES =============
+
+// GET - Müşteri bildirimlerini listele
+app.get('/api/customers/:customerId/notifications', authenticateToken, (req, res) => {
+  const { customerId } = req.params;
+  const { limit = 50, offset = 0 } = req.query;
+
+  db.all(
+    `SELECT * FROM notifications 
+     WHERE customer_id = ? 
+     ORDER BY created_at DESC 
+     LIMIT ? OFFSET ?`,
+    [customerId, parseInt(limit), parseInt(offset)],
+    (err, notifications) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+
+      res.json({
+        success: true,
+        data: notifications,
+        total: notifications.length
+      });
+    }
+  );
+});
+
+// POST - Yeni bildirim gönder
+app.post('/api/customers/:customerId/notifications', authenticateToken, async (req, res) => {
+  const { customerId } = req.params;
+  const { title, message, type = 'info', target = 'all', scheduled_time = null } = req.body;
+
+  if (!title || !message) {
+    return res.status(400).json({
+      success: false,
+      error: 'Başlık ve mesaj gerekli'
+    });
+  }
+
+  const notificationId = uuidv4();
+  const now = new Date().toISOString();
+
+  try {
+    // Insert notification
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO notifications (id, customer_id, title, message, type, target, status, scheduled_time, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+        [notificationId, customerId, title, message, type, target, scheduled_time, now, now],
+        function(err) {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+
+    // Anlık gönderim için (scheduled_time null ise)
+    if (!scheduled_time) {
+      try {
+        // Status'u sent olarak güncelle
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE notifications SET status = "sent", sent_at = ? WHERE id = ?',
+            [now, notificationId],
+            function(err) {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+
+        // WebSocket ile anlık bildirim gönder
+        io.to(`customer_${customerId}`).emit('notification_sent', {
+          id: notificationId,
+          title,
+          message,
+          type,
+          target,
+          timestamp: now
+        });
+
+        console.log(`📱 Push Notification Gönderildi:
+          Customer: ${customerId}
+          Title: ${title}
+          Message: ${message}
+          Type: ${type}
+          Target: ${target}`);
+      } catch (updateError) {
+        console.error(`❌ Notification status update failed for ${notificationId}:`, updateError);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Bildirim başarıyla oluşturuldu',
+      data: {
+        id: notificationId,
+        title,
+        message,
+        type,
+        target,
+        status: scheduled_time ? 'scheduled' : 'sent',
+        created_at: now
+      }
+    });
+
+  } catch (error) {
+    console.error('Single notification error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Bildirim gönderilirken hata oluştu: ' + error.message
+    });
+  }
+});
+
+// PUT - Bildirim güncelle
+app.put('/api/customers/:customerId/notifications/:notificationId', authenticateToken, (req, res) => {
+  const { customerId, notificationId } = req.params;
+  const { title, message, type, target, scheduled_time, status } = req.body;
+  const now = new Date().toISOString();
+
+  db.run(
+    `UPDATE notifications 
+     SET title = COALESCE(?, title),
+         message = COALESCE(?, message),
+         type = COALESCE(?, type),
+         target = COALESCE(?, target),
+         scheduled_time = COALESCE(?, scheduled_time),
+         status = COALESCE(?, status),
+         updated_at = ?
+     WHERE id = ? AND customer_id = ?`,
+    [title, message, type, target, scheduled_time, status, now, notificationId, customerId],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Bildirim bulunamadı'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Bildirim başarıyla güncellendi'
+      });
+    }
+  );
+});
+
+// DELETE - Bildirim sil
+app.delete('/api/customers/:customerId/notifications/:notificationId', authenticateToken, (req, res) => {
+  const { customerId, notificationId } = req.params;
+
+  db.run(
+    'DELETE FROM notifications WHERE id = ? AND customer_id = ?',
+    [notificationId, customerId],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Bildirim bulunamadı'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Bildirim başarıyla silindi'
+      });
+    }
+  );
+});
+
+// POST - Toplu bildirim gönder
+app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => {
+  const { title, message, type = 'info', customerIds = [], excludeCustomerIds = [] } = req.body;
+
+  if (!title || !message) {
+    return res.status(400).json({
+      success: false,
+      error: 'Başlık ve mesaj gerekli'
+    });
+  }
+
+  // Tüm müşterilere gönder (eğer customerIds belirtilmemişse)
+  let query = 'SELECT id FROM customers';
+  let params = [];
+
+  if (customerIds.length > 0) {
+    const placeholders = customerIds.map(() => '?').join(',');
+    query += ` WHERE id IN (${placeholders})`;
+    params = customerIds;
+  } else if (excludeCustomerIds.length > 0) {
+    const placeholders = excludeCustomerIds.map(() => '?').join(',');
+    query += ` WHERE id NOT IN (${placeholders})`;
+    params = excludeCustomerIds;
+  }
+
+  try {
+    // Promisify db.all
+    const customers = await new Promise((resolve, reject) => {
+      db.all(query, params, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    const now = new Date().toISOString();
+    const sentNotifications = [];
+    const failedNotifications = [];
+
+    // Her müşteri için notification ekleme işlemini sıralı olarak bekleyelim
+    for (const customer of customers) {
+      const notificationId = uuidv4();
+      
+      try {
+        await new Promise((resolve, reject) => {
+          db.run(
+            `INSERT INTO notifications (id, customer_id, title, message, type, target, status, created_at, updated_at, sent_at)
+             VALUES (?, ?, ?, ?, ?, 'all', 'sent', ?, ?, ?)`,
+            [notificationId, customer.id, title, message, type, now, now, now],
+            function(err) {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+
+        // WebSocket ile anlık bildirim gönder
+        io.to(`customer_${customer.id}`).emit('notification_sent', {
+          id: notificationId,
+          title,
+          message,
+          type,
+          target: 'all',
+          timestamp: now
+        });
+
+        sentNotifications.push({
+          customerId: customer.id,
+          notificationId,
+          status: 'sent'
+        });
+
+        console.log(`📱 Broadcast Notification Gönderildi - Customer: ${customer.id}`);
+      } catch (dbError) {
+        failedNotifications.push({
+          customerId: customer.id,
+          error: dbError.message
+        });
+        console.error(`❌ Broadcast Notification Başarısız - Customer: ${customer.id} - Error: ${dbError.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `${sentNotifications.length} müşteriye bildirim gönderildi${failedNotifications.length > 0 ? `, ${failedNotifications.length} başarısız` : ''}`,
+      data: {
+        totalSent: sentNotifications.length,
+        totalFailed: failedNotifications.length,
+        notifications: sentNotifications,
+        failures: failedNotifications
+      }
+    });
+
+  } catch (error) {
+    console.error('Broadcast notification error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Bildirim gönderilirken hata oluştu: ' + error.message
+    });
+  }
+});
+
+// GET - Bildirim istatistikleri
+app.get('/api/customers/:customerId/notifications/stats', authenticateToken, (req, res) => {
+  const { customerId } = req.params;
+
+  db.all(
+    `SELECT 
+       status,
+       type,
+       COUNT(*) as count,
+       DATE(created_at) as date
+     FROM notifications 
+     WHERE customer_id = ?
+     GROUP BY status, type, DATE(created_at)
+     ORDER BY date DESC`,
+    [customerId],
+    (err, stats) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+
+      // Toplam istatistikler
+      db.get(
+        `SELECT 
+           COUNT(*) as total,
+           SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
+           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+           SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
+         FROM notifications 
+         WHERE customer_id = ?`,
+        [customerId],
+        (err, totals) => {
+          if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+          }
+
+          res.json({
+            success: true,
+            data: {
+              totals: totals || { total: 0, sent: 0, pending: 0, failed: 0 },
+              detailed: stats
+            }
+          });
+        }
+      );
+    }
+  );
+});
+
+
+// Public endpoint for mobile app notification polling (no auth required)
+app.get('/api/mobile/notifications/:customerId', (req, res) => {
+  const { customerId } = req.params;
+  const { since } = req.query; // Last notification ID (UUID string)
+
+  let query = `SELECT * FROM notifications 
+               WHERE customer_id = ? AND status = 'sent'`;
+  let params = [customerId];
+
+  if (since) {
+    // For UUID-based filtering, we compare based on created_at timestamp
+    // First get the timestamp of the 'since' notification
+    const sinceQuery = `SELECT created_at FROM notifications WHERE id = ? AND customer_id = ?`;
+    
+    db.get(sinceQuery, [since, customerId], (sinceErr, sinceRow) => {
+      if (sinceErr) {
+        console.error('Since timestamp lookup error:', sinceErr);
+        return res.status(500).json({ success: false, error: sinceErr.message });
+      }
+
+      if (sinceRow) {
+        // Get notifications newer than the 'since' notification
+        query += ` AND created_at > ?`;
+        params.push(sinceRow.created_at);
+      }
+
+      query += ` ORDER BY created_at DESC LIMIT 20`;
+
+      db.all(query, params, (err, notifications) => {
+        if (err) {
+          console.error('Mobile notifications error:', err);
+          return res.status(500).json({ success: false, error: err.message });
+        }
+
+        console.log(`📱 Mobile notifications query for ${customerId}: Found ${notifications ? notifications.length : 0} notifications${since ? ` since ${since}` : ''}`);
+
+        res.json({
+          success: true,
+          notifications: notifications || [],
+          count: notifications ? notifications.length : 0,
+          timestamp: new Date().toISOString()
+        });
+      });
+    });
+  } else {
+    // No since parameter - get all recent notifications
+    query += ` ORDER BY created_at DESC LIMIT 20`;
+
+    db.all(query, params, (err, notifications) => {
+      if (err) {
+        console.error('Mobile notifications error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+
+      console.log(`📱 Mobile notifications query for ${customerId}: Found ${notifications ? notifications.length : 0} notifications (all recent)`);
+
+      res.json({
+        success: true,
+        notifications: notifications || [],
+        count: notifications ? notifications.length : 0,
+        timestamp: new Date().toISOString()
+      });
+    });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({

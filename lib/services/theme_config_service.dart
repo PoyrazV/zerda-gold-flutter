@@ -33,8 +33,9 @@ class ThemeConfigService {
       // Dio client'ı başlat
       _dio = Dio(BaseOptions(
         baseUrl: _apiBaseUrl,
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 15), // Increased from 5 to 15 seconds
+        receiveTimeout: const Duration(seconds: 30), // Increased from 10 to 30 seconds
+        sendTimeout: const Duration(seconds: 15), // Added send timeout
       ));
 
       await _loadThemeConfiguration();
@@ -78,39 +79,63 @@ class ThemeConfigService {
     _setDefaultThemeConfiguration();
   }
 
-  // Admin panel API'sinden theme yükle
+  // Admin panel API'sinden theme yükle (with retry mechanism)
   Future<bool> _loadFromAdminPanel() async {
-    try {
-      // Customer ID'yi al
-      await _initializeCustomerId();
-      
-      // Theme endpoint: /api/customers/{id}/theme
-      final response = await _dio.get('/customers/$_customerId/theme');
-      
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        Map<String, dynamic> newThemeConfig = response.data['data'];
+    // Customer ID'yi al
+    await _initializeCustomerId();
+    
+    int retryCount = 0;
+    const maxRetries = 3; // More retries for initial load
+    
+    while (retryCount <= maxRetries) {
+      try {
+        // Theme endpoint: /api/customers/{id}/theme
+        final response = await _dio.get('/customers/$_customerId/theme');
         
-        // Değişiklik var mı kontrol et
-        bool hasChanges = !_compareMaps(_themeConfig, newThemeConfig);
-        
-        _themeConfig = newThemeConfig;
-        
-        // Local cache'e de kaydet
-        await _cacheThemeConfiguration();
-        
-        print('✅ Theme loaded from Multi-tenant API (Customer: $_customerId)');
-        print('🎨 Theme Config: $_themeConfig');
-        
-        // Eğer değişiklik varsa listeners'ları bildir
-        if (hasChanges) {
-          _notifyThemeChanges();
-          print('🔄 Theme listeners notified');
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          Map<String, dynamic> newThemeConfig = response.data['data'];
+          
+          // Değişiklik var mı kontrol et
+          bool hasChanges = !_compareMaps(_themeConfig, newThemeConfig);
+          
+          _themeConfig = newThemeConfig;
+          
+          // Local cache'e de kaydet
+          await _cacheThemeConfiguration();
+          
+          print('✅ Theme loaded from Multi-tenant API (Customer: $_customerId)');
+          print('🎨 Theme Config: $_themeConfig');
+          
+          // Eğer değişiklik varsa listeners'ları bildir
+          if (hasChanges) {
+            _notifyThemeChanges();
+            print('🔄 Theme listeners notified');
+          }
+          
+          return true;
         }
         
-        return true;
+      } catch (e) {
+        retryCount++;
+        
+        if (retryCount > maxRetries) {
+          // Only log detailed error on final retry failure
+          if (e.toString().contains('connection timeout')) {
+            print('⚠️ Could not load theme from Admin Panel: Connection timeout after $maxRetries retries');
+            print('💡 Using cached or default theme configuration');
+          } else if (e.toString().contains('connection refused') || e.toString().contains('network')) {
+            print('⚠️ Could not load theme from Admin Panel: Network unreachable');
+            print('💡 Using cached or default theme configuration');
+          } else {
+            print('⚠️ Could not load theme from Admin Panel: ${e.toString().split('\n').first}');
+            print('💡 Using cached or default theme configuration');
+          }
+        } else {
+          // Wait before retry (exponential backoff)
+          await Future.delayed(Duration(seconds: retryCount * 2));
+          print('🔄 Retrying theme load... (attempt ${retryCount + 1}/${maxRetries + 1})');
+        }
       }
-    } catch (e) {
-      print('Could not load theme from Admin Panel: $e');
     }
     return false;
   }
@@ -143,34 +168,57 @@ class ThemeConfigService {
   // Periodic sync başlat
   void _startPeriodicSync() {
     _syncTimer?.cancel();
-    _syncTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _syncTimer = Timer.periodic(const Duration(seconds: 10), (_) { // Reduced frequency from 3s to 10s
       _syncWithAdminPanel();
     });
   }
 
-  // Admin panel ile theme sync
+  // Admin panel ile theme sync (with retry mechanism)
   Future<void> _syncWithAdminPanel() async {
-    try {
-      if (!_isInitialized) return;
-      
-      final response = await _dio.get('/customers/$_customerId/theme');
-      
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        Map<String, dynamic> newThemeConfig = response.data['data'];
+    if (!_isInitialized) return;
+    
+    int retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        final response = await _dio.get('/customers/$_customerId/theme');
         
-        // Değişiklik var mı kontrol et
-        if (!_compareMaps(_themeConfig, newThemeConfig)) {
-          _themeConfig = newThemeConfig;
-          await _cacheThemeConfiguration();
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          Map<String, dynamic> newThemeConfig = response.data['data'];
           
-          print('🎨 Theme updated from Admin Panel (Customer: $_customerId)');
-          
-          // UI'a notification gönderilebilir
-          _notifyThemeChanges();
+          // Değişiklik var mı kontrol et
+          if (!_compareMaps(_themeConfig, newThemeConfig)) {
+            _themeConfig = newThemeConfig;
+            await _cacheThemeConfiguration();
+            
+            print('🎨 Theme updated from Admin Panel (Customer: $_customerId)');
+            
+            // UI'a notification gönderilebilir
+            _notifyThemeChanges();
+          }
+        }
+        
+        // Success - break out of retry loop
+        return;
+        
+      } catch (e) {
+        retryCount++;
+        
+        if (retryCount > maxRetries) {
+          // Only log error on final retry failure to reduce spam
+          if (e.toString().contains('connection timeout')) {
+            print('⚠️ Theme sync timeout after $maxRetries retries - Admin panel may be offline');
+          } else if (e.toString().contains('connection refused') || e.toString().contains('network')) {
+            print('⚠️ Theme sync network error - Admin panel unreachable');
+          } else {
+            print('⚠️ Theme sync failed: ${e.toString().split('\n').first}'); // Only first line of error
+          }
+        } else {
+          // Wait before retry (exponential backoff)
+          await Future.delayed(Duration(seconds: retryCount * 2));
         }
       }
-    } catch (e) {
-      print('Error syncing theme with Admin Panel: $e');
     }
   }
 

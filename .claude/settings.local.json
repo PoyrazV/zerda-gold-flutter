@@ -44,7 +44,10 @@
       "Bash(npm run seed:*)",
       "Bash(node:*)",
       "Bash(del database.db)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(sqlite3:*)",
+      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\services\\background_notification_service.dart\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

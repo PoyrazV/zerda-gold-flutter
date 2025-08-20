@@ -30,6 +30,9 @@ class FeatureConfigService {
   // WebSocket connection
   WebSocketChannel? _wsChannel;
   bool _wsConnected = false;
+  int _wsRetryCount = 0;
+  Timer? _wsRetryTimer;
+  static const int _maxWsRetries = 5;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -51,8 +54,11 @@ class FeatureConfigService {
       // Periodic sync başlat (5 saniyede bir)
       _startPeriodicSync();
       
-      // WebSocket bağlantısını başlat
-      await _initializeWebSocket();
+      // WebSocket bağlantısını başlat (non-blocking)
+      _initializeWebSocket().catchError((error) {
+        print('⚠️ WebSocket initialization failed: $error');
+        print('💡 Continuing with HTTP-only sync...');
+      });
       
       print('✅ FeatureConfigService initialized successfully');
       print('📊 Loaded ${_features.length} features: $_features');
@@ -294,48 +300,118 @@ class FeatureConfigService {
   void stopSync() {
     _syncTimer?.cancel();
     _syncTimer = null;
-    _wsChannel?.sink.close();
-    _wsChannel = null;
-    _wsConnected = false;
+    _closeWebSocket();
   }
 
-  // WebSocket bağlantısını başlat
+  // WebSocket bağlantısını başlat (with retry and timeout handling)
   Future<void> _initializeWebSocket() async {
+    // Cancel any existing retry timer
+    _wsRetryTimer?.cancel();
+    
+    // Don't retry if we've exceeded max retries
+    if (_wsRetryCount >= _maxWsRetries) {
+      print('⚠️ WebSocket max retries ($_maxWsRetries) exceeded - disabling WebSocket');
+      return;
+    }
+    
     try {
-      print('🔌 Initializing WebSocket connection...');
+      print('🔌 Initializing WebSocket connection... (attempt ${_wsRetryCount + 1}/$_maxWsRetries)');
+      
+      // Close existing connection if any
+      await _closeWebSocket();
       
       final wsUrl = Uri.parse('$_wsBaseUrl/socket.io/?EIO=4&transport=websocket');
       print('🌐 WebSocket URL: $wsUrl');
       
       _wsChannel = WebSocketChannel.connect(wsUrl);
       
+      // Add timeout for connection establishment
+      bool connectionEstablished = false;
+      Timer connectionTimeout = Timer(const Duration(seconds: 10), () {
+        if (!connectionEstablished) {
+          print('⏰ WebSocket connection timeout');
+          _handleWebSocketError('Connection timeout');
+        }
+      });
+      
       // WebSocket mesajlarını dinle
       _wsChannel!.stream.listen(
         (data) {
+          if (!connectionEstablished) {
+            connectionEstablished = true;
+            connectionTimeout.cancel();
+            _wsConnected = true;
+            _wsRetryCount = 0; // Reset retry count on successful connection
+            print('✅ WebSocket connected successfully');
+            
+            // Customer room'a katıl
+            try {
+              _wsChannel!.sink.add('42["join_customer","$_customerId"]');
+            } catch (e) {
+              print('❌ Failed to join customer room: $e');
+            }
+          }
+          
           print('📨 WebSocket received: $data');
           _handleWebSocketMessage(data);
         },
         onError: (error) {
+          connectionTimeout.cancel();
+          connectionEstablished = false;
           print('❌ WebSocket error: $error');
-          _wsConnected = false;
-          // 5 saniye sonra yeniden bağlanmayı dene
-          Timer(const Duration(seconds: 5), () => _initializeWebSocket());
+          _handleWebSocketError(error.toString());
         },
         onDone: () {
+          connectionTimeout.cancel();
+          connectionEstablished = false;
           print('📤 WebSocket connection closed');
           _wsConnected = false;
+          
+          // Auto-reconnect if not exceeded retry limit
+          if (_wsRetryCount < _maxWsRetries) {
+            _scheduleWebSocketRetry();
+          }
         },
       );
       
-      _wsConnected = true;
-      
-      // Customer room'a katıl
-      _wsChannel!.sink.add('42["join_customer","$_customerId"]');
-      
-      print('✅ WebSocket connected successfully');
     } catch (e) {
       print('❌ Failed to initialize WebSocket: $e');
+      _handleWebSocketError(e.toString());
+    }
+  }
+  
+  // WebSocket error handling with retry logic
+  void _handleWebSocketError(String error) {
+    _wsConnected = false;
+    _wsRetryCount++;
+    
+    if (_wsRetryCount <= _maxWsRetries) {
+      _scheduleWebSocketRetry();
+    } else {
+      print('⚠️ WebSocket permanently disabled after $_maxWsRetries failed attempts');
+      print('💡 App will continue to work with periodic HTTP sync only');
+    }
+  }
+  
+  // Schedule WebSocket retry with exponential backoff
+  void _scheduleWebSocketRetry() {
+    final retryDelay = Duration(seconds: 5 + (_wsRetryCount * 5)); // 5s, 10s, 15s, etc.
+    print('🔄 Scheduling WebSocket retry in ${retryDelay.inSeconds}s... (attempt ${_wsRetryCount + 1}/$_maxWsRetries)');
+    
+    _wsRetryTimer = Timer(retryDelay, () {
+      _initializeWebSocket();
+    });
+  }
+  
+  // Close WebSocket connection gracefully
+  Future<void> _closeWebSocket() async {
+    try {
+      _wsRetryTimer?.cancel();
+      await _wsChannel?.sink.close();
+      _wsChannel = null;
       _wsConnected = false;
+    } catch (e) {
+      print('Error closing WebSocket: $e');
     }
   }
 
@@ -411,6 +487,7 @@ class FeatureConfigService {
       'performanceHistory': true,
       'sarrafiyeIscilik': true,
       'gecmisKurlar': true,
+      'adminPanel': true,
     };
     print('Using default configuration');
   }
@@ -458,6 +535,7 @@ class FeatureConfigService {
   bool get isPerformanceHistoryEnabled => isFeatureEnabled('performanceHistory');
   bool get isSarrafiyeIscilikEnabled => isFeatureEnabled('sarrafiyeIscilik');
   bool get isGecmisKurlarEnabled => isFeatureEnabled('gecmisKurlar');
+  bool get isAdminPanelEnabled => isFeatureEnabled('adminPanel');
 
   // Development/Debug methods
   Future<void> enableAllFeatures() async {

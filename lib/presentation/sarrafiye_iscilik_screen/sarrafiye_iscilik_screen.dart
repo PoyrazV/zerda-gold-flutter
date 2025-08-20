@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_export.dart';
 import '../../services/financial_data_service.dart';
 import '../../widgets/financial_screen_template.dart';
+import '../../theme/app_colors.dart';
 
 class SarrafiyeIscilikScreen extends StatefulWidget {
   const SarrafiyeIscilikScreen({Key? key}) : super(key: key);
@@ -113,8 +114,8 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
       width: double.infinity,
       height: 4.h,
       padding: EdgeInsets.symmetric(horizontal: 4.w),
-      decoration: const BoxDecoration(
-        color: Color(0xFF18214F), // Dark navy background
+      decoration: BoxDecoration(
+        color: AppColors.headerBackground, // Dynamic header background
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -126,7 +127,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095), // Gold text
+                color: Colors.white, // White text for better contrast
                 height: 2,
               ),
             ),
@@ -139,7 +140,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095), // Gold text
+                color: Colors.white, // White text for better contrast
                 height: 2,
               ),
             ),
@@ -152,7 +153,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095), // Gold text
+                color: Colors.white, // White text for better contrast
                 height: 2,
               ),
             ),
@@ -200,7 +201,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E2939),
+                        color: AppColors.text,
                         height: 1.4,
                       ),
                       maxLines: 1,
@@ -220,7 +221,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
                     style: GoogleFonts.inter(
                       fontSize: 4.w,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E2939),
+                      color: AppColors.text,
                       height: 1.8,
                     ),
                   ),
@@ -239,7 +240,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E2939),
+                        color: AppColors.text,
                         height: 1.6,
                       ),
                     ),

@@ -18,9 +18,63 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
   
   print('🔥 Background message received: ${message.notification?.title}');
+  print('   Body: ${message.notification?.body}');
+  print('   Data: ${message.data}');
   
-  // You can handle background messages here if needed
-  // For example, save to local storage, show notification, etc.
+  // Initialize local notifications plugin for background
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
+      FlutterLocalNotificationsPlugin();
+      
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'zerda_notifications',
+    'Zerda Notifications',
+    description: 'Zerda Gold notifications',
+    importance: Importance.high,
+  );
+  
+  // Initialize with Android settings
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+      
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  
+  // Create notification details
+  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    'zerda_notifications',
+    'Zerda Notifications',
+    channelDescription: 'Zerda Gold notifications',
+    importance: Importance.high,
+    priority: Priority.high,
+    showWhen: true,
+  );
+  
+  const NotificationDetails details = NotificationDetails(android: androidDetails);
+  
+  // Show the notification
+  await flutterLocalNotificationsPlugin.show(
+    message.hashCode,
+    message.notification?.title ?? 'Zerda Gold',
+    message.notification?.body ?? '',
+    details,
+    payload: message.data.toString(),
+  );
+  
+  // Save to SharedPreferences for later retrieval
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final notifications = prefs.getStringList('background_notifications') ?? [];
+    notifications.add(jsonEncode({
+      'title': message.notification?.title,
+      'body': message.notification?.body,
+      'data': message.data,
+      'timestamp': DateTime.now().toIso8601String(),
+    }));
+    await prefs.setStringList('background_notifications', notifications);
+  } catch (e) {
+    print('❌ Error saving background notification: $e');
+  }
 }
 
 class NotificationService {
@@ -60,6 +114,9 @@ class NotificationService {
     // Initialize local notifications
     await _initializeNotifications();
     await _loadLastNotificationId();
+    
+    // Check for background notifications
+    await _checkBackgroundNotifications();
     
     // Start foreground polling for backward compatibility
     _startPolling();
@@ -142,6 +199,44 @@ class NotificationService {
       _lastNotificationId = id;
     } catch (e) {
       print('❌ Failed to save last notification ID: $e');
+    }
+  }
+
+  Future<void> _checkBackgroundNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final notifications = prefs.getStringList('background_notifications') ?? [];
+      
+      if (notifications.isNotEmpty) {
+        print('📬 Found ${notifications.length} background notifications');
+        
+        for (final notificationJson in notifications) {
+          try {
+            final notification = jsonDecode(notificationJson);
+            print('   - ${notification['title']} at ${notification['timestamp']}');
+            
+            // Add to recent notifications
+            _recentNotifications.insert(0, notification);
+            
+            // Notify listeners
+            for (final listener in _notificationListeners) {
+              try {
+                listener(notification);
+              } catch (e) {
+                print('❌ Error in notification listener: $e');
+              }
+            }
+          } catch (e) {
+            print('❌ Error parsing background notification: $e');
+          }
+        }
+        
+        // Clear background notifications after processing
+        await prefs.remove('background_notifications');
+        print('✅ Background notifications processed and cleared');
+      }
+    } catch (e) {
+      print('❌ Error checking background notifications: $e');
     }
   }
 

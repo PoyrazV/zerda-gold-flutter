@@ -584,7 +584,8 @@ async function sendFCMNotification(customerId, notificationData) {
         console.log(`🔥 Sending FCM to ${fcmTokens.length} tokens for customer ${customerId}`);
 
         try {
-          const message = {
+          // Prepare the message with high priority for background delivery
+          const baseMessage = {
             notification: {
               title: notificationData.title,
               body: notificationData.message,
@@ -593,20 +594,62 @@ async function sendFCMNotification(customerId, notificationData) {
               type: notificationData.type || 'info',
               id: notificationData.id || '',
               timestamp: new Date().toISOString(),
+              click_action: 'FLUTTER_NOTIFICATION_CLICK',
             },
-            tokens: fcmTokens,
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'zerda_notifications',
+                priority: 'high',
+                defaultSound: true,
+                defaultVibrateTimings: true,
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  alert: {
+                    title: notificationData.title,
+                    body: notificationData.message,
+                  },
+                  sound: 'default',
+                  contentAvailable: true,
+                },
+              },
+            },
           };
 
-          const response = await admin.messaging().sendMulticast(message);
+          // Send to each token individually for better compatibility
+          const sendPromises = fcmTokens.map(token => {
+            const message = { ...baseMessage, token };
+            return admin.messaging().send(message)
+              .then(response => ({ success: true, response, token }))
+              .catch(error => ({ success: false, error, token }));
+          });
+
+          const results = await Promise.all(sendPromises);
+          const successCount = results.filter(r => r.success).length;
+          const failureCount = results.filter(r => !r.success).length;
+          
+          const response = {
+            successCount,
+            failureCount,
+            responses: results
+          };
           
           console.log(`🔥 FCM sent successfully: ${response.successCount} success, ${response.failureCount} failures`);
           
           // Clean up invalid tokens
           if (response.failureCount > 0) {
             const invalidTokens = [];
-            response.responses.forEach((resp, idx) => {
-              if (!resp.success && (resp.error?.code === 'messaging/invalid-registration-token' || resp.error?.code === 'messaging/registration-token-not-registered')) {
-                invalidTokens.push(fcmTokens[idx]);
+            results.forEach((result) => {
+              if (!result.success) {
+                const errorCode = result.error?.code || result.error?.errorInfo?.code;
+                if (errorCode === 'messaging/invalid-registration-token' || 
+                    errorCode === 'messaging/registration-token-not-registered' ||
+                    errorCode === 'messaging/invalid-argument') {
+                  invalidTokens.push(result.token);
+                }
               }
             });
             

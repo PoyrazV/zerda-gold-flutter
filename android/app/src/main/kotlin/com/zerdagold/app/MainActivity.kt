@@ -1,4 +1,4 @@
-package com.fintracker_pro.app
+package com.zerdagold.app
 
 import io.flutter.embedding.android.FlutterActivity
 

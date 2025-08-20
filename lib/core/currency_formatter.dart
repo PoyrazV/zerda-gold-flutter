@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 
 /// Turkish Currency Formatting Utility
 /// 
-/// This class provides consistent currency formatting throughout the FinTracker Pro application
+/// This class provides consistent currency formatting throughout the ZerdaGold application
 /// using Turkish number format conventions:
 /// - Thousands separator: . (dot)
 /// - Decimal separator: , (comma)

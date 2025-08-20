@@ -21,9 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Mock credentials for testing
   final Map<String, String> _mockCredentials = {
-    'admin@fintracker.com': 'admin123',
-    'user@fintracker.com': 'user123',
-    'demo@fintracker.com': 'demo123',
+    'admin@zerdagold.com': 'admin123',
+    'user@zerdagold.com': 'user123',
+    'demo@zerdagold.com': 'demo123',
   };
 
   @override

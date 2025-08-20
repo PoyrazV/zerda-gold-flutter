@@ -128,7 +128,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       builder: (context, orientation, screenType) {
         return MaterialApp(
           navigatorKey: _navigatorKey,
-          title: 'fintracker_pro',
+          title: 'zerdagold',
           theme: _dynamicTheme ?? AppTheme.lightTheme,
           darkTheme: _dynamicTheme ?? AppTheme.darkTheme,
           themeMode: _dynamicTheme != null 

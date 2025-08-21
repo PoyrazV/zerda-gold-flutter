@@ -168,8 +168,10 @@ class ThemeConfigService {
   // Periodic sync başlat
   void _startPeriodicSync() {
     _syncTimer?.cancel();
-    _syncTimer = Timer.periodic(const Duration(seconds: 10), (_) { // Reduced frequency from 3s to 10s
-      _syncWithAdminPanel();
+    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) { // 30 saniyede bir sync
+      _syncWithAdminPanel().catchError((error) {
+        // Hataları sessizce yoksay
+      });
     });
   }
 

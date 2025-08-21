@@ -18,4 +18,3 @@ export '../services/watchlist_service.dart';
 export '../services/global_ticker_service.dart';
 export '../services/financial_data_service.dart';
 export '../services/currency_api_service.dart';
-export '../services/datshop_api_service.dart';

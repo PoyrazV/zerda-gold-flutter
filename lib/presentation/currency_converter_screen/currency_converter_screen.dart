@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
-import '../../services/datshop_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -34,7 +33,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   
   // API Services
   final CurrencyApiService _currencyApiService = CurrencyApiService();
-  final DatShopApiService _goldApiService = DatShopApiService();
   
   // API Data Storage
   Map<String, dynamic> _currencyRates = {};
@@ -105,20 +103,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         _currencyRates['TRY'] = 1.0;
       }
 
-      // Load gold prices and connect to WebSocket
-      await _goldApiService.connect();
-      _goldPrices = _goldApiService.getFormattedGoldData();
-      
-      // Listen to gold price updates
-      _goldApiService.goldDataStream.listen((goldData) {
-        if (mounted) {
-          setState(() {
-            _goldPrices = _goldApiService.getFormattedGoldData();
-            _updateExchangeRate();
-            _calculateConversion();
-          });
-        }
-      });
+      // Gold prices artık kullanılmıyor - sadece currency API kullanıyoruz
+      _goldPrices = [];
 
     } catch (e) {
       print('Error loading API data: $e');
@@ -136,7 +122,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
-    _goldApiService.dispose();
     _fromAmountController.dispose();
     _toAmountController.dispose();
     _swapAnimationController.dispose();

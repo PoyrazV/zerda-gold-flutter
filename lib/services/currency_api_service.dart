@@ -17,12 +17,12 @@ class CurrencyApiService {
 
   Future<Map<String, dynamic>?> getLatestRates() async {
     try {
-      print('CurrencyApiService: Making API request to ${_baseUrl}EUR');
+      // print('CurrencyApiService: Making API request to ${_baseUrl}EUR');
       final response = await _dio.get('EUR');
-      print('CurrencyApiService: API response status: ${response.statusCode}');
+      // print('CurrencyApiService: API response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        print('CurrencyApiService: API response received successfully');
+        // print('CurrencyApiService: API response received successfully');
         return response.data;
       } else {
         print('CurrencyApiService: API returned status ${response.statusCode}');
@@ -35,15 +35,15 @@ class CurrencyApiService {
 
   Future<List<Map<String, dynamic>>> getFormattedCurrencyData() async {
     final data = await getLatestRates();
-    print('CurrencyApiService: Raw API data received: ${data != null}');
+    // print('CurrencyApiService: Raw API data received: ${data != null}');
     
     if (data == null || data['rates'] == null) {
-      print('CurrencyApiService: No rates data available');
+      // print('CurrencyApiService: No rates data available');
       return [];
     }
 
     final rates = data['rates'] as Map<String, dynamic>;
-    print('CurrencyApiService: Processing ${rates.length} rates');
+    // print('CurrencyApiService: Processing ${rates.length} rates');
     
     final currencyNames = {
       'USD': 'Amerikan Doları',
@@ -177,11 +177,11 @@ class CurrencyApiService {
           "timestamp": _getCurrentTime(),
         });
         
-        print('CurrencyApiService: Added ${key}/EUR - ${eurRate.toStringAsFixed(4)}');
+        // print('CurrencyApiService: Added ${key}/EUR - ${eurRate.toStringAsFixed(4)}'); // Log kapatıldı
       }
     });
 
-    print('CurrencyApiService: Formatted ${formattedData.length} currencies');
+    // print('CurrencyApiService: Formatted ${formattedData.length} currencies');
     return formattedData;
   }
 

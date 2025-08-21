@@ -49,7 +49,9 @@
       "Bash(sqlite3:*)",
       "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\services\\background_notification_service.dart\")",
       "Bash(mkdir:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git clean:*)",
+      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\services\\datshop_api_service.dart\")"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

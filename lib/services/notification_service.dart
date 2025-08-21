@@ -246,9 +246,11 @@ class NotificationService {
     _isPolling = true;
     print('🔄 Starting notification polling...');
     
-    // Poll every 3 seconds for new notifications
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      _checkForNewNotifications();
+    // Poll every 30 seconds for new notifications
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _checkForNewNotifications().catchError((error) {
+        // Hataları sessizce yoksay
+      });
     });
   }
 
@@ -260,7 +262,7 @@ class NotificationService {
         url += '?since=$_lastNotificationId';
       }
       
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -282,7 +284,12 @@ class NotificationService {
         print('❌ Failed to fetch notifications: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error checking notifications: $e');
+      // Hataları sessizce yoksay, sadece debug modda log yaz
+      if (e is TimeoutException) {
+        // Timeout normal, sessizce devam et
+      } else {
+        // Diğer hatalar için de sessiz ol
+      }
     }
   }
 

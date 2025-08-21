@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/metals_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -22,6 +23,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     with TickerProviderStateMixin {
   late AnimationController _refreshController;
   bool _isRefreshing = false;
+  Map<String, dynamic>? _goldData;
+  bool _isLoading = true;
 
   // Featured gold items for the featured cards section
   final List<Map<String, dynamic>> _featuredGoldData = [
@@ -63,8 +66,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     },
   ];
 
-  // Turkish gold coin prices data
-  final List<Map<String, dynamic>> _goldCoinData = [
+  // Gold data will be fetched from API
+  List<Map<String, dynamic>> _goldCoinData = [
     {
       "code": "GRAM",
       "name": "Gram Altın",
@@ -215,6 +218,38 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     
     // Listen to theme changes
     ThemeConfigService().addListener(_onThemeChanged);
+    
+    // Fetch gold price on init
+    _fetchGoldPrice();
+  }
+  
+  Future<void> _fetchGoldPrice() async {
+    try {
+      final data = await MetalsApiService.getGoldPrice();
+      if (mounted) {
+        setState(() {
+          _goldData = data;
+          _goldCoinData = [
+            {
+              'code': 'ONSALTIN',
+              'name': 'Ons Altın (USD)',
+              'buyPrice': data['buyPriceUSD'],
+              'sellPrice': data['sellPriceUSD'],
+              'change': data['change'],
+              'isPositive': data['isPositive'],
+              'timestamp': data['timestamp'],
+            },
+          ];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _updateTicker() {
@@ -249,26 +284,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Mock data update with realistic gold price fluctuations
-    setState(() {
-      for (var coin in _goldCoinData) {
-        final randomChange = (DateTime.now().millisecond % 40 - 20) * 0.25;
-        coin['buyPrice'] = (coin['buyPrice'] as double) + randomChange;
-        coin['sellPrice'] = (coin['sellPrice'] as double) + randomChange;
-        coin['change'] = (DateTime.now().millisecond % 300 - 150) * 0.01;
-        coin['isPositive'] = coin['change'] > 0;
-      }
-
-      for (var featured in _featuredGoldData) {
-        final randomChange = (DateTime.now().millisecond % 40 - 20) * 0.25;
-        featured['sellPrice'] = (featured['sellPrice'] as double) + randomChange;
-        featured['change'] = (DateTime.now().millisecond % 300 - 150) * 0.01;
-        featured['isPositive'] = featured['change'] > 0;
-      }
-    });
+    // Fetch new data from API
+    await _fetchGoldPrice();
 
     setState(() {
       _isRefreshing = false;
@@ -441,12 +458,27 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
   }
 
   Widget _buildGoldList() {
-    if (_goldCoinData.isEmpty) {
+    if (_isLoading) {
       return Container(
         height: 20.h,
         child: Center(
           child: CircularProgressIndicator(
             color: AppColors.gold,
+          ),
+        ),
+      );
+    }
+    
+    if (_goldCoinData.isEmpty) {
+      return Container(
+        height: 20.h,
+        child: Center(
+          child: Text(
+            'Veri yüklenemedi',
+            style: GoogleFonts.inter(
+              fontSize: 4.w,
+              color: AppColors.disabled,
+            ),
           ),
         ),
       );

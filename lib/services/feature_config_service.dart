@@ -41,24 +41,26 @@ class FeatureConfigService {
       print('🔧 FeatureConfigService initializing...');
       print('📡 API Base URL: $_apiBaseUrl');
       
-      // Dio client'ı başlat
+      // Dio client'ı başlat - timeout sürelerini artır
       _dio = Dio(BaseOptions(
         baseUrl: _apiBaseUrl,
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 15),
       ));
 
       await _loadConfiguration();
       _isInitialized = true;
       
-      // Periodic sync başlat (5 saniyede bir)
+      // Periodic sync başlat (30 saniyede bir)
       _startPeriodicSync();
       
-      // WebSocket bağlantısını başlat (non-blocking)
-      _initializeWebSocket().catchError((error) {
-        print('⚠️ WebSocket initialization failed: $error');
-        print('💡 Continuing with HTTP-only sync...');
-      });
+      // WebSocket bağlantısını devre dışı bırak - sadece HTTP sync kullan
+      // _initializeWebSocket().catchError((error) {
+      //   print('⚠️ WebSocket initialization failed: $error');
+      //   print('💡 Continuing with HTTP-only sync...');
+      // });
+      print('💡 Using HTTP-only sync mode (WebSocket disabled)');
       
       print('✅ FeatureConfigService initialized successfully');
       print('📊 Loaded ${_features.length} features: $_features');
@@ -201,11 +203,18 @@ class FeatureConfigService {
     }
   }
 
-  // Periodic sync başlat
+  // Periodic sync başlat - daha uzun interval ile
   void _startPeriodicSync() {
     _syncTimer?.cancel();
-    _syncTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _syncWithAdminPanel();
+    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      // Sync'i try-catch ile sar ki hata durumunda uygulama çökmesin
+      try {
+        _syncWithAdminPanel().catchError((error) {
+          // Sessizce hataları yoksay, log yazma
+        });
+      } catch (e) {
+        // Sync hatalarını sessizce yoksay
+      }
     });
   }
 

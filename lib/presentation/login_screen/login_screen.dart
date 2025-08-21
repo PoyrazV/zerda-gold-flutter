@@ -19,12 +19,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Mock credentials for testing
-  final Map<String, String> _mockCredentials = {
-    'admin@zerdagold.com': 'admin123',
-    'user@zerdagold.com': 'user123',
-    'demo@zerdagold.com': 'demo123',
-  };
+  // Remove mock credentials - use real backend
+  // Backend test users:
+  // demo@zerda.com (password: demo123)
+  // test@zerda.com (password: test123)
 
   @override
   Widget build(BuildContext context) {
@@ -227,19 +225,13 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Check mock credentials
-      if (_mockCredentials.containsKey(email) &&
-          _mockCredentials[email] == password) {
-        // Update AuthService with successful login
-        await AuthService().login(
-          email: email,
-          password: password,
-          userName: email.split('@')[0],
-        );
-        
+      // Call real backend authentication
+      final success = await AuthService().login(
+        email: email,
+        password: password,
+      );
+      
+      if (success) {
         // Success haptic feedback
         HapticFeedback.lightImpact();
 

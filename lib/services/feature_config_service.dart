@@ -52,15 +52,14 @@ class FeatureConfigService {
       await _loadConfiguration();
       _isInitialized = true;
       
-      // Periodic sync başlat (30 saniyede bir)
+      // Periodic sync başlat (10 saniyede bir - daha hızlı güncelleme)
       _startPeriodicSync();
       
-      // WebSocket bağlantısını devre dışı bırak - sadece HTTP sync kullan
-      // _initializeWebSocket().catchError((error) {
-      //   print('⚠️ WebSocket initialization failed: $error');
-      //   print('💡 Continuing with HTTP-only sync...');
-      // });
-      print('💡 Using HTTP-only sync mode (WebSocket disabled)');
+      // WebSocket bağlantısını başlat - gerçek zamanlı güncellemeler için
+      _initializeWebSocket().catchError((error) {
+        print('⚠️ WebSocket initialization failed: $error');
+        print('💡 Continuing with HTTP-only sync...');
+      });
       
       print('✅ FeatureConfigService initialized successfully');
       print('📊 Loaded ${_features.length} features: $_features');
@@ -203,10 +202,10 @@ class FeatureConfigService {
     }
   }
 
-  // Periodic sync başlat - daha uzun interval ile
+  // Periodic sync başlat - daha kısa interval ile hızlı güncelleme
   void _startPeriodicSync() {
     _syncTimer?.cancel();
-    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _syncTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       // Sync'i try-catch ile sar ki hata durumunda uygulama çökmesin
       try {
         _syncWithAdminPanel().catchError((error) {
@@ -353,15 +352,26 @@ class FeatureConfigService {
             _wsRetryCount = 0; // Reset retry count on successful connection
             print('✅ WebSocket connected successfully');
             
-            // Customer room'a katıl
-            try {
-              _wsChannel!.sink.add('42["join_customer","$_customerId"]');
-            } catch (e) {
-              print('❌ Failed to join customer room: $e');
-            }
+            // Socket.io handshake sonrası customer room'a katıl
+            Timer(const Duration(milliseconds: 500), () {
+              try {
+                // Socket.io join_customer event'i gönder
+                final joinMessage = '42["join_customer","$_customerId"]';
+                _wsChannel!.sink.add(joinMessage);
+                print('📤 Sent join request for customer: $_customerId');
+              } catch (e) {
+                print('❌ Failed to join customer room: $e');
+              }
+            });
           }
           
-          print('📨 WebSocket received: $data');
+          // Debug için sadece önemli mesajları logla
+          if (data.toString().contains('feature_updated') || 
+              data.toString().contains('theme_updated') ||
+              !data.toString().startsWith('2') && !data.toString().startsWith('3')) {
+            print('📨 WebSocket received: $data');
+          }
+          
           _handleWebSocketMessage(data);
         },
         onError: (error) {
@@ -429,6 +439,13 @@ class FeatureConfigService {
     try {
       final String message = data.toString();
       
+      // Socket.io ping-pong mekanizması
+      if (message == '2') {
+        // Ping mesajına pong ile cevap ver
+        _wsChannel?.sink.add('3');
+        return;
+      }
+      
       // Socket.io mesaj formatını parse et
       if (message.startsWith('42')) {
         final jsonStr = message.substring(2);
@@ -444,8 +461,18 @@ class FeatureConfigService {
           } else if (eventName == 'theme_updated') {
             print('🎨 Theme update received: $eventData');
             _handleThemeUpdate(eventData);
+          } else if (eventName == 'customer_joined') {
+            print('✅ Successfully joined customer room: $eventData');
           }
         }
+      } else if (message.startsWith('0')) {
+        // Connection established message - send handshake response
+        print('🤝 Socket.io handshake completed');
+        // Socket.io v4 requires sending '40' after receiving '0' message
+        _wsChannel?.sink.add('40');
+      } else if (message == '40') {
+        // Handshake confirmed
+        print('✅ Socket.io connection ready');
       }
     } catch (e) {
       print('❌ Error parsing WebSocket message: $e');
@@ -453,20 +480,39 @@ class FeatureConfigService {
   }
 
   // Feature güncellemelerini işle
-  void _handleFeatureUpdate(Map<String, dynamic> data) {
+  void _handleFeatureUpdate(dynamic data) {
     try {
-      final featureName = data['featureName'] as String?;
-      final enabled = data['enabled'] as bool?;
+      // data Map veya dynamic olabilir
+      Map<String, dynamic> updateData;
+      if (data is Map<String, dynamic>) {
+        updateData = data;
+      } else if (data is Map) {
+        updateData = Map<String, dynamic>.from(data);
+      } else {
+        print('⚠️ Unexpected data type for feature update: ${data.runtimeType}');
+        return;
+      }
+      
+      final featureName = updateData['featureName'] as String?;
+      final enabled = updateData['enabled'] as bool?;
       
       if (featureName != null && enabled != null) {
+        // Önceki değeri sakla
+        final oldValue = _features[featureName];
+        
+        // Güncelle
         _features[featureName] = enabled;
         _cacheConfiguration();
         _notifyFeatureChanges();
         
-        print('🔄 Feature updated via WebSocket: $featureName = $enabled');
+        print('🔄 Feature updated via WebSocket:');
+        print('   📌 Feature: $featureName');
+        print('   📊 Changed: $oldValue → $enabled');
+        print('   ⏰ Timestamp: ${updateData['timestamp'] ?? 'N/A'}');
       }
     } catch (e) {
       print('❌ Error handling feature update: $e');
+      print('   Data received: $data');
     }
   }
 

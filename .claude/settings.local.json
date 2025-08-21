@@ -51,7 +51,8 @@
       "Bash(mkdir:*)",
       "Bash(npm install:*)",
       "Bash(git clean:*)",
-      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\services\\datshop_api_service.dart\")"
+      "Bash(del \"C:\\Users\\poyra\\OneDrive\\Desktop\\zerda_yeni_tasarim\\lib\\services\\datshop_api_service.dart\")",
+      "Bash(start http://localhost:3009)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

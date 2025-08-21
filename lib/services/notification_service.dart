@@ -104,6 +104,28 @@ class NotificationService {
   
   // Son bildirimleri sakla
   final List<Map<String, dynamic>> _recentNotifications = [];
+  
+  // Public getters
+  String? get fcmToken => _fcmToken;
+  
+  // Get token method for external use
+  Future<String?> getToken() async {
+    if (_fcmToken != null) {
+      return _fcmToken;
+    }
+    
+    // Try to get token if Firebase is initialized
+    if (_fcmInitialized && _firebaseMessaging != null) {
+      try {
+        _fcmToken = await _firebaseMessaging!.getToken();
+        return _fcmToken;
+      } catch (e) {
+        print('Error getting FCM token: $e');
+      }
+    }
+    
+    return null;
+  }
 
   Future<void> initialize() async {
     print('🔔 NotificationService initializing...');
@@ -636,7 +658,6 @@ class NotificationService {
   }
 
   // Public API for FCM
-  String? get fcmToken => _fcmToken;
   bool get isFCMInitialized => _fcmInitialized;
 
   void dispose() {

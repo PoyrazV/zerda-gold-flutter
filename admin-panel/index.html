@@ -1793,9 +1793,8 @@
                                                     backgroundColor: 'white'
                                                 }}
                                             >
-                                                <option value="all">Tüm Kullanıcılar (Giriş Yapan + Misafir)</option>
-                                                <option value="authenticated">Sadece Giriş Yapmış Kullanıcılar</option>
-                                                <option value="guests">Sadece Misafir Kullanıcılar</option>
+                                                <option value="all">Tüm Kullanıcılar</option>
+                                                <option value="authenticated">Giriş Yapmış Kullanıcılar</option>
                                             </select>
                                         </div>
 
@@ -1941,8 +1940,8 @@
                                                         <i className="fas fa-users" style={{ marginRight: '5px' }}></i>
                                                         Hedef: {
                                                             notification.target === 'all' ? 'Tüm Kullanıcılar' : 
-                                                            notification.target === 'authenticated' ? 'Giriş Yapmış' :
-                                                            notification.target === 'guests' ? 'Misafirler' :
+                                                            notification.target === 'authenticated' ? 'Giriş Yapmış Kullanıcılar' :
+                                                            notification.target === 'guests' ? 'Misafir Kullanıcılar' :
                                                             notification.target
                                                         }
                                                     </span>

@@ -1793,9 +1793,9 @@
                                                     backgroundColor: 'white'
                                                 }}
                                             >
-                                                <option value="all">Tüm Kullanıcılar</option>
-                                                <option value="active">Aktif Kullanıcılar</option>
-                                                <option value="inactive">Pasif Kullanıcılar</option>
+                                                <option value="all">Tüm Kullanıcılar (Giriş Yapan + Misafir)</option>
+                                                <option value="authenticated">Sadece Giriş Yapmış Kullanıcılar</option>
+                                                <option value="guests">Sadece Misafir Kullanıcılar</option>
                                             </select>
                                         </div>
 
@@ -1939,7 +1939,12 @@
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6c757d' }}>
                                                     <span>
                                                         <i className="fas fa-users" style={{ marginRight: '5px' }}></i>
-                                                        Hedef: {notification.target === 'all' ? 'Tüm Kullanıcılar' : notification.target}
+                                                        Hedef: {
+                                                            notification.target === 'all' ? 'Tüm Kullanıcılar' : 
+                                                            notification.target === 'authenticated' ? 'Giriş Yapmış' :
+                                                            notification.target === 'guests' ? 'Misafirler' :
+                                                            notification.target
+                                                        }
                                                     </span>
                                                     <span>
                                                         <i className="fas fa-clock" style={{ marginRight: '5px' }}></i>

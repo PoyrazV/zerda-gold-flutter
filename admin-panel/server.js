@@ -221,6 +221,264 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// ============= MOBILE APP AUTHENTICATION =============
+
+// POST - Mobile app login
+app.post('/api/mobile/auth/login', async (req, res) => {
+  try {
+    const { email, password, fcm_token, device_id, platform } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email ve şifre gerekli'
+      });
+    }
+    
+    db.get(
+      'SELECT * FROM mobile_users WHERE email = ?',
+      [email],
+      async (err, user) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        if (!user) {
+          return res.status(401).json({ success: false, error: 'Kullanıcı bulunamadı' });
+        }
+        
+        if (!user.is_active) {
+          return res.status(403).json({ success: false, error: 'Hesap devre dışı' });
+        }
+        
+        const isValidPassword = await bcrypt.compare(password, user.password_hash);
+        if (!isValidPassword) {
+          return res.status(401).json({ success: false, error: 'Geçersiz şifre' });
+        }
+        
+        // Generate session token
+        const sessionToken = jwt.sign(
+          { userId: user.id, email: user.email, type: 'mobile' },
+          JWT_SECRET,
+          { expiresIn: '30d' }
+        );
+        
+        const sessionId = uuidv4();
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        
+        // Save session
+        db.run(
+          `INSERT INTO mobile_sessions (id, user_id, token, device_id, fcm_token, platform, expires_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [sessionId, user.id, sessionToken, device_id, fcm_token, platform, expiresAt],
+          (err) => {
+            if (err) {
+              console.error('Session save error:', err);
+            }
+          }
+        );
+        
+        // Update last login
+        db.run(
+          'UPDATE mobile_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
+          [user.id]
+        );
+        
+        // Update FCM token with user info if provided
+        if (fcm_token && device_id) {
+          const customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95'; // Default customer
+          
+          db.run(
+            `UPDATE fcm_tokens 
+             SET user_id = ?, user_email = ?, is_authenticated = 1, last_login = CURRENT_TIMESTAMP 
+             WHERE fcm_token = ? AND customer_id = ?`,
+            [user.id, user.email, fcm_token, customerId],
+            (err) => {
+              if (err) {
+                console.error('FCM token update error:', err);
+              } else {
+                console.log(`✅ FCM token linked to user: ${user.email}`);
+              }
+            }
+          );
+        }
+        
+        res.json({
+          success: true,
+          message: 'Giriş başarılı',
+          data: {
+            token: sessionToken,
+            user: {
+              id: user.id,
+              email: user.email,
+              full_name: user.full_name,
+              profile_image: user.profile_image,
+              is_verified: user.is_verified
+            }
+          }
+        });
+      }
+    );
+  } catch (error) {
+    console.error('Mobile login error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST - Mobile app register
+app.post('/api/mobile/auth/register', async (req, res) => {
+  try {
+    const { email, password, full_name, fcm_token, device_id, platform } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email ve şifre gerekli'
+      });
+    }
+    
+    // Check if user exists
+    db.get('SELECT id FROM mobile_users WHERE email = ?', [email], async (err, existing) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      if (existing) {
+        return res.status(409).json({ success: false, error: 'Bu email zaten kayıtlı' });
+      }
+      
+      const userId = uuidv4();
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const verificationToken = uuidv4();
+      
+      db.run(
+        `INSERT INTO mobile_users (id, email, password_hash, full_name, verification_token, is_verified) 
+         VALUES (?, ?, ?, ?, ?, 1)`, // Auto-verify for now
+        [userId, email, hashedPassword, full_name || email.split('@')[0], verificationToken],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+          }
+          
+          // Auto login after register
+          const sessionToken = jwt.sign(
+            { userId, email, type: 'mobile' },
+            JWT_SECRET,
+            { expiresIn: '30d' }
+          );
+          
+          const sessionId = uuidv4();
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          
+          db.run(
+            `INSERT INTO mobile_sessions (id, user_id, token, device_id, fcm_token, platform, expires_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [sessionId, userId, sessionToken, device_id, fcm_token, platform, expiresAt]
+          );
+          
+          // Link FCM token if provided
+          if (fcm_token && device_id) {
+            const customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+            
+            db.run(
+              `UPDATE fcm_tokens 
+               SET user_id = ?, user_email = ?, is_authenticated = 1, last_login = CURRENT_TIMESTAMP 
+               WHERE fcm_token = ? AND customer_id = ?`,
+              [userId, email, fcm_token, customerId]
+            );
+          }
+          
+          res.status(201).json({
+            success: true,
+            message: 'Kayıt başarılı',
+            data: {
+              token: sessionToken,
+              user: {
+                id: userId,
+                email,
+                full_name: full_name || email.split('@')[0],
+                is_verified: true
+              }
+            }
+          });
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Mobile register error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST - Mobile app logout
+app.post('/api/mobile/auth/logout', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    const { fcm_token } = req.body;
+    
+    if (token) {
+      // Delete session
+      db.run('DELETE FROM mobile_sessions WHERE token = ?', [token]);
+    }
+    
+    if (fcm_token) {
+      // Remove user info from FCM token
+      db.run(
+        `UPDATE fcm_tokens 
+         SET user_id = NULL, user_email = NULL, is_authenticated = 0 
+         WHERE fcm_token = ?`,
+        [fcm_token],
+        (err) => {
+          if (err) {
+            console.error('FCM token logout update error:', err);
+          }
+        }
+      );
+    }
+    
+    res.json({ success: true, message: 'Çıkış başarılı' });
+  } catch (error) {
+    console.error('Mobile logout error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET - Verify mobile token
+app.get('/api/mobile/auth/verify', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Token gerekli' });
+  }
+  
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ success: false, error: 'Geçersiz token' });
+    }
+    
+    if (decoded.type !== 'mobile') {
+      return res.status(403).json({ success: false, error: 'Yetkilendirme hatası' });
+    }
+    
+    db.get(
+      'SELECT id, email, full_name, profile_image, is_verified FROM mobile_users WHERE id = ?',
+      [decoded.userId],
+      (err, user) => {
+        if (err || !user) {
+          return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
+        }
+        
+        res.json({
+          success: true,
+          data: { user }
+        });
+      }
+    );
+  });
+});
+
 // ============= CUSTOMER MANAGEMENT ROUTES =============
 
 // GET - Tüm müşterileri listele
@@ -566,10 +824,25 @@ async function sendFCMNotification(customerId, notificationData) {
   }
 
   return new Promise((resolve) => {
-    // Get FCM tokens for the customer
+    // Build query based on target
+    let query = 'SELECT fcm_token FROM fcm_tokens WHERE customer_id = ?';
+    const params = [customerId];
+    
+    // Filter by target type
+    if (notificationData.target === 'authenticated') {
+      query += ' AND is_authenticated = 1 AND user_id IS NOT NULL';
+      console.log('📨 Sending to authenticated users only');
+    } else if (notificationData.target === 'guests') {
+      query += ' AND (is_authenticated = 0 OR user_id IS NULL)';
+      console.log('📨 Sending to guest users only');
+    } else {
+      console.log('📨 Sending to all users');
+    }
+    
+    // Get FCM tokens based on target
     db.all(
-      'SELECT fcm_token FROM fcm_tokens WHERE customer_id = ?',
-      [customerId],
+      query,
+      params,
       async (err, tokens) => {
         if (err) {
           console.error('Error fetching FCM tokens:', err);
@@ -769,7 +1042,8 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
           id: notificationId,
           title,
           message,
-          type
+          type,
+          target
         });
 
         console.log(`📱 Push Notification Gönderildi:
@@ -873,7 +1147,7 @@ app.delete('/api/customers/:customerId/notifications/:notificationId', authentic
 
 // POST - Toplu bildirim gönder
 app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => {
-  const { title, message, type = 'info', customerIds = [], excludeCustomerIds = [] } = req.body;
+  const { title, message, type = 'info', target = 'all', customerIds = [], excludeCustomerIds = [] } = req.body;
 
   if (!title || !message) {
     return res.status(400).json({
@@ -917,8 +1191,8 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
         await new Promise((resolve, reject) => {
           db.run(
             `INSERT INTO notifications (id, customer_id, title, message, type, target, status, created_at, updated_at, sent_at)
-             VALUES (?, ?, ?, ?, ?, 'all', 'sent', ?, ?, ?)`,
-            [notificationId, customer.id, title, message, type, now, now, now],
+             VALUES (?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)`,
+            [notificationId, customer.id, title, message, type, target, now, now, now],
             function(err) {
               if (err) reject(err);
               else resolve();
@@ -932,7 +1206,7 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
           title,
           message,
           type,
-          target: 'all',
+          target,
           timestamp: now
         });
 
@@ -941,7 +1215,8 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
           id: notificationId,
           title,
           message,
-          type
+          type,
+          target
         });
 
         sentNotifications.push({
@@ -1096,9 +1371,9 @@ app.get('/api/mobile/notifications/:customerId', (req, res) => {
   }
 });
 
-// FCM Token Registration - Mobile API endpoint
+// FCM Token Registration - Mobile API endpoint (supports user info)
 app.post('/api/mobile/register-fcm-token', async (req, res) => {
-  const { customerId, fcmToken, platform, deviceId } = req.body;
+  const { customerId, fcmToken, platform, deviceId, userId, userEmail } = req.body;
 
   if (!customerId || !fcmToken) {
     return res.status(400).json({ success: false, error: 'Missing customerId or fcmToken' });
@@ -1110,9 +1385,22 @@ app.post('/api/mobile/register-fcm-token', async (req, res) => {
     // First, try to update existing token
     await new Promise((resolve, reject) => {
       db.run(
-        `UPDATE fcm_tokens SET fcm_token = ?, platform = ?, device_id = ?, updated_at = CURRENT_TIMESTAMP 
+        `UPDATE fcm_tokens 
+         SET fcm_token = ?, platform = ?, device_id = ?, 
+             user_id = ?, user_email = ?, 
+             is_authenticated = ?, updated_at = CURRENT_TIMESTAMP 
          WHERE customer_id = ? AND (fcm_token = ? OR device_id = ?)`,
-        [fcmToken, platform || 'flutter', deviceId || null, customerId, fcmToken, deviceId || null],
+        [
+          fcmToken, 
+          platform || 'flutter', 
+          deviceId || null,
+          userId || null,
+          userEmail || null,
+          userId ? 1 : 0,
+          customerId, 
+          fcmToken, 
+          deviceId || null
+        ],
         function(err) {
           if (err) return reject(err);
           resolve(this.changes);
@@ -1123,9 +1411,19 @@ app.post('/api/mobile/register-fcm-token', async (req, res) => {
       if (changes === 0) {
         return new Promise((resolve, reject) => {
           db.run(
-            `INSERT OR REPLACE INTO fcm_tokens (id, customer_id, fcm_token, platform, device_id) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [tokenId, customerId, fcmToken, platform || 'flutter', deviceId || null],
+            `INSERT OR REPLACE INTO fcm_tokens 
+             (id, customer_id, fcm_token, platform, device_id, user_id, user_email, is_authenticated) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              tokenId, 
+              customerId, 
+              fcmToken, 
+              platform || 'flutter', 
+              deviceId || null,
+              userId || null,
+              userEmail || null,
+              userId ? 1 : 0
+            ],
             function(err) {
               if (err) return reject(err);
               resolve();

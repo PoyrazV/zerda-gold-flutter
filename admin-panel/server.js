@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const crypto = require('crypto');
 const admin = require('firebase-admin');
 
 const app = express();
@@ -1147,6 +1148,244 @@ app.post('/api/mobile/register-fcm-token', async (req, res) => {
     console.error('FCM token registration error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// ==================== GOLD PRODUCTS MANAGEMENT ====================
+
+// API Ninjas configuration
+const API_NINJAS_KEY = 'qsHGB+VLocvWUHhJp1Hz2w==NMto19ZMjVwc7axC';
+const API_NINJAS_URL = 'https://api.api-ninjas.com/v1/commodityprice?name=gold';
+
+// Get current gold price from API Ninjas
+app.get('/api/gold-price/current', async (req, res) => {
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(API_NINJAS_URL, {
+      headers: {
+        'X-Api-Key': API_NINJAS_KEY
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API responded with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Calculate gram price from ounce price
+    const ouncePrice = data.price || 0;
+    const gramPrice = ouncePrice / 31.1035; // 1 troy ounce = 31.1035 grams
+    
+    res.json({
+      success: true,
+      data: {
+        ounce_price_usd: ouncePrice,
+        gram_price_usd: gramPrice,
+        currency: 'USD',
+        updated: data.updated || new Date().toISOString(),
+        source: 'API Ninjas'
+      }
+    });
+  } catch (error) {
+    console.error('Gold price fetch error:', error);
+    res.json({
+      success: false,
+      error: 'Altın fiyatı alınamadı',
+      fallback: {
+        ounce_price_usd: 3381.6,
+        gram_price_usd: 108.73,
+        currency: 'USD',
+        source: 'Fallback'
+      }
+    });
+  }
+});
+
+// Get all gold products for a customer
+app.get('/api/customers/:customerId/gold-products', (req, res) => {
+  const { customerId } = req.params;
+  
+  db.all(
+    `SELECT * FROM gold_products 
+     WHERE customer_id = ? 
+     ORDER BY display_order, name`,
+    [customerId],
+    (err, products) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          success: false,
+          error: 'Veritabanı hatası'
+        });
+      }
+      
+      res.json({
+        success: true,
+        products: products || []
+      });
+    }
+  );
+});
+
+// Create a new gold product
+app.post('/api/customers/:customerId/gold-products', (req, res) => {
+  const { customerId } = req.params;
+  const { name, weight_grams, buy_millesimal, sell_millesimal, display_order } = req.body;
+  
+  // Validation
+  if (!name || !weight_grams || !buy_millesimal || !sell_millesimal) {
+    return res.status(400).json({
+      success: false,
+      error: 'Tüm alanlar zorunludur'
+    });
+  }
+  
+  const id = crypto.randomBytes(16).toString('hex');
+  
+  db.run(
+    `INSERT INTO gold_products 
+     (id, customer_id, name, weight_grams, buy_millesimal, sell_millesimal, display_order, is_active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+    [id, customerId, name, weight_grams, buy_millesimal, sell_millesimal, display_order || 0],
+    function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          success: false,
+          error: 'Ürün eklenemedi'
+        });
+      }
+      
+      // Get the created product
+      db.get(
+        'SELECT * FROM gold_products WHERE id = ?',
+        [id],
+        (err, product) => {
+          if (err || !product) {
+            return res.status(500).json({
+              success: false,
+              error: 'Ürün oluşturuldu ancak getirilemedi'
+            });
+          }
+          
+          res.json({
+            success: true,
+            product: product
+          });
+        }
+      );
+    }
+  );
+});
+
+// Update a gold product
+app.put('/api/customers/:customerId/gold-products/:productId', (req, res) => {
+  const { customerId, productId } = req.params;
+  const { name, weight_grams, buy_millesimal, sell_millesimal, display_order, is_active } = req.body;
+  
+  const updates = [];
+  const values = [];
+  
+  if (name !== undefined) {
+    updates.push('name = ?');
+    values.push(name);
+  }
+  if (weight_grams !== undefined) {
+    updates.push('weight_grams = ?');
+    values.push(weight_grams);
+  }
+  if (buy_millesimal !== undefined) {
+    updates.push('buy_millesimal = ?');
+    values.push(buy_millesimal);
+  }
+  if (sell_millesimal !== undefined) {
+    updates.push('sell_millesimal = ?');
+    values.push(sell_millesimal);
+  }
+  if (display_order !== undefined) {
+    updates.push('display_order = ?');
+    values.push(display_order);
+  }
+  if (is_active !== undefined) {
+    updates.push('is_active = ?');
+    values.push(is_active ? 1 : 0);
+  }
+  
+  if (updates.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Güncellenecek alan bulunamadı'
+    });
+  }
+  
+  updates.push('updated_at = CURRENT_TIMESTAMP');
+  values.push(productId, customerId);
+  
+  db.run(
+    `UPDATE gold_products 
+     SET ${updates.join(', ')}
+     WHERE id = ? AND customer_id = ?`,
+    values,
+    function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          success: false,
+          error: 'Ürün güncellenemedi'
+        });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Ürün bulunamadı'
+        });
+      }
+      
+      // Get updated product
+      db.get(
+        'SELECT * FROM gold_products WHERE id = ?',
+        [productId],
+        (err, product) => {
+          res.json({
+            success: true,
+            product: product
+          });
+        }
+      );
+    }
+  );
+});
+
+// Delete a gold product
+app.delete('/api/customers/:customerId/gold-products/:productId', (req, res) => {
+  const { customerId, productId } = req.params;
+  
+  db.run(
+    'DELETE FROM gold_products WHERE id = ? AND customer_id = ?',
+    [productId, customerId],
+    function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          success: false,
+          error: 'Ürün silinemedi'
+        });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Ürün bulunamadı'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Ürün başarıyla silindi'
+      });
+    }
+  );
 });
 
 // Health check

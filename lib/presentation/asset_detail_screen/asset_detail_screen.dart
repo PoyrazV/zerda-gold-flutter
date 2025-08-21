@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
+import '../../services/gold_products_service.dart';
 import '../../widgets/ticker_section.dart';
 import '../../widgets/dashboard_header.dart';
 import './widgets/interactive_chart_widget.dart';
@@ -351,19 +352,105 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     if (arguments != null && arguments['code'] != null) {
       symbol = arguments['code'] as String;
       print('AssetDetailScreen: Received currency code: $symbol');
+      
+      // If we have direct price data from gold screen, use it
+      if (arguments['buyPrice'] != null && arguments['sellPrice'] != null) {
+        setState(() {
+          assetData = {
+            "symbol": symbol,
+            "name": arguments['name'] ?? _getCurrencyNameForSymbol(symbol),
+            "currentPrice": CurrencyFormatter.formatNumber(arguments['sellPrice'] ?? 0.0, decimalPlaces: 2),
+            "buyPrice": arguments['buyPrice'] ?? 0.0,
+            "sellPrice": arguments['sellPrice'] ?? 0.0,
+            "priceChange": CurrencyFormatter.formatPercentageChange(arguments['change'] ?? 0.0).replaceAll('%', ''),
+            "changePercent": CurrencyFormatter.formatPercentageChange(arguments['change'] ?? 0.0),
+            "isPositive": arguments['isPositive'] ?? false,
+            "openingPrice": CurrencyFormatter.formatNumber((arguments['sellPrice'] ?? 0.0) * 0.998, decimalPlaces: 2),
+            "previousClose": CurrencyFormatter.formatNumber((arguments['sellPrice'] ?? 0.0) * 0.997, decimalPlaces: 2),
+            "dailyHigh": CurrencyFormatter.formatNumber((arguments['sellPrice'] ?? 0.0) * 1.002, decimalPlaces: 2),
+            "dailyLow": CurrencyFormatter.formatNumber((arguments['sellPrice'] ?? 0.0) * 0.996, decimalPlaces: 2),
+            "weeklyPerformance": CurrencyFormatter.formatPercentageChange((arguments['change'] ?? 0.0) * 7),
+            "weeklyIsPositive": arguments['isPositive'] ?? false,
+          };
+          _isLoading = false;
+        });
+        return;
+      }
     }
     
     // Load data from API
     _loadCurrencyData(symbol);
   }
   
+  // Check if the symbol is a gold product
+  bool _isGoldProduct(String symbol) {
+    // Check common gold product codes
+    return symbol.contains('ALTIN') || 
+           symbol.contains('GOLD') || 
+           symbol.contains('GRAM') ||
+           symbol.contains('CEYREK') ||
+           symbol.contains('YARIM') ||
+           symbol.contains('TAM') ||
+           symbol.contains('ATA') ||
+           symbol.contains('CUMHUR') ||
+           symbol.contains('22AYAR') ||
+           symbol.contains('18AYAR') ||
+           symbol.contains('14AYAR') ||
+           symbol.contains('GUMUS') ||
+           symbol.contains('ONSALTIN');
+  }
+
   Future<void> _loadCurrencyData(String symbol) async {
     setState(() {
       _isLoading = true;
     });
     
     try {
-      // Get currency data from API
+      // Check if this is a gold product
+      if (_isGoldProduct(symbol)) {
+        // Load gold product data
+        final goldProducts = await GoldProductsService.getProductsWithPrices();
+        
+        // Find the specific gold product
+        final goldData = goldProducts.firstWhere(
+          (p) => p['code'] == symbol || (p['name']?.toString().toUpperCase().contains(symbol) ?? false),
+          orElse: () => {
+            'code': symbol,
+            'name': _getCurrencyNameForSymbol(symbol),
+            'buyPrice': 0.0,
+            'sellPrice': 0.0,
+            'change': 0.0,
+            'isPositive': false,
+          },
+        );
+        
+        // Convert gold data to asset data format
+        setState(() {
+          assetData = {
+            "symbol": goldData['code'] ?? symbol,
+            "name": goldData['name'] ?? _getCurrencyNameForSymbol(symbol),
+            "currentPrice": CurrencyFormatter.formatNumber(goldData['sellPrice'] ?? 0.0, decimalPlaces: 2),
+            "buyPrice": goldData['buyPrice'] ?? 0.0,
+            "sellPrice": goldData['sellPrice'] ?? 0.0,
+            "priceChange": CurrencyFormatter.formatPercentageChange(goldData['change'] ?? 0.0).replaceAll('%', ''),
+            "changePercent": CurrencyFormatter.formatPercentageChange(goldData['change'] ?? 0.0),
+            "isPositive": goldData['isPositive'] ?? false,
+            "openingPrice": CurrencyFormatter.formatNumber((goldData['sellPrice'] ?? 0.0) * 0.998, decimalPlaces: 2),
+            "previousClose": CurrencyFormatter.formatNumber((goldData['sellPrice'] ?? 0.0) * 0.997, decimalPlaces: 2),
+            "dailyHigh": CurrencyFormatter.formatNumber((goldData['sellPrice'] ?? 0.0) * 1.002, decimalPlaces: 2),
+            "dailyLow": CurrencyFormatter.formatNumber((goldData['sellPrice'] ?? 0.0) * 0.996, decimalPlaces: 2),
+            "weeklyPerformance": CurrencyFormatter.formatPercentageChange((goldData['change'] ?? 0.0) * 7),
+            "weeklyIsPositive": goldData['isPositive'] ?? false,
+            "weight_grams": goldData['weight_grams'],
+            "buy_millesimal": goldData['buy_millesimal'],
+            "sell_millesimal": goldData['sell_millesimal'],
+          };
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      // Get currency data from API (existing code for non-gold assets)
       final currencies = await _currencyApiService.getFormattedCurrencyData();
       
       // Find the specific currency

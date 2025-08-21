@@ -127,7 +127,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // White text for better contrast
+                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                 height: 2,
               ),
             ),
@@ -140,7 +140,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // White text for better contrast
+                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                 height: 2,
               ),
             ),
@@ -153,7 +153,7 @@ class _SarrafiyeIscilikScreenState extends State<SarrafiyeIscilikScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // White text for better contrast
+                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                 height: 2,
               ),
             ),

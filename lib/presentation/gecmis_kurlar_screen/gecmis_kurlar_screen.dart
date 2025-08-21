@@ -444,7 +444,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                 height: 2,
               ),
             ),
@@ -457,7 +457,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                 height: 2,
               ),
             ),
@@ -470,7 +470,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                 height: 2,
               ),
             ),

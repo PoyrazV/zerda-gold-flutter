@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/metals_api_service.dart';
+import '../../services/gold_products_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -225,25 +226,40 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
   
   Future<void> _fetchGoldPrice() async {
     try {
-      final data = await MetalsApiService.getGoldPrice();
-      if (mounted) {
-        setState(() {
-          _goldData = data;
-          _goldCoinData = [
-            {
-              'code': 'ONSALTIN',
-              'name': 'Ons Altın (USD)',
-              'buyPrice': data['buyPriceUSD'],
-              'sellPrice': data['sellPriceUSD'],
-              'change': data['change'],
-              'isPositive': data['isPositive'],
-              'timestamp': data['timestamp'],
-            },
-          ];
-          _isLoading = false;
-        });
+      // Fetch products from admin panel
+      final products = await GoldProductsService.getProductsWithPrices();
+      
+      // If no products from admin panel, use API Ninjas for ounce gold
+      if (products.isEmpty) {
+        final data = await MetalsApiService.getGoldPrice();
+        if (mounted) {
+          setState(() {
+            _goldData = data;
+            _goldCoinData = [
+              {
+                'code': 'ONSALTIN',
+                'name': 'Ons Altın (USD)',
+                'buyPrice': data['buyPriceUSD'],
+                'sellPrice': data['sellPriceUSD'],
+                'change': data['change'],
+                'isPositive': data['isPositive'],
+                'timestamp': data['timestamp'],
+              },
+            ];
+            _isLoading = false;
+          });
+        }
+      } else {
+        // Use products from admin panel
+        if (mounted) {
+          setState(() {
+            _goldCoinData = products;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
+      print('Error fetching gold data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -351,7 +367,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 4.w,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white, // White text for header
+                                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                                 height: 2,
                               ),
                             ),
@@ -364,7 +380,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 4.w,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white, // White text for header
+                                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                                 height: 2,
                               ),
                             ),
@@ -377,7 +393,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 4.w,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white, // White text for header
+                                color: ThemeConfigService().secondaryColor, // Use secondary color from theme
                                 height: 2,
                               ),
                             ),
@@ -511,6 +527,11 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
           '/asset-detail-screen',
           arguments: {
             'code': gold['code'] as String,
+            'name': gold['name'] as String?,
+            'buyPrice': gold['buyPrice'],
+            'sellPrice': gold['sellPrice'],
+            'change': gold['change'],
+            'isPositive': gold['isPositive'],
           },
         );
       },

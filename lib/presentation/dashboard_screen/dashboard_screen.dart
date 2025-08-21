@@ -11,7 +11,6 @@ import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
 import '../../widgets/ticker_section.dart';
-import '../../widgets/debug_panel.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -164,9 +163,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           Expanded(
             child: Column(
               children: [
-                // DEBUG PANEL - Add temporarily for testing
-                DebugPanel(),
-                
                 // Horizontal scrollable ticker cards - Fixed at top
                 const TickerSection(reduceBottomPadding: false),
                 
@@ -223,7 +219,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w, // 1rem equivalent - responsive
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095), // Gold text
+                color: ThemeConfigService().secondaryColor, // Gold text
                 height: 2, // Line height 2.5rem
               ),
             ),
@@ -236,7 +232,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w, // 1rem equivalent - responsive
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095), // Gold text
+                color: ThemeConfigService().secondaryColor, // Gold text
                 height: 2, // Line height 2.5rem
               ),
             ),
@@ -249,7 +245,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               style: GoogleFonts.inter(
                 fontSize: 4.w, // 1rem equivalent - responsive
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFFE8D095), // Gold text
+                color: ThemeConfigService().secondaryColor, // Gold text
                 height: 2, // Line height 2.5rem
               ),
             ),

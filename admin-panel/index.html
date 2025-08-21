@@ -1957,6 +1957,476 @@
                 );
             };
 
+            // Gold Management Component
+            const GoldManagement = () => {
+                const [goldProducts, setGoldProducts] = useState([]);
+                const [goldPrice, setGoldPrice] = useState(null);
+                const [showForm, setShowForm] = useState(false);
+                const [editingProduct, setEditingProduct] = useState(null);
+                const [loading, setLoading] = useState(false);
+                const [productForm, setProductForm] = useState({
+                    name: '',
+                    weight_grams: '',
+                    buy_millesimal: '',
+                    sell_millesimal: '',
+                    display_order: 0
+                });
+
+                // Load gold products
+                const loadGoldProducts = async () => {
+                    if (!selectedCustomer) return;
+                    
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/gold-products`);
+                        const data = await response.json();
+                        if (data.success) {
+                            setGoldProducts(data.products);
+                        }
+                    } catch (error) {
+                        console.error('Error loading gold products:', error);
+                        showNotification('Altın ürünleri yüklenemedi', 'error');
+                    }
+                };
+
+                // Load current gold price
+                const loadGoldPrice = async () => {
+                    try {
+                        const response = await fetch('/api/gold-price/current');
+                        const data = await response.json();
+                        if (data.success) {
+                            setGoldPrice(data.data);
+                        } else if (data.fallback) {
+                            setGoldPrice(data.fallback);
+                        }
+                    } catch (error) {
+                        console.error('Error loading gold price:', error);
+                    }
+                };
+
+                // Calculate prices based on millesimal
+                const calculatePrices = (product) => {
+                    if (!goldPrice) return { buy: 0, sell: 0 };
+                    const gramPrice = goldPrice.gram_price_usd;
+                    const buyPrice = gramPrice * product.weight_grams * product.buy_millesimal;
+                    const sellPrice = gramPrice * product.weight_grams * product.sell_millesimal;
+                    return {
+                        buy: buyPrice.toFixed(2),
+                        sell: sellPrice.toFixed(2)
+                    };
+                };
+
+                // Handle form submit
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setLoading(true);
+
+                    try {
+                        const url = editingProduct 
+                            ? `/api/customers/${selectedCustomer.id}/gold-products/${editingProduct.id}`
+                            : `/api/customers/${selectedCustomer.id}/gold-products`;
+                        
+                        const method = editingProduct ? 'PUT' : 'POST';
+                        
+                        const response = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(productForm)
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification(
+                                editingProduct ? 'Ürün güncellendi' : 'Ürün eklendi',
+                                'success'
+                            );
+                            setShowForm(false);
+                            setEditingProduct(null);
+                            setProductForm({
+                                name: '',
+                                weight_grams: '',
+                                buy_millesimal: '',
+                                sell_millesimal: '',
+                                display_order: 0
+                            });
+                            loadGoldProducts();
+                        } else {
+                            showNotification(data.error || 'İşlem başarısız', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error saving product:', error);
+                        showNotification('Bir hata oluştu', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Handle delete
+                const handleDelete = async (productId) => {
+                    if (!confirm('Bu ürünü silmek istediğinizden emin misiniz?')) return;
+
+                    try {
+                        const response = await fetch(
+                            `/api/customers/${selectedCustomer.id}/gold-products/${productId}`,
+                            { method: 'DELETE' }
+                        );
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification('Ürün silindi', 'success');
+                            loadGoldProducts();
+                        } else {
+                            showNotification(data.error || 'Silme işlemi başarısız', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting product:', error);
+                        showNotification('Bir hata oluştu', 'error');
+                    }
+                };
+
+                // Handle edit
+                const handleEdit = (product) => {
+                    setEditingProduct(product);
+                    setProductForm({
+                        name: product.name,
+                        weight_grams: product.weight_grams,
+                        buy_millesimal: product.buy_millesimal,
+                        sell_millesimal: product.sell_millesimal,
+                        display_order: product.display_order || 0
+                    });
+                    setShowForm(true);
+                };
+
+                // Toggle active status
+                const toggleActive = async (product) => {
+                    try {
+                        const response = await fetch(
+                            `/api/customers/${selectedCustomer.id}/gold-products/${product.id}`,
+                            {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ is_active: !product.is_active })
+                            }
+                        );
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification('Durum güncellendi', 'success');
+                            loadGoldProducts();
+                        }
+                    } catch (error) {
+                        console.error('Error toggling active:', error);
+                    }
+                };
+
+                useEffect(() => {
+                    if (selectedCustomer) {
+                        loadGoldProducts();
+                    }
+                    loadGoldPrice();
+                    
+                    // Refresh gold price every 5 minutes
+                    const interval = setInterval(loadGoldPrice, 5 * 60 * 1000);
+                    return () => clearInterval(interval);
+                }, [selectedCustomer]);
+
+                if (!selectedCustomer) {
+                    return (
+                        <div className="section-card">
+                            <h2>Altın Yönetimi</h2>
+                            <p>Lütfen önce bir müşteri seçin.</p>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="section-card">
+                        <div className="section-header">
+                            <h2>
+                                <i className="fas fa-coins" style={{ marginRight: '10px', color: '#FFD700' }}></i>
+                                Altın Yönetimi
+                            </h2>
+                            <button 
+                                className="add-btn"
+                                onClick={() => {
+                                    setEditingProduct(null);
+                                    setProductForm({
+                                        name: '',
+                                        weight_grams: '',
+                                        buy_millesimal: '',
+                                        sell_millesimal: '',
+                                        display_order: 0
+                                    });
+                                    setShowForm(true);
+                                }}
+                            >
+                                <i className="fas fa-plus"></i> Yeni Ürün Ekle
+                            </button>
+                        </div>
+
+                        {/* Gold Price Display */}
+                        {goldPrice && (
+                            <div style={{
+                                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                                color: '#000',
+                                padding: '20px',
+                                borderRadius: '12px',
+                                marginBottom: '30px',
+                                display: 'flex',
+                                justifyContent: 'space-around',
+                                boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
+                            }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', opacity: 0.8 }}>Ons Altın (USD)</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                                        ${goldPrice.ounce_price_usd?.toFixed(2) || '0.00'}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', opacity: 0.8 }}>Gram Altın (USD)</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                                        ${goldPrice.gram_price_usd?.toFixed(2) || '0.00'}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', opacity: 0.8 }}>Kaynak</div>
+                                    <div style={{ fontSize: '18px' }}>
+                                        {goldPrice.source || 'API'}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Product Form */}
+                        {showForm && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                padding: '25px',
+                                borderRadius: '12px',
+                                marginBottom: '30px',
+                                border: '2px solid #e9ecef'
+                            }}>
+                                <h3 style={{ marginBottom: '20px' }}>
+                                    {editingProduct ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
+                                </h3>
+                                <form onSubmit={handleSubmit}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Ürün Adı
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={productForm.name}
+                                                onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+                                                placeholder="Örn: Gram Altın, Çeyrek Altın"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Gram Ağırlığı
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                value={productForm.weight_grams}
+                                                onChange={(e) => setProductForm({...productForm, weight_grams: e.target.value})}
+                                                placeholder="Örn: 1.0, 1.75, 3.5, 7.0"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Alış Milyemi
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                min="0.001"
+                                                max="1.000"
+                                                value={productForm.buy_millesimal}
+                                                onChange={(e) => setProductForm({...productForm, buy_millesimal: e.target.value})}
+                                                placeholder="Örn: 0.990, 0.995"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Satış Milyemi
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                min="0.001"
+                                                max="1.000"
+                                                value={productForm.sell_millesimal}
+                                                onChange={(e) => setProductForm({...productForm, sell_millesimal: e.target.value})}
+                                                placeholder="Örn: 0.999, 1.000"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                                        <button 
+                                            type="submit" 
+                                            className="save-btn"
+                                            disabled={loading}
+                                        >
+                                            <i className="fas fa-save"></i> {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                setShowForm(false);
+                                                setEditingProduct(null);
+                                            }}
+                                            style={{
+                                                padding: '12px 24px',
+                                                background: '#6c757d',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            İptal
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Products Table */}
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid #e9ecef' }}>
+                                        <th style={{ padding: '15px', textAlign: 'left' }}>Ürün Adı</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Gram</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Alış Milyemi</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Satış Milyemi</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Alış Fiyatı</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Satış Fiyatı</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Durum</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {goldProducts.map((product) => {
+                                        const prices = calculatePrices(product);
+                                        return (
+                                            <tr key={product.id} style={{ borderBottom: '1px solid #e9ecef' }}>
+                                                <td style={{ padding: '15px' }}>
+                                                    <strong>{product.name}</strong>
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    {product.weight_grams}g
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    {product.buy_millesimal}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    {product.sell_millesimal}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center', color: '#dc3545' }}>
+                                                    ${prices.buy}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center', color: '#28a745' }}>
+                                                    ${prices.sell}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => toggleActive(product)}
+                                                        style={{
+                                                            padding: '5px 15px',
+                                                            background: product.is_active ? '#28a745' : '#dc3545',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '20px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '12px'
+                                                        }}
+                                                    >
+                                                        {product.is_active ? 'Aktif' : 'Pasif'}
+                                                    </button>
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => handleEdit(product)}
+                                                        style={{
+                                                            padding: '8px 12px',
+                                                            marginRight: '5px',
+                                                            background: '#007bff',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(product.id)}
+                                                        style={{
+                                                            padding: '8px 12px',
+                                                            background: '#dc3545',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {goldProducts.length === 0 && (
+                                        <tr>
+                                            <td colSpan="8" style={{ padding: '30px', textAlign: 'center', color: '#6c757d' }}>
+                                                Henüz altın ürünü eklenmemiş
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
             if (loading) {
                 return (
                     <div className="loading">
@@ -1999,6 +2469,10 @@
                                   onClick={() => setActiveTab('notifications')}>
                                 <i className="fas fa-bell"></i> Bildirim Yönetimi
                             </a></li>
+                            <li><a href="#" className={activeTab === 'gold' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('gold')}>
+                                <i className="fas fa-coins"></i> Altın Yönetimi
+                            </a></li>
                             <li><a href="#" className={activeTab === 'assets' ? 'active' : ''} 
                                   onClick={() => setActiveTab('assets')}>
                                 <i className="fas fa-cloud-upload-alt"></i> Derleme ve Yayın
@@ -2018,6 +2492,7 @@
                                 {activeTab === 'features' && 'Özellik Yönetimi'}
                                 {activeTab === 'theme' && 'Marka Özelleştirme'}
                                 {activeTab === 'notifications' && 'Bildirim Yönetimi'}
+                                {activeTab === 'gold' && 'Altın Yönetimi'}
                                 {activeTab === 'assets' && 'Derleme ve Yayın'}
                                 {activeTab === 'analytics' && 'Takip ve Raporlama'}
                             </h1>
@@ -2036,6 +2511,7 @@
                             {activeTab === 'features' && <Features />}
                             {activeTab === 'theme' && <ThemeCustomization />}
                             {activeTab === 'notifications' && <Notifications />}
+                            {activeTab === 'gold' && <GoldManagement />}
                             {activeTab === 'assets' && <div className="section-card"><div className="section-content"><p>Derleme ve Yayın özellikleri yakında geliyor...</p></div></div>}
                             {activeTab === 'analytics' && <div className="section-card"><div className="section-content"><p>Takip ve Raporlama özellikleri yakında geliyor...</p></div></div>}
                         </div>

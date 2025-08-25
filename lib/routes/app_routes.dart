@@ -20,6 +20,7 @@ import '../presentation/register_screen/register_screen.dart';
 import '../presentation/edit_profile_screen/edit_profile_screen.dart';
 import '../presentation/change_password_screen/change_password_screen.dart';
 import '../presentation/email_preferences_screen/email_preferences_screen.dart';
+import '../presentation/gold_value_calculator_screen/gold_value_calculator_screen.dart';
 
 class AppRoutes {
   static const String initial = '/';
@@ -44,6 +45,7 @@ class AppRoutes {
   static const String editProfile = '/edit-profile-screen';
   static const String changePassword = '/change-password-screen';
   static const String emailPreferences = '/email-preferences-screen';
+  static const String goldValueCalculator = '/gold-value-calculator-screen';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -68,5 +70,6 @@ class AppRoutes {
     editProfile: (context) => const EditProfileScreen(),
     changePassword: (context) => const ChangePasswordScreen(),
     emailPreferences: (context) => const EmailPreferencesScreen(),
+    goldValueCalculator: (context) => const GoldValueCalculatorScreen(),
   };
 }

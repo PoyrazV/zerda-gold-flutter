@@ -533,6 +533,7 @@ class FeatureConfigService {
     _features = {
       'dashboard': true,
       'goldPrices': true,
+      'goldValueCalculator': true,
       'converter': true,
       'alarms': true,
       'portfolio': true,

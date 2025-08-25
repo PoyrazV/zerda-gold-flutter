@@ -17,9 +17,14 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await Firebase.initializeApp();
   }
   
-  print('🔥 Background message received: ${message.notification?.title}');
-  print('   Body: ${message.notification?.body}');
-  print('   Data: ${message.data}');
+  // DATA-ONLY message handling - get title and body from data payload
+  final String title = message.data['title'] ?? 'Zerda Gold';
+  final String body = message.data['body'] ?? 'Yeni bildirim';
+  
+  print('🔥 Background DATA-ONLY message received');
+  print('   Title: $title');
+  print('   Body: $body');
+  print('   Type: ${message.data['type']}');
   
   // Initialize local notifications plugin for background
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
@@ -52,11 +57,11 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   
   const NotificationDetails details = NotificationDetails(android: androidDetails);
   
-  // Show the notification
+  // Show the notification ONCE (no duplicate since Firebase won't auto-display)
   await flutterLocalNotificationsPlugin.show(
     message.hashCode,
-    message.notification?.title ?? 'Zerda Gold',
-    message.notification?.body ?? '',
+    title,
+    body,
     details,
     payload: message.data.toString(),
   );
@@ -66,8 +71,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final prefs = await SharedPreferences.getInstance();
     final notifications = prefs.getStringList('background_notifications') ?? [];
     notifications.add(jsonEncode({
-      'title': message.notification?.title,
-      'body': message.notification?.body,
+      'title': title,  // Use extracted title from data
+      'body': body,    // Use extracted body from data
       'data': message.data,
       'timestamp': DateTime.now().toIso8601String(),
     }));
@@ -613,7 +618,11 @@ class NotificationService {
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
-    print('🔥 FCM foreground message: ${message.notification?.title}');
+    // Data-only messages: extract from data payload
+    final String title = message.data['title'] ?? 'Zerda Gold';
+    final String body = message.data['body'] ?? 'Yeni bildirim';
+    
+    print('🔥 FCM foreground message (data-only): $title');
     
     // Convert FCM message to our notification format
     final notificationData = _fcmMessageToNotificationData(message);
@@ -637,10 +646,11 @@ class NotificationService {
   }
 
   Map<String, dynamic> _fcmMessageToNotificationData(RemoteMessage message) {
+    // Data-only messages: extract everything from data payload
     return {
       'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      'title': message.notification?.title ?? 'Zerda Gold',
-      'message': message.notification?.body ?? 'Yeni bildirim',
+      'title': message.data['title'] ?? 'Zerda Gold',
+      'message': message.data['body'] ?? 'Yeni bildirim',
       'type': message.data['type'] ?? 'info',
       'timestamp': DateTime.now().toIso8601String(),
       'data': message.data,

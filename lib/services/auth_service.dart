@@ -146,34 +146,81 @@ class AuthService extends ChangeNotifier {
       final fcmToken = await notificationService.getToken();
       final deviceId = await _getDeviceId();
       
+      // Store previous user info for logging
+      final previousUser = _userEmail;
+      
+      print('🔄 Starting logout process...');
+      print('   Previous user: $previousUser');
+      print('   Device ID: $deviceId');
+      
       // Call backend logout API
       if (_authToken != null) {
-        await _dio.post(
-          '/auth/logout',
-          data: {'fcm_token': fcmToken},
-          options: Options(
-            headers: {'Authorization': 'Bearer $_authToken'},
-          ),
-        );
+        try {
+          await _dio.post(
+            '/auth/logout',
+            data: {'fcm_token': fcmToken},
+            options: Options(
+              headers: {'Authorization': 'Bearer $_authToken'},
+            ),
+          );
+          print('✅ Backend logout successful');
+        } catch (e) {
+          print('⚠️ Backend logout failed (continuing): $e');
+        }
       }
       
       // Update FCM token to mark as guest (remove user info)
       if (fcmToken != null) {
-        await Dio().post(
-          'http://10.0.2.2:3009/api/mobile/register-fcm-token',
-          data: {
-            'customerId': 'ffeee61a-8497-4c70-857e-c8f0efb13a2a',
-            'fcmToken': fcmToken,
-            'deviceId': deviceId,
-            'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
-            'userId': null,  // Explicitly set to null to mark as guest
-            'userEmail': null,  // Explicitly set to null to mark as guest
-          },
-        );
-        print('✅ FCM token marked as guest after logout');
+        print('🔄 Updating FCM token to guest mode...');
+        print('   Token: ${fcmToken.substring(0, 30)}...');
+        
+        try {
+          final response = await Dio().post(
+            'http://10.0.2.2:3009/api/mobile/register-fcm-token',
+            data: {
+              'customerId': 'ffeee61a-8497-4c70-857e-c8f0efb13a2a',
+              'fcmToken': fcmToken,
+              'deviceId': deviceId,
+              'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+              'userId': null,  // Explicitly set to null to mark as guest
+              'userEmail': null,  // Explicitly set to null to mark as guest
+            },
+          );
+          
+          if (response.data['success'] == true) {
+            print('✅ FCM token successfully marked as guest');
+            print('   Device ID preserved: $deviceId');
+            print('   New status: Guest (is_authenticated = 0)');
+            print('   Previous user cleared: $previousUser → null');
+          } else {
+            print('⚠️ FCM token update response not successful: ${response.data}');
+          }
+        } catch (e) {
+          print('❌ Failed to update FCM token to guest: $e');
+          // Try once more with a small delay
+          await Future.delayed(Duration(seconds: 1));
+          try {
+            await Dio().post(
+              'http://10.0.2.2:3009/api/mobile/register-fcm-token',
+              data: {
+                'customerId': 'ffeee61a-8497-4c70-857e-c8f0efb13a2a',
+                'fcmToken': fcmToken,
+                'deviceId': deviceId,
+                'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+                'userId': null,
+                'userEmail': null,
+              },
+            );
+            print('✅ FCM token updated on retry');
+          } catch (retryError) {
+            print('❌ FCM token update failed on retry: $retryError');
+          }
+        }
+      } else {
+        print('⚠️ No FCM token available to update');
       }
     } catch (e) {
-      print('Logout API error: $e');
+      print('❌ Logout process error: $e');
     }
     
     // Clear local data

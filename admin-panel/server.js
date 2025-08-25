@@ -867,13 +867,14 @@ async function sendFCMNotification(customerId, notificationData) {
         console.log(`🔥 Sending FCM to ${fcmTokens.length} tokens for customer ${customerId}`);
 
         try {
-          // Prepare the message with high priority for background delivery
+          // Prepare DATA-ONLY message to prevent duplicate notifications
+          // Flutter app will handle displaying the notification
           const baseMessage = {
-            notification: {
-              title: notificationData.title,
-              body: notificationData.message,
-            },
+            // NO notification field - this prevents Firebase from auto-displaying
             data: {
+              // Move notification content to data payload
+              title: notificationData.title || 'Zerda Gold',
+              body: notificationData.message || '',
               type: notificationData.type || 'info',
               id: notificationData.id || '',
               timestamp: new Date().toISOString(),
@@ -881,22 +882,14 @@ async function sendFCMNotification(customerId, notificationData) {
             },
             android: {
               priority: 'high',
-              notification: {
-                channelId: 'zerda_notifications',
-                priority: 'high',
-                defaultSound: true,
-                defaultVibrateTimings: true,
-              },
+              // Data-only message - no notification field here
             },
             apns: {
               payload: {
                 aps: {
-                  alert: {
-                    title: notificationData.title,
-                    body: notificationData.message,
-                  },
-                  sound: 'default',
+                  // Data-only for iOS too
                   contentAvailable: true,
+                  // No alert field to prevent auto-display
                 },
               },
             },

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
@@ -15,8 +16,34 @@ import 'services/notification_service.dart';
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Ensure Firebase is initialized
   await Firebase.initializeApp();
-  print('🔔 Background message received: ${message.notification?.title}');
-  // The actual notification display is handled by NotificationService
+  
+  // Data-only messages: extract from data payload
+  final String title = message.data['title'] ?? 'Zerda Gold';
+  final String body = message.data['body'] ?? 'Yeni bildirim';
+  
+  print('🔔 Background message received (data-only): $title');
+  
+  // Firebase will NOT auto-display data-only messages
+  // Store notification data for later processing when app opens
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final notifications = prefs.getStringList('background_notifications') ?? [];
+    
+    final notificationData = {
+      'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'title': title,
+      'message': body,
+      'type': message.data['type'] ?? 'info',
+      'timestamp': DateTime.now().toIso8601String(),
+      'data': message.data,
+    };
+    
+    notifications.add(jsonEncode(notificationData));
+    await prefs.setStringList('background_notifications', notifications);
+    print('📬 Stored background notification for later processing');
+  } catch (e) {
+    print('❌ Failed to store background notification: $e');
+  }
 }
 
 void main() async {

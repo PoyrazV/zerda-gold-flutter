@@ -3,10 +3,21 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
 
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
+import 'services/notification_service.dart';
+
+// Background message handler - MUST be top-level function
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Ensure Firebase is initialized
+  await Firebase.initializeApp();
+  print('🔔 Background message received: ${message.notification?.title}');
+  // The actual notification display is handled by NotificationService
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +37,10 @@ void main() async {
     print('🔥 Initializing Firebase Core...');
     await Firebase.initializeApp();
     print('🔥 Firebase Core initialized successfully');
+    
+    // Register background message handler
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    print('🔔 Background message handler registered');
   } catch (e) {
     print('❌ Firebase Core initialization failed: $e');
     // Continue without Firebase - app should still work with HTTP polling

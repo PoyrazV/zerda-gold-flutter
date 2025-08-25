@@ -82,9 +82,10 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  Timer? _pollingTimer;
-  bool _isPolling = false;
-  String? _lastNotificationId;
+  // Polling removed - using FCM only
+  // Timer? _pollingTimer;
+  // bool _isPolling = false;
+  // String? _lastNotificationId;
 
   // Admin panel HTTP URL
   static const String _baseUrl = 'http://10.0.2.2:3009';
@@ -135,13 +136,14 @@ class NotificationService {
     
     // Initialize local notifications
     await _initializeNotifications();
-    await _loadLastNotificationId();
+    // Polling removed - no need to load last notification ID
+    // await _loadLastNotificationId();
     
     // Check for background notifications
     await _checkBackgroundNotifications();
     
-    // Start foreground polling for backward compatibility
-    _startPolling();
+    // Polling removed - using FCM only
+    // _startPolling();
     
     print('🔔 NotificationService fully initialized with FCM support');
   }
@@ -161,8 +163,8 @@ class NotificationService {
       // Initialize Firebase Messaging
       _firebaseMessaging = FirebaseMessaging.instance;
       
-      // Register background message handler
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      // Background handler is already registered in main.dart
+      // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
       
       // Request notification permissions
       NotificationSettings settings = await _firebaseMessaging!.requestPermission(
@@ -202,27 +204,29 @@ class NotificationService {
     }
   }
 
-  Future<void> _loadLastNotificationId() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      // Reset last notification ID to get all notifications
-      await prefs.remove('last_notification_id');
-      _lastNotificationId = null;
-      print('📖 Reset last notification ID to get all notifications');
-    } catch (e) {
-      print('❌ Failed to load last notification ID: $e');
-    }
-  }
+  // Polling removed - no longer tracking last notification ID
+  // Future<void> _loadLastNotificationId() async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     // Reset last notification ID to get all notifications
+  //     await prefs.remove('last_notification_id');
+  //     _lastNotificationId = null;
+  //     print('📖 Reset last notification ID to get all notifications');
+  //   } catch (e) {
+  //     print('❌ Failed to load last notification ID: $e');
+  //   }
+  // }
 
-  Future<void> _saveLastNotificationId(String id) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_notification_id', id);
-      _lastNotificationId = id;
-    } catch (e) {
-      print('❌ Failed to save last notification ID: $e');
-    }
-  }
+  // Polling removed - no longer saving last notification ID
+  // Future<void> _saveLastNotificationId(String id) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.setString('last_notification_id', id);
+  //     _lastNotificationId = id;
+  //   } catch (e) {
+  //     print('❌ Failed to save last notification ID: $e');
+  //   }
+  // }
 
   Future<void> _checkBackgroundNotifications() async {
     try {
@@ -262,69 +266,83 @@ class NotificationService {
     }
   }
 
-  void _startPolling() {
-    if (_isPolling) return;
-    
-    _isPolling = true;
-    print('🔄 Starting notification polling...');
-    
-    // Poll every 30 seconds for new notifications
-    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      _checkForNewNotifications().catchError((error) {
-        // Hataları sessizce yoksay
-      });
-    });
-  }
+  // Polling removed - using FCM for real-time notifications
+  // void _startPolling() {
+  //   if (_isPolling) return;
+  //   
+  //   _isPolling = true;
+  //   print('🔄 Starting notification polling...');
+  //   
+  //   // Poll every 30 seconds for new notifications
+  //   _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+  //     _checkForNewNotifications().catchError((error) {
+  //       // Hataları sessizce yoksay
+  //     });
+  //   });
+  // }
 
-  Future<void> _checkForNewNotifications() async {
+  // Manual refresh method for testing or fallback
+  Future<void> manualRefresh() async {
     try {
-      // Use public mobile endpoint that doesn't require authentication
-      String url = '$_baseUrl/api/mobile/notifications/$_customerId';
-      if (_lastNotificationId != null) {
-        url += '?since=$_lastNotificationId';
-      }
-      
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        if (data['success'] == true) {
-          final notifications = data['notifications'] as List;
-          
-          print('📡 Polling check: Found ${notifications.length} notifications');
-          
-          // Process new notifications (they're already filtered by 'since' parameter)
-          for (final notification in notifications) {
-            final notificationId = notification['id'].toString();
-            print('🔔 New notification found: ${notification['title']} (ID: $notificationId)');
-            _handleNotificationReceived(Map<String, dynamic>.from(notification));
-            await _saveLastNotificationId(notificationId);
-          }
-        }
-      } else {
-        print('❌ Failed to fetch notifications: ${response.statusCode}');
-      }
+      print('🔄 Manual refresh requested');
+      // This can be used for testing or as a fallback
+      // But primary notifications come through FCM
     } catch (e) {
-      // Hataları sessizce yoksay, sadece debug modda log yaz
-      if (e is TimeoutException) {
-        // Timeout normal, sessizce devam et
-      } else {
-        // Diğer hatalar için de sessiz ol
-      }
+      print('❌ Manual refresh error: $e');
     }
   }
+  
+  // Polling removed - using FCM for real-time notifications
+  // Future<void> _checkForNewNotifications() async {
+  //   try {
+  //     // Use public mobile endpoint that doesn't require authentication
+  //     String url = '$_baseUrl/api/mobile/notifications/$_customerId';
+  //     if (_lastNotificationId != null) {
+  //       url += '?since=$_lastNotificationId';
+  //     }
+  //     
+  //     final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
+  //     
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       
+  //       if (data['success'] == true) {
+  //         final notifications = data['notifications'] as List;
+  //         
+  //         print('📡 Polling check: Found ${notifications.length} notifications');
+  //         
+  //         // Process new notifications (they're already filtered by 'since' parameter)
+  //         for (final notification in notifications) {
+  //           final notificationId = notification['id'].toString();
+  //           print('🔔 New notification found: ${notification['title']} (ID: $notificationId)');
+  //           _handleNotificationReceived(Map<String, dynamic>.from(notification));
+  //           await _saveLastNotificationId(notificationId);
+  //         }
+  //       }
+  //     } else {
+  //       print('❌ Failed to fetch notifications: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     // Hataları sessizce yoksay, sadece debug modda log yaz
+  //     if (e is TimeoutException) {
+  //       // Timeout normal, sessizce devam et
+  //     } else {
+  //       // Diğer hatalar için de sessiz ol
+  //     }
+  //   }
+  // }
 
-  bool _isNewerNotification(String newId, String lastId) {
-    // Simple comparison - in real app you might use timestamps
-    try {
-      final newIdNum = int.tryParse(newId) ?? 0;
-      final lastIdNum = int.tryParse(lastId) ?? 0;
-      return newIdNum > lastIdNum;
-    } catch (e) {
-      return newId != lastId;
-    }
-  }
+  // Polling removed - no longer comparing notification IDs
+  // bool _isNewerNotification(String newId, String lastId) {
+  //   // Simple comparison - in real app you might use timestamps
+  //   try {
+  //     final newIdNum = int.tryParse(newId) ?? 0;
+  //     final lastIdNum = int.tryParse(lastId) ?? 0;
+  //     return newIdNum > lastIdNum;
+  //   } catch (e) {
+  //     return newId != lastId;
+  //   }
+  // }
 
 
   void _handleNotificationReceived(Map<String, dynamic> notificationData) {
@@ -467,7 +485,7 @@ class NotificationService {
 
   List<Map<String, dynamic>> get recentNotifications => List.from(_recentNotifications);
 
-  bool get isConnected => _isPolling;
+  bool get isConnected => _fcmInitialized; // Now using FCM connection status
 
   Future<void> _initializeNotifications() async {
     if (_notificationsInitialized) return;
@@ -631,12 +649,33 @@ class NotificationService {
 
   Future<void> _registerFCMToken(String token) async {
     try {
+      // Get device ID for consistent token management
+      final prefs = await SharedPreferences.getInstance();
+      String? deviceId = prefs.getString('device_id');
+      
+      if (deviceId == null) {
+        // Generate device ID if not exists
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final random = timestamp % 10000;
+        deviceId = 'dev_${timestamp}_$random';
+        await prefs.setString('device_id', deviceId);
+        print('🔑 Generated new device ID for FCM: $deviceId');
+      } else if (!deviceId.startsWith('dev_')) {
+        // Migrate old format to new format
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final random = timestamp % 10000;
+        deviceId = 'dev_${deviceId}_$random';
+        await prefs.setString('device_id', deviceId);
+        print('🔄 Migrated device ID to new format for FCM: $deviceId');
+      }
+      
       final response = await http.post(
         Uri.parse('$_baseUrl/api/mobile/register-fcm-token'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'customerId': _customerId,
           'fcmToken': token,
+          'deviceId': deviceId,
           'platform': 'flutter',
         }),
       );
@@ -661,8 +700,9 @@ class NotificationService {
   bool get isFCMInitialized => _fcmInitialized;
 
   void dispose() {
-    _pollingTimer?.cancel();
-    _isPolling = false;
+    // Polling timer removed
+    // _pollingTimer?.cancel();
+    // _isPolling = false;
     _notificationListeners.clear();
     _recentNotifications.clear();
   }

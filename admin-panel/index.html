@@ -2852,28 +2852,29 @@
 
                 const fetchCurrentGoldPrice = async () => {
                     try {
-                        const response = await fetch('/api/gold-products');
+                        const response = await fetch('/api/gold-price/current');
                         const data = await response.json();
-                        if (data.success && data.products.length > 0) {
-                            // Find 24K gold or the first product
-                            const gold24K = data.products.find(p => p.name.includes('24')) || data.products[0];
-                            if (gold24K) {
-                                setCurrentGoldPrice(gold24K.sellPrice);
-                            }
+                        if (data.success && data.data) {
+                            // Use gram price in USD
+                            setCurrentGoldPrice(data.data.gram_price_usd);
+                        } else if (data.fallback) {
+                            setCurrentGoldPrice(data.fallback.gram_price_usd);
                         }
                     } catch (error) {
                         console.error('Failed to fetch gold price:', error);
+                        // Fallback price in case of error
+                        setCurrentGoldPrice(65); // Approximate USD per gram
                     }
                 };
 
                 const handleCalculate = () => {
                     if (!gram || !milyem) {
-                        showNotification('Lütfen gram ve milyem değerlerini giriniz', 'error');
+                        alert('Lütfen gram ve milyem değerlerini giriniz');
                         return;
                     }
 
                     if (!currentGoldPrice) {
-                        showNotification('Güncel altın fiyatı alınamadı', 'error');
+                        alert('Güncel altın fiyatı alınamadı');
                         return;
                     }
 
@@ -2881,21 +2882,19 @@
                     const milyemValue = parseFloat(milyem);
 
                     if (isNaN(gramValue) || gramValue <= 0) {
-                        showNotification('Geçerli bir gram değeri giriniz', 'error');
+                        alert('Geçerli bir gram değeri giriniz');
                         return;
                     }
 
-                    if (isNaN(milyemValue) || milyemValue < 1 || milyemValue > 1000) {
-                        showNotification('Milyem değeri 1-1000 arasında olmalıdır', 'error');
+                    if (isNaN(milyemValue) || milyemValue < 0.001 || milyemValue > 1) {
+                        alert('Milyem değeri 0.001-1.000 arasında olmalıdır');
                         return;
                     }
 
-                    // Calculate: Value = (Gram × Milyem / 1000) × Current Gold Price
-                    const pureGoldAmount = (gramValue * milyemValue) / 1000;
-                    const value = pureGoldAmount * currentGoldPrice;
+                    // Calculate: Value = Gram × Milyem × Current Gold Price
+                    const value = gramValue * milyemValue * currentGoldPrice;
                     
                     setCalculatedValue(value);
-                    showNotification('Hesaplama başarılı', 'success');
                 };
 
                 const handleReset = () => {
@@ -2905,9 +2904,9 @@
                 };
 
                 const formatCurrency = (value) => {
-                    return new Intl.NumberFormat('tr-TR', {
+                    return new Intl.NumberFormat('en-US', {
                         style: 'currency',
-                        currency: 'TRY',
+                        currency: 'USD',
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     }).format(value);
@@ -2919,7 +2918,7 @@
                             <h2><i className="fas fa-calculator"></i> Altın Değer Hesaplama</h2>
                         </div>
                         <div className="section-content">
-                            <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+                            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                                 {currentGoldPrice && (
                                     <div style={{
                                         background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
@@ -2934,83 +2933,63 @@
                                     </div>
                                 )}
 
-                                <div className="form-group">
-                                    <label>Altın Ağırlığı (Gram)</label>
-                                    <input
-                                        type="number"
-                                        value={gram}
-                                        onChange={(e) => setGram(e.target.value)}
-                                        placeholder="Örn: 10"
-                                        step="0.01"
-                                        min="0"
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            border: '2px solid #ddd',
-                                            borderRadius: '8px',
-                                            fontSize: '16px'
-                                        }}
-                                    />
-                                </div>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label>Altın Ağırlığı (Gram)</label>
+                                        <input
+                                            type="number"
+                                            value={gram}
+                                            onChange={(e) => setGram(e.target.value)}
+                                            placeholder="Örn: 10"
+                                            step="0.01"
+                                            min="0"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #ddd',
+                                                borderRadius: '8px',
+                                                fontSize: '16px'
+                                            }}
+                                        />
+                                    </div>
 
-                                <div className="form-group" style={{ marginTop: '20px' }}>
-                                    <label>Milyem (Has Değeri)</label>
-                                    <input
-                                        type="number"
-                                        value={milyem}
-                                        onChange={(e) => setMilyem(e.target.value)}
-                                        placeholder="Örn: 916 (22 ayar)"
-                                        step="1"
-                                        min="1"
-                                        max="1000"
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px',
-                                            border: '2px solid #ddd',
-                                            borderRadius: '8px',
-                                            fontSize: '16px'
-                                        }}
-                                    />
-                                    <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
-                                        • 24 Ayar = 1000 milyem<br/>
-                                        • 22 Ayar = 916 milyem<br/>
-                                        • 18 Ayar = 750 milyem<br/>
-                                        • 14 Ayar = 585 milyem
-                                    </small>
-                                </div>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label>Milyem (Has Değeri)</label>
+                                        <input
+                                            type="number"
+                                            value={milyem}
+                                            onChange={(e) => setMilyem(e.target.value)}
+                                            placeholder="Örn: 0.916"
+                                            step="0.001"
+                                            min="0.001"
+                                            max="1"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #ddd',
+                                                borderRadius: '8px',
+                                                fontSize: '16px'
+                                            }}
+                                        />
+                                    </div>
 
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '30px' }}>
                                     <button
                                         onClick={handleCalculate}
                                         className="btn btn-primary"
                                         style={{
-                                            flex: 1,
-                                            padding: '12px',
+                                            padding: '12px 30px',
                                             background: 'linear-gradient(135deg, #007bff, #0056b3)',
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '8px',
                                             fontSize: '16px',
                                             fontWeight: 'bold',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            height: 'fit-content',
+                                            marginTop: '10px'
                                         }}
                                     >
                                         <i className="fas fa-calculator"></i> Hesapla
-                                    </button>
-                                    <button
-                                        onClick={handleReset}
-                                        className="btn btn-secondary"
-                                        style={{
-                                            padding: '12px 24px',
-                                            background: '#6c757d',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            fontSize: '16px',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <i className="fas fa-redo"></i> Temizle
                                     </button>
                                 </div>
 
@@ -3031,7 +3010,7 @@
                                             {formatCurrency(calculatedValue)}
                                         </div>
                                         <div style={{ marginTop: '10px', fontSize: '14px', opacity: '0.9' }}>
-                                            {gram} gram × {milyem}/1000 milyem × {formatCurrency(currentGoldPrice)}
+                                            {gram} gram × {milyem} milyem × {formatCurrency(currentGoldPrice)}
                                         </div>
                                     </div>
                                 )}
@@ -3091,14 +3070,6 @@
                                   onClick={() => setActiveTab('goldCalculator')}>
                                 <i className="fas fa-calculator"></i> Değer Hesaplama
                             </a></li>
-                            <li><a href="#" className={activeTab === 'assets' ? 'active' : ''} 
-                                  onClick={() => setActiveTab('assets')}>
-                                <i className="fas fa-cloud-upload-alt"></i> Derleme ve Yayın
-                            </a></li>
-                            <li><a href="#" className={activeTab === 'analytics' ? 'active' : ''} 
-                                  onClick={() => setActiveTab('analytics')}>
-                                <i className="fas fa-chart-bar"></i> Takip ve Raporlama
-                            </a></li>
                         </ul>
                     </div>
 
@@ -3112,8 +3083,6 @@
                                 {activeTab === 'notifications' && 'Bildirim Yönetimi'}
                                 {activeTab === 'gold' && 'Altın Yönetimi'}
                                 {activeTab === 'goldCalculator' && 'Değer Hesaplama'}
-                                {activeTab === 'assets' && 'Derleme ve Yayın'}
-                                {activeTab === 'analytics' && 'Takip ve Raporlama'}
                             </h1>
                             
                             <div className="user-info">
@@ -3132,8 +3101,6 @@
                             {activeTab === 'notifications' && <Notifications />}
                             {activeTab === 'gold' && <GoldManagement />}
                             {activeTab === 'goldCalculator' && <GoldCalculator />}
-                            {activeTab === 'assets' && <div className="section-card"><div className="section-content"><p>Derleme ve Yayın özellikleri yakında geliyor...</p></div></div>}
-                            {activeTab === 'analytics' && <div className="section-card"><div className="section-content"><p>Takip ve Raporlama özellikleri yakında geliyor...</p></div></div>}
                         </div>
                     </div>
 

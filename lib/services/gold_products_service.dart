@@ -9,7 +9,7 @@ class GoldProductsService {
   
   static List<Map<String, dynamic>>? _cachedProducts;
   static DateTime? _lastFetchTime;
-  static const Duration cacheDuration = Duration(minutes: 1);
+  static const Duration cacheDuration = Duration(seconds: 2);
 
   // Get customer ID from preferences
   static Future<String> getCustomerId() async {

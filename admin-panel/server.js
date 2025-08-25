@@ -285,19 +285,26 @@ app.post('/api/mobile/auth/login', async (req, res) => {
         );
         
         // Update FCM token with user info if provided
-        if (fcm_token && device_id) {
-          const customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95'; // Default customer
-          
+        if (fcm_token) {
           db.run(
             `UPDATE fcm_tokens 
-             SET user_id = ?, user_email = ?, is_authenticated = 1, last_login = CURRENT_TIMESTAMP 
+             SET user_id = ?, user_email = ?, is_authenticated = 1, last_login = CURRENT_TIMESTAMP, updated_at = datetime('now')
              WHERE fcm_token = ? AND customer_id = ?`,
-            [user.id, user.email, fcm_token, customerId],
-            (err) => {
-              if (err) {
-                console.error('FCM token update error:', err);
+            [user.id, user.email, fcm_token, 'ffeee61a-8497-4c70-857e-c8f0efb13a2a'],
+            (updateErr) => {
+              if (updateErr) {
+                console.error('FCM token update error:', updateErr);
               } else {
-                console.log(`✅ FCM token linked to user: ${user.email}`);
+                db.get(
+                  'SELECT changes() as changes',
+                  (err, result) => {
+                    if (result && result.changes > 0) {
+                      console.log(`✅ FCM token updated for user: ${user.email}`);
+                    } else {
+                      console.log(`⚠️ FCM token not found for update: ${fcm_token}`);
+                    }
+                  }
+                );
               }
             }
           );
@@ -378,7 +385,7 @@ app.post('/api/mobile/auth/register', async (req, res) => {
           
           // Link FCM token if provided
           if (fcm_token && device_id) {
-            const customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+            const customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
             
             db.run(
               `UPDATE fcm_tokens 
@@ -426,12 +433,14 @@ app.post('/api/mobile/auth/logout', async (req, res) => {
       // Remove user info from FCM token
       db.run(
         `UPDATE fcm_tokens 
-         SET user_id = NULL, user_email = NULL, is_authenticated = 0 
+         SET user_id = NULL, user_email = NULL, is_authenticated = 0, updated_at = datetime('now')
          WHERE fcm_token = ?`,
         [fcm_token],
         (err) => {
           if (err) {
             console.error('FCM token logout update error:', err);
+          } else {
+            console.log(`✅ FCM token cleared on logout for token: ${fcm_token.substring(0, 20)}...`);
           }
         }
       );
@@ -1416,62 +1425,60 @@ app.get('/api/mobile/notifications/:customerId', (req, res) => {
 app.post('/api/mobile/register-fcm-token', async (req, res) => {
   const { customerId, fcmToken, platform, deviceId, userId, userEmail } = req.body;
 
-  if (!customerId || !fcmToken) {
-    return res.status(400).json({ success: false, error: 'Missing customerId or fcmToken' });
+  if (!customerId || !fcmToken || !deviceId) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Missing required fields: customerId, fcmToken, or deviceId' 
+    });
   }
 
   const tokenId = uuidv4();
   
   try {
-    // First, try to update existing token
+    // First, delete any existing tokens for this device ID (ensure only one token per device)
     await new Promise((resolve, reject) => {
       db.run(
-        `UPDATE fcm_tokens 
-         SET fcm_token = ?, platform = ?, device_id = ?, 
-             user_id = ?, user_email = ?, 
-             is_authenticated = ?, updated_at = CURRENT_TIMESTAMP 
-         WHERE customer_id = ? AND (fcm_token = ? OR device_id = ?)`,
+        `DELETE FROM fcm_tokens 
+         WHERE customer_id = ? AND device_id = ? AND fcm_token != ?`,
+        [customerId, deviceId, fcmToken],
+        function(err) {
+          if (err) return reject(err);
+          console.log(`Cleaned up ${this.changes} old tokens for device ${deviceId}`);
+          resolve();
+        }
+      );
+    });
+
+    // Now update or insert the token
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT OR REPLACE INTO fcm_tokens 
+         (id, customer_id, fcm_token, platform, device_id, user_id, user_email, is_authenticated, created_at, updated_at) 
+         VALUES (
+           COALESCE((SELECT id FROM fcm_tokens WHERE customer_id = ? AND device_id = ?), ?),
+           ?, ?, ?, ?, ?, ?, ?,
+           COALESCE((SELECT created_at FROM fcm_tokens WHERE customer_id = ? AND device_id = ?), CURRENT_TIMESTAMP),
+           CURRENT_TIMESTAMP
+         )`,
         [
+          // For ID selection
+          customerId, deviceId, tokenId,
+          // For insert values
+          customerId, 
           fcmToken, 
           platform || 'flutter', 
-          deviceId || null,
+          deviceId,
           userId || null,
           userEmail || null,
           userId ? 1 : 0,
-          customerId, 
-          fcmToken, 
-          deviceId || null
+          // For created_at selection
+          customerId, deviceId
         ],
         function(err) {
           if (err) return reject(err);
-          resolve(this.changes);
+          resolve();
         }
       );
-    }).then((changes) => {
-      // If no rows were updated, insert new token
-      if (changes === 0) {
-        return new Promise((resolve, reject) => {
-          db.run(
-            `INSERT OR REPLACE INTO fcm_tokens 
-             (id, customer_id, fcm_token, platform, device_id, user_id, user_email, is_authenticated) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              tokenId, 
-              customerId, 
-              fcmToken, 
-              platform || 'flutter', 
-              deviceId || null,
-              userId || null,
-              userEmail || null,
-              userId ? 1 : 0
-            ],
-            function(err) {
-              if (err) return reject(err);
-              resolve();
-            }
-          );
-        });
-      }
     });
 
     console.log(`🔥 FCM token registered for customer ${customerId}: ${fcmToken.substring(0, 20)}...`);

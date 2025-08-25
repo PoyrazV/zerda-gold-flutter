@@ -278,6 +278,11 @@ class AuthService extends ChangeNotifier {
         
         if (response.data['success'] == true) {
           print('✅ FCM token updated with user info');
+          print('   User: $_userEmail');
+          print('   Device: $deviceId');
+          print('   Token: ${fcmToken?.substring(0, 20)}...');
+        } else {
+          print('❌ FCM token update failed: ${response.data}');
         }
       }
     } catch (e) {
@@ -285,15 +290,25 @@ class AuthService extends ChangeNotifier {
     }
   }
   
-  // Get device ID
+  // Get device ID - more robust implementation
   Future<String> _getDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
     String? deviceId = prefs.getString('device_id');
     
     if (deviceId == null) {
-      // Generate a unique device ID
-      deviceId = DateTime.now().millisecondsSinceEpoch.toString();
+      // Generate a unique device ID using multiple factors
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final random = timestamp % 10000;
+      deviceId = 'dev_${timestamp}_$random';
       await prefs.setString('device_id', deviceId);
+      print('🔑 Generated new device ID: $deviceId');
+    } else if (!deviceId.startsWith('dev_')) {
+      // Migrate old format to new format
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final random = timestamp % 10000;
+      deviceId = 'dev_${deviceId}_$random';
+      await prefs.setString('device_id', deviceId);
+      print('🔄 Migrated device ID to new format: $deviceId');
     }
     
     return deviceId;

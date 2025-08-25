@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
@@ -21,11 +22,12 @@ class GoldCoinPricesScreen extends StatefulWidget {
 }
 
 class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _refreshController;
   bool _isRefreshing = false;
   Map<String, dynamic>? _goldData;
   bool _isLoading = true;
+  Timer? _periodicRefreshTimer;
 
   // Featured gold items for the featured cards section
   final List<Map<String, dynamic>> _featuredGoldData = [
@@ -214,6 +216,9 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       vsync: this,
     );
     
+    // Add observer for app lifecycle changes
+    WidgetsBinding.instance.addObserver(this);
+    
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
     
@@ -222,6 +227,9 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     
     // Fetch gold price on init
     _fetchGoldPrice();
+    
+    // Start periodic refresh timer (every 5 seconds to match cache duration)
+    _startPeriodicRefresh();
   }
   
   Future<void> _fetchGoldPrice() async {
@@ -281,13 +289,85 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       });
     }
   }
+  
+  // Start periodic refresh timer
+  void _startPeriodicRefresh() {
+    // Cancel existing timer if any
+    _periodicRefreshTimer?.cancel();
+    
+    // Create new timer that refreshes every 2 seconds
+    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      // Only refresh if the widget is still mounted
+      if (mounted) {
+        _silentRefresh();
+      }
+    });
+  }
+  
+  // Silent refresh without loading indicators
+  Future<void> _silentRefresh() async {
+    // Clear cache to force fresh data
+    GoldProductsService.clearCache();
+    
+    try {
+      // Fetch products from admin panel
+      final products = await GoldProductsService.getProductsWithPrices();
+      
+      if (products.isEmpty) {
+        // Fallback to API if no products
+        final data = await MetalsApiService.getGoldPrice();
+        if (mounted) {
+          setState(() {
+            _goldData = data;
+            _goldCoinData = [
+              {
+                'code': 'ONSALTIN',
+                'name': 'Ons Altın (USD)',
+                'buyPrice': data['buyPriceUSD'],
+                'sellPrice': data['sellPriceUSD'],
+                'change': data['change'],
+                'isPositive': data['isPositive'],
+                'timestamp': data['timestamp'],
+              },
+            ];
+          });
+        }
+      } else {
+        // Update with products from admin panel
+        if (mounted) {
+          setState(() {
+            _goldCoinData = products;
+          });
+        }
+      }
+    } catch (e) {
+      // Silent fail - don't show error to user during background refresh
+      print('Silent refresh error: $e');
+    }
+  }
 
   @override
   void dispose() {
+    _periodicRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     WatchlistService.removeListener(_updateTicker);
     ThemeConfigService().removeListener(_onThemeChanged);
     _refreshController.dispose();
     super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Clear cache and refresh data when app comes to foreground
+      GoldProductsService.clearCache();
+      _fetchGoldPrice();
+      // Restart periodic refresh when app resumes
+      _startPeriodicRefresh();
+    } else if (state == AppLifecycleState.paused) {
+      // Stop periodic refresh when app goes to background to save resources
+      _periodicRefreshTimer?.cancel();
+    }
   }
 
   Future<void> _handleRefresh() async {
@@ -300,6 +380,9 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
+    // Clear cache before fetching new data
+    GoldProductsService.clearCache();
+    
     // Fetch new data from API
     await _fetchGoldPrice();
 

@@ -9,7 +9,6 @@ import '../presentation/gold_coin_prices_screen/gold_coin_prices_screen.dart';
 import '../presentation/currency_converter_screen/currency_converter_screen.dart';
 import '../presentation/price_alerts_screen/price_alerts_screen.dart';
 import '../presentation/portfolio_management_screen/portfolio_management_screen.dart';
-import '../presentation/gold_value_calculator_screen/gold_value_calculator_screen.dart';
 import '../services/feature_config_service.dart';
 import 'feature_wrapper.dart';
 
@@ -61,12 +60,6 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
       'feature': 'goldPrices',
     },
     {
-      'title': 'Hesapla',
-      'icon': Icons.calculate,
-      'route': '/gold-value-calculator-screen',
-      'feature': 'goldValueCalculator',
-    },
-    {
       'title': 'Çevirici',
       'icon': Icons.swap_horiz,
       'route': '/currency-converter-screen',
@@ -104,11 +97,6 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
         return FeatureWrapper(
           featureName: 'goldPrices',
           child: const GoldCoinPricesScreen(),
-        );
-      case '/gold-value-calculator-screen':
-        return FeatureWrapper(
-          featureName: 'goldValueCalculator',
-          child: const GoldValueCalculatorScreen(),
         );
       case '/currency-converter-screen':
         return FeatureWrapper(

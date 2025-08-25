@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin Panel</title>
+</head>
+<body>
+    <h1>SQLite Admin Panel Test</h1>
+    <div id="status">Loading...</div>
+    <div id="features"></div>
+    
+    <script>
+        async function testPanel() {
+            try {
+                // Test login
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+                const loginResult = await loginResponse.json();
+                
+                if (loginResult.success) {
+                    document.getElementById('status').innerHTML = '✅ Login successful';
+                    
+                    // Test features
+                    const token = loginResult.data.token;
+                    const featuresResponse = await fetch('/api/customers/ffeee61a-8497-4c70-857e-c8f0efb13a2a/features', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const features = await featuresResponse.json();
+                    
+                    if (features.success) {
+                        let html = '<h3>Features:</h3><ul>';
+                        Object.entries(features.features).forEach(([name, enabled]) => {
+                            html += `<li>${name}: ${enabled ? '✅' : '❌'}</li>`;
+                        });
+                        html += '</ul>';
+                        document.getElementById('features').innerHTML = html;
+                    }
+                } else {
+                    document.getElementById('status').innerHTML = '❌ Login failed: ' + loginResult.error;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+                console.error('Test error:', error);
+            }
+        }
+        
+        testPanel();
+    </script>
+</body>
+</html>

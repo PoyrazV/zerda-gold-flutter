@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
@@ -135,16 +136,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Sizer(
-      builder: (context, orientation, screenType) {
-        return MaterialApp(
-          navigatorKey: _navigatorKey,
-          title: 'zerdagold',
-          theme: _dynamicTheme ?? AppTheme.lightTheme,
-          darkTheme: _dynamicTheme ?? AppTheme.darkTheme,
-          themeMode: _dynamicTheme != null 
-              ? (ThemeConfigService().isDarkTheme ? ThemeMode.dark : ThemeMode.light)
-              : ThemeMode.light,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthService>.value(
+          value: AuthService(),
+        ),
+      ],
+      child: Sizer(
+        builder: (context, orientation, screenType) {
+          return MaterialApp(
+            navigatorKey: _navigatorKey,
+            title: 'zerdagold',
+            theme: _dynamicTheme ?? AppTheme.lightTheme,
+            darkTheme: _dynamicTheme ?? AppTheme.darkTheme,
+            themeMode: _dynamicTheme != null 
+                ? (ThemeConfigService().isDarkTheme ? ThemeMode.dark : ThemeMode.light)
+                : ThemeMode.light,
           // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
           builder: (context, child) {
             return MediaQuery(
@@ -160,6 +167,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: AppRoutes.initial,
         );
       },
+    ),
     );
   }
 }

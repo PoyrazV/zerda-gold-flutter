@@ -141,9 +141,10 @@ class AuthService extends ChangeNotifier {
   // Logout method
   Future<void> logout() async {
     try {
-      // Get FCM token to update
+      // Get FCM token to update it as guest
       final notificationService = NotificationService();
       final fcmToken = await notificationService.getToken();
+      final deviceId = await _getDeviceId();
       
       // Call backend logout API
       if (_authToken != null) {
@@ -154,6 +155,22 @@ class AuthService extends ChangeNotifier {
             headers: {'Authorization': 'Bearer $_authToken'},
           ),
         );
+      }
+      
+      // Update FCM token to mark as guest (remove user info)
+      if (fcmToken != null) {
+        await Dio().post(
+          'http://10.0.2.2:3009/api/mobile/register-fcm-token',
+          data: {
+            'customerId': 'ffeee61a-8497-4c70-857e-c8f0efb13a2a',
+            'fcmToken': fcmToken,
+            'deviceId': deviceId,
+            'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+            'userId': null,  // Explicitly set to null to mark as guest
+            'userEmail': null,  // Explicitly set to null to mark as guest
+          },
+        );
+        print('✅ FCM token marked as guest after logout');
       }
     } catch (e) {
       print('Logout API error: $e');
@@ -204,6 +221,7 @@ class AuthService extends ChangeNotifier {
         _userId = user['id'];
         _userEmail = user['email'];
         _userName = user['full_name'];
+        _userProfileImage = user['profile_image'];
         _isLoggedIn = true;
         
         // Save to SharedPreferences
@@ -213,6 +231,9 @@ class AuthService extends ChangeNotifier {
         await prefs.setString('userId', _userId!);
         await prefs.setString('userEmail', _userEmail!);
         await prefs.setString('userName', _userName!);
+        if (_userProfileImage != null) {
+          await prefs.setString('userProfileImage', _userProfileImage!);
+        }
         
         // Update FCM token with user info
         await _updateFCMToken();
@@ -224,7 +245,13 @@ class AuthService extends ChangeNotifier {
       return false;
     } catch (e) {
       print('Register error: $e');
-      return false;
+      // Re-throw the error so the UI can handle it appropriately
+      if (e.toString().contains('409')) {
+        throw Exception('Email already registered');
+      } else if (e.toString().contains('DioException')) {
+        throw Exception('Network connection error');
+      }
+      throw Exception('Registration failed: $e');
     }
   }
   
@@ -236,17 +263,25 @@ class AuthService extends ChangeNotifier {
       final deviceId = await _getDeviceId();
       
       if (fcmToken != null) {
-        await _dio.post('/register-fcm-token', data: {
-          'customerId': '112e0e89-1c16-485d-acda-d0a21a24bb95', // Default customer
-          'fcmToken': fcmToken,
-          'deviceId': deviceId,
-          'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
-          'userId': _userId,
-          'userEmail': _userEmail,
-        });
+        // Use the full API path instead of relative path
+        final response = await Dio().post(
+          'http://10.0.2.2:3009/api/mobile/register-fcm-token',
+          data: {
+            'customerId': 'ffeee61a-8497-4c70-857e-c8f0efb13a2a', // Default customer
+            'fcmToken': fcmToken,
+            'deviceId': deviceId,
+            'platform': defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+            'userId': _userId,
+            'userEmail': _userEmail,
+          },
+        );
+        
+        if (response.data['success'] == true) {
+          print('✅ FCM token updated with user info');
+        }
       }
     } catch (e) {
-      print('FCM token update error: $e');
+      print('Error updating FCM token: $e');
     }
   }
   

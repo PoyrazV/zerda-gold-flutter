@@ -30,6 +30,7 @@ dependencies:
   http: ^1.1.0  # HTTP client for API calls
   firebase_core: ^3.6.0  # Firebase core SDK
   firebase_messaging: ^15.1.3  # Firebase Cloud Messaging
+  provider: ^6.1.2  # State management for authentication
 
 dev_dependencies:
   flutter_test:    # 🚨 CRITICAL: Required for Flutter project testing - DO NOT REMOVE

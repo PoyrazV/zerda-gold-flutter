@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -21,14 +23,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCurrentUserData();
+    // Load data after build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCurrentUserData();
+    });
   }
 
   void _loadCurrentUserData() {
-    // Mock current user data
-    _nameController.text = "Ahmet Yılmaz";
-    _emailController.text = "ahmet.yilmaz@email.com";
-    _phoneController.text = "+90 555 123 4567";
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _nameController.text = authService.userName ?? "";
+    _emailController.text = authService.userEmail ?? "";
+    _phoneController.text = "+90 555 123 4567"; // Phone number can be added to AuthService later
   }
 
   @override

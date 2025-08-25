@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/app_export.dart';
 import './widgets/logout_button_widget.dart';
 import './widgets/profile_header_widget.dart';
 import './widgets/settings_section_widget.dart';
 import '../../services/feature_config_service.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/feature_wrapper.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -16,21 +18,6 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  // Mock user data
-  final Map<String, dynamic> userData = {
-    "name": "Ahmet Yılmaz",
-    "email": "ahmet.yilmaz@email.com",
-    "avatar":
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    "notificationsEnabled": true,
-    "soundEnabled": true,
-    "hapticEnabled": true,
-    "theme": "Otomatik",
-    "currency": "TRY",
-    "chartTimeframe": "1 Gün",
-    "language": "Türkçe"
-  };
-
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
   bool _hapticEnabled = true;
@@ -46,27 +33,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void _loadUserPreferences() {
-    setState(() {
-      _notificationsEnabled = userData["notificationsEnabled"] ?? true;
-      _soundEnabled = userData["soundEnabled"] ?? true;
-      _hapticEnabled = userData["hapticEnabled"] ?? true;
-      _selectedTheme = userData["theme"] ?? "Otomatik";
-      _selectedCurrency = userData["currency"] ?? "TRY";
-      _selectedTimeframe = userData["chartTimeframe"] ?? "1 Gün";
-      _selectedLanguage = userData["language"] ?? "Türkçe";
-    });
+    // Load preferences from local storage or API in the future
+    // For now, using default values
   }
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    
     return Scaffold(
       backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
       body: Column(
         children: [
           ProfileHeaderWidget(
-            userName: userData["name"] ?? "Kullanıcı",
-            userEmail: userData["email"] ?? "email@example.com",
-            avatarUrl: userData["avatar"],
+            userName: authService.userName ?? "Kullanıcı",
+            userEmail: authService.userEmail ?? "email@example.com",
+            avatarUrl: authService.userProfileImage,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -706,7 +688,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  void _handleLogout() {
+  void _handleLogout() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    await authService.logout();
+    
     Navigator.pushNamedAndRemoveUntil(
       context,
       '/login-screen',

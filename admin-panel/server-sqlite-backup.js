@@ -286,7 +286,7 @@ app.post('/api/mobile/auth/login', async (req, res) => {
         
         // Update FCM token with user info if provided
         if (fcm_token && device_id) {
-          const customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95'; // Default customer
+          const customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a'; // Default customer
           
           db.run(
             `UPDATE fcm_tokens 
@@ -302,6 +302,11 @@ app.post('/api/mobile/auth/login', async (req, res) => {
             }
           );
         }
+        
+        // Check for pending notifications and send them
+        console.log(`🔔 Login successful for ${user.email}, checking pending notifications...`);
+        console.log(`   FCM Token: ${fcm_token ? fcm_token.substring(0, 30) + '...' : 'NOT PROVIDED'}`);
+        checkAndSendPendingNotifications(user.id, fcm_token);
         
         res.json({
           success: true,
@@ -378,7 +383,7 @@ app.post('/api/mobile/auth/register', async (req, res) => {
           
           // Link FCM token if provided
           if (fcm_token && device_id) {
-            const customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+            const customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
             
             db.run(
               `UPDATE fcm_tokens 
@@ -817,27 +822,184 @@ app.get('/', (req, res) => {
 
 // ============= FCM HELPER FUNCTIONS =============
 
+// Helper function to check and send pending notifications on login
+async function checkAndSendPendingNotifications(userId, fcmToken) {
+  console.log(`🔍 checkAndSendPendingNotifications called for user: ${userId}`);
+  console.log(`   FCM Token received: ${fcmToken ? 'YES (' + fcmToken.substring(0, 30) + '...)' : 'NO'}`);
+  console.log(`   Firebase initialized: ${firebaseInitialized}`);
+  
+  if (!fcmToken) {
+    console.log('❌ No FCM token provided, cannot send notifications');
+    return;
+  }
+  
+  try {
+    const customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
+    
+    // Get notifications from last 7 days that were targeted to authenticated users
+    // but not delivered to this user yet
+    const query = `
+      SELECT n.* 
+      FROM notifications n
+      WHERE n.customer_id = ?
+        AND n.target = 'authenticated'
+        AND n.status = 'sent'
+        AND n.created_at >= datetime('now', '-7 days')
+        AND NOT EXISTS (
+          SELECT 1 FROM notification_deliveries nd 
+          WHERE nd.notification_id = n.id 
+          AND nd.user_id = ?
+        )
+      ORDER BY n.created_at DESC
+      LIMIT 10`;
+    
+    console.log('📊 Executing query for pending notifications...');
+    db.all(query, [customerId, userId], async (err, notifications) => {
+      if (err) {
+        console.error('❌ Error fetching pending notifications on login:', err);
+        return;
+      }
+      
+      if (!notifications || notifications.length === 0) {
+        console.log('📱 No pending notifications for user on login');
+        return;
+      }
+      
+      console.log(`📱 Found ${notifications.length} pending notifications for user ${userId} on login`);
+      
+      // Send each notification with a small delay to avoid overwhelming
+      for (let i = 0; i < notifications.length; i++) {
+        const notification = notifications[i];
+        
+        // Add a small delay between notifications
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        try {
+          // Send directly to the specific FCM token
+          const message = {
+            notification: {
+              title: notification.title,
+              body: notification.message,
+            },
+            data: {
+              type: notification.type || 'info',
+              id: notification.id,
+              timestamp: new Date().toISOString(),
+              click_action: 'FLUTTER_NOTIFICATION_CLICK',
+            },
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'zerda_notifications',
+                priority: 'high',
+                defaultSound: true,
+                defaultVibrateTimings: true,
+              },
+            },
+            token: fcmToken
+          };
+          
+          if (firebaseInitialized) {
+            console.log(`📤 Sending notification ${i+1}/${notifications.length}: "${notification.title}"`);
+            try {
+              const response = await admin.messaging().send(message);
+              console.log(`✅ FCM Response:`, response);
+              console.log(`✅ Delivered pending notification ${i+1}/${notifications.length}: ${notification.title}`);
+              
+              // Mark as delivered
+              const deliveryId = uuidv4();
+              db.run(
+                `INSERT OR IGNORE INTO notification_deliveries (id, notification_id, user_id, delivery_method) 
+                 VALUES (?, ?, ?, 'fcm_login')`,
+                [deliveryId, notification.id, userId],
+                (err) => {
+                  if (err) {
+                    console.error('❌ Error saving delivery record:', err);
+                  } else {
+                    console.log('✅ Delivery record saved');
+                  }
+                }
+              );
+            } catch (fcmError) {
+              console.error(`❌ FCM send error:`, fcmError.message);
+              if (fcmError.code) console.error(`   Error code:`, fcmError.code);
+            }
+          } else {
+            console.log('⚠️ Firebase not initialized, skipping notification');
+          }
+        } catch (error) {
+          console.error(`Failed to deliver pending notification ${notification.id}:`, error.message);
+        }
+      }
+      
+      console.log(`✅ Finished sending pending notifications on login`);
+    });
+  } catch (error) {
+    console.error('Error in checkAndSendPendingNotifications:', error);
+  }
+}
+
 async function sendFCMNotification(customerId, notificationData) {
   if (!firebaseInitialized) {
     console.log('⚠️ Firebase not initialized, skipping FCM notification');
     return { success: false, reason: 'firebase_not_initialized' };
   }
 
+  // If a specific FCM token is provided, use it directly
+  if (notificationData.fcmToken) {
+    try {
+      const message = {
+        notification: {
+          title: notificationData.title,
+          body: notificationData.message || notificationData.body,
+        },
+        data: {
+          type: notificationData.type || 'info',
+          id: notificationData.id || '',
+          timestamp: new Date().toISOString(),
+          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'zerda_notifications',
+            priority: 'high',
+            defaultSound: true,
+            defaultVibrateTimings: true,
+          },
+        },
+        token: notificationData.fcmToken
+      };
+      
+      const response = await admin.messaging().send(message);
+      console.log('✅ FCM notification sent to specific token');
+      return { success: true, successCount: 1 };
+    } catch (error) {
+      console.error('FCM send error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   return new Promise((resolve) => {
     // Build query based on target
-    let query = 'SELECT fcm_token FROM fcm_tokens WHERE customer_id = ?';
+    let query = 'SELECT fcm_token, user_id, user_email, is_authenticated FROM fcm_tokens WHERE customer_id = ?';
     const params = [customerId];
     
     // Filter by target type
     if (notificationData.target === 'authenticated') {
-      query += ' AND is_authenticated = 1 AND user_id IS NOT NULL';
+      query += ' AND is_authenticated = 1 AND user_id IS NOT NULL AND user_id != ""';
       console.log('📨 Sending to authenticated users only');
     } else if (notificationData.target === 'guests') {
-      query += ' AND (is_authenticated = 0 OR user_id IS NULL)';
+      query += ' AND is_authenticated = 0 AND (user_id IS NULL OR user_id = "")';
       console.log('📨 Sending to guest users only');
     } else {
       console.log('📨 Sending to all users');
     }
+    
+    console.log('🔍 Query:', query);
+    console.log('   Params:', params);
     
     // Get FCM tokens based on target
     db.all(
@@ -850,12 +1012,32 @@ async function sendFCMNotification(customerId, notificationData) {
         }
 
         if (!tokens || tokens.length === 0) {
-          console.log(`No FCM tokens found for customer ${customerId}`);
+          console.log(`⚠️ No FCM tokens found for customer ${customerId} with target: ${notificationData.target}`);
+          
+          // Debug: Show all tokens for this customer
+          db.all(
+            'SELECT user_id, user_email, is_authenticated FROM fcm_tokens WHERE customer_id = ?',
+            [customerId],
+            (debugErr, allTokens) => {
+              if (!debugErr && allTokens) {
+                console.log(`📊 All tokens for customer ${customerId}:`);
+                allTokens.forEach(t => {
+                  console.log(`   - User: ${t.user_email || 'guest'}, ID: ${t.user_id || 'none'}, Auth: ${t.is_authenticated}`);
+                });
+              }
+            }
+          );
+          
           return resolve({ success: false, reason: 'no_tokens' });
         }
 
+        console.log(`🔥 Found ${tokens.length} FCM tokens for customer ${customerId}:`);
+        tokens.forEach(t => {
+          console.log(`   - User: ${t.user_email || 'guest'}, Auth: ${t.is_authenticated ? 'YES' : 'NO'}`);
+        });
+        
         const fcmTokens = tokens.map(t => t.fcm_token);
-        console.log(`🔥 Sending FCM to ${fcmTokens.length} tokens for customer ${customerId}`);
+        console.log(`📤 Sending FCM to ${fcmTokens.length} tokens`);
 
         try {
           // Prepare the message with high priority for background delivery
@@ -1156,68 +1338,28 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
     });
   }
 
-  // Hedef gruba göre müşterileri belirle
-  let customersToNotify = [];
-  
+  // Tüm müşterilere gönder (eğer customerIds belirtilmemişse)
+  let query = 'SELECT id FROM customers';
+  let params = [];
+
   if (customerIds.length > 0) {
-    // Belirli müşteriler belirtilmişse onları kullan
     const placeholders = customerIds.map(() => '?').join(',');
-    const query = `SELECT id FROM customers WHERE id IN (${placeholders})`;
-    customersToNotify = await new Promise((resolve, reject) => {
-      db.all(query, customerIds, (err, results) => {
+    query += ` WHERE id IN (${placeholders})`;
+    params = customerIds;
+  } else if (excludeCustomerIds.length > 0) {
+    const placeholders = excludeCustomerIds.map(() => '?').join(',');
+    query += ` WHERE id NOT IN (${placeholders})`;
+    params = excludeCustomerIds;
+  }
+
+  try {
+    // Promisify db.all
+    const customers = await new Promise((resolve, reject) => {
+      db.all(query, params, (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
     });
-  } else {
-    // Target'a göre filtreleme yap
-    if (target === 'authenticated') {
-      // Sadece giriş yapmış kullanıcıları al (FCM token tablosundan)
-      const query = `
-        SELECT DISTINCT customer_id as id 
-        FROM fcm_tokens
-        WHERE is_authenticated = 1 AND user_id IS NOT NULL
-      `;
-      customersToNotify = await new Promise((resolve, reject) => {
-        db.all(query, [], (err, results) => {
-          if (err) reject(err);
-          else resolve(results || []);
-        });
-      });
-    } else if (target === 'guests') {
-      // Sadece misafir kullanıcıları al (FCM token tablosundan)
-      const query = `
-        SELECT DISTINCT customer_id as id 
-        FROM fcm_tokens
-        WHERE is_authenticated = 0 OR user_id IS NULL
-      `;
-      customersToNotify = await new Promise((resolve, reject) => {
-        db.all(query, [], (err, results) => {
-          if (err) reject(err);
-          else resolve(results || []);
-        });
-      });
-    } else {
-      // Tüm müşterileri al - customers tablosundan
-      const query = 'SELECT id FROM customers';
-      customersToNotify = await new Promise((resolve, reject) => {
-        db.all(query, [], (err, results) => {
-          if (err) reject(err);
-          else resolve(results || []);
-        });
-      });
-    }
-    
-    // excludeCustomerIds varsa onları filtrele
-    if (excludeCustomerIds.length > 0) {
-      customersToNotify = customersToNotify.filter(c => !excludeCustomerIds.includes(c.id));
-    }
-  }
-  
-  console.log(`📢 Broadcast notification - Target: ${target}, Customers found: ${customersToNotify.length}`);
-
-  try {
-    const customers = customersToNotify;
 
     const now = new Date().toISOString();
     const sentNotifications = [];
@@ -1279,7 +1421,6 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
     res.json({
       success: true,
       message: `${sentNotifications.length} müşteriye bildirim gönderildi${failedNotifications.length > 0 ? `, ${failedNotifications.length} başarısız` : ''}`,
-      sentCount: sentNotifications.length,
       data: {
         totalSent: sentNotifications.length,
         totalFailed: failedNotifications.length,
@@ -1412,6 +1553,116 @@ app.get('/api/mobile/notifications/:customerId', (req, res) => {
   }
 });
 
+// GET - Get pending notifications for authenticated user
+app.get('/api/mobile/notifications/pending', authenticateToken, async (req, res) => {
+  try {
+    console.log('📱 Pending notifications endpoint called');
+    console.log('   User from token:', req.user);
+    const userId = req.user.userId;
+    const customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
+    console.log('   User ID:', userId);
+    console.log('   Customer ID:', customerId);
+    
+    // Get notifications from last 7 days that were targeted to authenticated users
+    // but not delivered to this user yet
+    const query = `
+      SELECT n.* 
+      FROM notifications n
+      WHERE n.customer_id = ?
+        AND n.target = 'authenticated'
+        AND n.status = 'sent'
+        AND n.created_at >= datetime('now', '-7 days')
+        AND NOT EXISTS (
+          SELECT 1 FROM notification_deliveries nd 
+          WHERE nd.notification_id = n.id 
+          AND nd.user_id = ?
+        )
+      ORDER BY n.created_at DESC
+      LIMIT 20`;
+    
+    console.log('   Executing query with params:', [customerId, userId]);
+    
+    db.all(query, [customerId, userId], async (err, notifications) => {
+      if (err) {
+        console.error('Error fetching pending notifications:', err);
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      console.log(`📱 Query result: Found ${notifications ? notifications.length : 0} pending notifications`);
+      
+      // Send each notification via FCM
+      if (notifications && notifications.length > 0) {
+        // Get user's FCM token
+        db.get(
+          'SELECT fcm_token FROM fcm_tokens WHERE user_id = ? AND customer_id = ?',
+          [userId, customerId],
+          async (err, tokenRow) => {
+            if (err || !tokenRow) {
+              console.log('No FCM token found for user');
+              return res.json({
+                success: true,
+                notifications: notifications,
+                delivered: false,
+                reason: 'no_fcm_token'
+              });
+            }
+            
+            // Send notifications via FCM
+            const sendPromises = notifications.map(async (notification) => {
+              try {
+                await sendFCMNotification(customerId, {
+                  id: notification.id,
+                  title: notification.title,
+                  message: notification.message,
+                  type: notification.type || 'info',
+                  target: 'specific_user',
+                  fcmToken: tokenRow.fcm_token
+                });
+                
+                // Mark as delivered
+                const deliveryId = uuidv4();
+                db.run(
+                  `INSERT INTO notification_deliveries (id, notification_id, user_id, delivery_method) 
+                   VALUES (?, ?, ?, 'fcm_pending')`,
+                  [deliveryId, notification.id, userId]
+                );
+                
+                return { id: notification.id, delivered: true };
+              } catch (error) {
+                console.error(`Failed to deliver notification ${notification.id}:`, error);
+                return { id: notification.id, delivered: false };
+              }
+            });
+            
+            const results = await Promise.all(sendPromises);
+            const deliveredCount = results.filter(r => r.delivered).length;
+            
+            console.log(`✅ Delivered ${deliveredCount}/${notifications.length} pending notifications`);
+            
+            res.json({
+              success: true,
+              notifications: notifications,
+              delivered: true,
+              deliveredCount: deliveredCount,
+              totalCount: notifications.length
+            });
+          }
+        );
+      } else {
+        res.json({
+          success: true,
+          notifications: [],
+          delivered: false,
+          reason: 'no_pending_notifications'
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Pending notifications error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // FCM Token Registration - Mobile API endpoint (supports user info)
 app.post('/api/mobile/register-fcm-token', async (req, res) => {
   const { customerId, fcmToken, platform, deviceId, userId, userEmail } = req.body;
@@ -1423,55 +1674,48 @@ app.post('/api/mobile/register-fcm-token', async (req, res) => {
   const tokenId = uuidv4();
   
   try {
-    // First, try to update existing token
+    // Debug logging
+    console.log(`📱 FCM Token Registration:
+      Customer: ${customerId}
+      User ID: ${userId}
+      Email: ${userEmail}
+      Device: ${deviceId}
+      Platform: ${platform}
+      Is Authenticated: ${(userId && userId !== 'null' && userId !== '') ? 'YES' : 'NO'}`);
+    
+    // First, delete any existing record with the same FCM token to prevent duplicates
     await new Promise((resolve, reject) => {
       db.run(
-        `UPDATE fcm_tokens 
-         SET fcm_token = ?, platform = ?, device_id = ?, 
-             user_id = ?, user_email = ?, 
-             is_authenticated = ?, updated_at = CURRENT_TIMESTAMP 
-         WHERE customer_id = ? AND (fcm_token = ? OR device_id = ?)`,
+        `DELETE FROM fcm_tokens WHERE customer_id = ? AND fcm_token = ?`,
+        [customerId, fcmToken],
+        function(err) {
+          if (err) return reject(err);
+          resolve();
+        }
+      );
+    });
+    
+    // Then insert the new/updated token
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO fcm_tokens 
+         (id, customer_id, fcm_token, platform, device_id, user_id, user_email, is_authenticated) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          tokenId, 
+          customerId, 
           fcmToken, 
           platform || 'flutter', 
           deviceId || null,
-          userId || null,
-          userEmail || null,
-          userId ? 1 : 0,
-          customerId, 
-          fcmToken, 
-          deviceId || null
+          userId === null || userId === undefined ? null : userId,  // Handle explicit null
+          userEmail === null || userEmail === undefined ? null : userEmail,  // Handle explicit null
+          (userId && userId !== 'null' && userId !== '') ? 1 : 0  // More strict authentication check
         ],
         function(err) {
           if (err) return reject(err);
-          resolve(this.changes);
+          resolve();
         }
       );
-    }).then((changes) => {
-      // If no rows were updated, insert new token
-      if (changes === 0) {
-        return new Promise((resolve, reject) => {
-          db.run(
-            `INSERT OR REPLACE INTO fcm_tokens 
-             (id, customer_id, fcm_token, platform, device_id, user_id, user_email, is_authenticated) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              tokenId, 
-              customerId, 
-              fcmToken, 
-              platform || 'flutter', 
-              deviceId || null,
-              userId || null,
-              userEmail || null,
-              userId ? 1 : 0
-            ],
-            function(err) {
-              if (err) return reject(err);
-              resolve();
-            }
-          );
-        });
-      }
     });
 
     console.log(`🔥 FCM token registered for customer ${customerId}: ${fcmToken.substring(0, 20)}...`);
@@ -1487,6 +1731,69 @@ app.post('/api/mobile/register-fcm-token', async (req, res) => {
     console.error('FCM token registration error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// ==================== USER MANAGEMENT ====================
+
+// Get all registered users
+app.get('/api/users', (req, res) => {
+  db.all(
+    `SELECT 
+      id,
+      email,
+      full_name,
+      phone_number,
+      is_active,
+      is_verified,
+      created_at,
+      last_login
+     FROM mobile_users 
+     ORDER BY created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).json({ 
+          success: false, 
+          error: 'Failed to fetch users' 
+        });
+        return;
+      }
+      
+      res.json({ 
+        success: true, 
+        users: rows || [] 
+      });
+    }
+  );
+});
+
+// Get user statistics
+app.get('/api/users/stats', (req, res) => {
+  db.get(
+    `SELECT 
+      COUNT(*) as total_users,
+      COUNT(CASE WHEN is_active = 1 THEN 1 END) as active_users,
+      COUNT(CASE WHEN is_verified = 1 THEN 1 END) as verified_users,
+      COUNT(CASE WHEN datetime(last_login) > datetime('now', '-7 days') THEN 1 END) as active_last_week
+     FROM mobile_users`,
+    [],
+    (err, row) => {
+      if (err) {
+        console.error('Error fetching user stats:', err);
+        res.status(500).json({ 
+          success: false, 
+          error: 'Failed to fetch user statistics' 
+        });
+        return;
+      }
+      
+      res.json({ 
+        success: true, 
+        stats: row 
+      });
+    }
+  );
 });
 
 // ==================== GOLD PRODUCTS MANAGEMENT ====================
@@ -1725,218 +2032,6 @@ app.delete('/api/customers/:customerId/gold-products/:productId', (req, res) => 
       });
     }
   );
-});
-
-// ==================== MOBILE USERS MANAGEMENT ====================
-
-// GET - List all mobile users
-app.get('/api/mobile-users', authenticateToken, (req, res) => {
-  const { page = 1, limit = 20, search = '', status = 'all' } = req.query;
-  const offset = (page - 1) * limit;
-  
-  let query = `
-    SELECT 
-      id,
-      email,
-      full_name,
-      is_active,
-      is_verified,
-      created_at,
-      last_login
-    FROM mobile_users
-    WHERE 1=1
-  `;
-  
-  const params = [];
-  
-  // Add search filter
-  if (search) {
-    query += ` AND (email LIKE ? OR full_name LIKE ?)`;
-    params.push(`%${search}%`, `%${search}%`);
-  }
-  
-  // Add status filter
-  if (status === 'active') {
-    query += ` AND is_active = 1`;
-  } else if (status === 'inactive') {
-    query += ` AND is_active = 0`;
-  }
-  
-  // Get total count
-  const countQuery = query.replace('SELECT id, email, full_name, is_active, is_verified, created_at, last_login', 'SELECT COUNT(*) as total');
-  
-  db.get(countQuery, params, (err, countResult) => {
-    if (err) {
-      return res.status(500).json({ success: false, error: err.message });
-    }
-    
-    const total = countResult.total;
-    
-    // Add ordering and pagination
-    query += ` ORDER BY last_login DESC LIMIT ? OFFSET ?`;
-    params.push(parseInt(limit), parseInt(offset));
-    
-    db.all(query, params, (err, users) => {
-      if (err) {
-        return res.status(500).json({ success: false, error: err.message });
-      }
-      
-      res.json({
-        success: true,
-        data: users,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: total,
-          totalPages: Math.ceil(total / limit)
-        }
-      });
-    });
-  });
-});
-
-// GET - Get single mobile user details
-app.get('/api/mobile-users/:userId', authenticateToken, (req, res) => {
-  const { userId } = req.params;
-  
-  db.get(
-    `SELECT 
-      id,
-      email,
-      full_name,
-      is_active,
-      is_verified,
-      created_at,
-      updated_at,
-      last_login
-    FROM mobile_users 
-    WHERE id = ?`,
-    [userId],
-    (err, user) => {
-      if (err) {
-        return res.status(500).json({ success: false, error: err.message });
-      }
-      
-      if (!user) {
-        return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
-      }
-      
-      // Get user's notifications
-      db.all(
-        `SELECT 
-          n.id,
-          n.title,
-          n.message,
-          n.type,
-          n.created_at,
-          n.status
-        FROM notifications n
-        WHERE n.customer_id IN (
-          SELECT DISTINCT customer_id 
-          FROM fcm_tokens 
-          WHERE user_id = ?
-        )
-        ORDER BY n.created_at DESC
-        LIMIT 10`,
-        [userId],
-        (err, notifications) => {
-          if (err) {
-            console.error('Error fetching notifications:', err);
-            notifications = [];
-          }
-          
-          // Get user's login sessions
-          db.all(
-            `SELECT 
-              created_at as login_time,
-              ip_address,
-              user_agent
-            FROM mobile_sessions
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 10`,
-            [userId],
-            (err, sessions) => {
-              if (err) {
-                console.error('Error fetching sessions:', err);
-                sessions = [];
-              }
-              
-              res.json({
-                success: true,
-                data: {
-                  user,
-                  notifications: notifications || [],
-                  sessions: sessions || []
-                }
-              });
-            }
-          );
-        }
-      );
-    }
-  );
-});
-
-// PUT - Update mobile user status (active/inactive)
-app.put('/api/mobile-users/:userId/status', authenticateToken, (req, res) => {
-  const { userId } = req.params;
-  const { is_active } = req.body;
-  
-  db.run(
-    `UPDATE mobile_users 
-     SET is_active = ?, updated_at = CURRENT_TIMESTAMP 
-     WHERE id = ?`,
-    [is_active ? 1 : 0, userId],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ success: false, error: err.message });
-      }
-      
-      if (this.changes === 0) {
-        return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
-      }
-      
-      res.json({
-        success: true,
-        message: `Kullanıcı ${is_active ? 'aktif' : 'pasif'} duruma getirildi`
-      });
-    }
-  );
-});
-
-// DELETE - Delete mobile user
-app.delete('/api/mobile-users/:userId', authenticateToken, (req, res) => {
-  const { userId } = req.params;
-  
-  // First delete related records
-  db.serialize(() => {
-    // Delete FCM tokens
-    db.run('DELETE FROM fcm_tokens WHERE user_id = ?', [userId]);
-    
-    // Delete sessions
-    db.run('DELETE FROM mobile_sessions WHERE user_id = ?', [userId]);
-    
-    // Delete the user
-    db.run(
-      'DELETE FROM mobile_users WHERE id = ?',
-      [userId],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ success: false, error: err.message });
-        }
-        
-        if (this.changes === 0) {
-          return res.status(404).json({ success: false, error: 'Kullanıcı bulunamadı' });
-        }
-        
-        res.json({
-          success: true,
-          message: 'Kullanıcı başarıyla silindi'
-        });
-      }
-    );
-  });
 });
 
 // Health check

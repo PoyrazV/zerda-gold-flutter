@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class GoldProductsService {
   static const String baseUrl = 'http://10.0.2.2:3009/api'; // Android emulator localhost
   static const String customerIdKey = 'customer_id';
-  static const String defaultCustomerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+  static const String defaultCustomerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
   
   static List<Map<String, dynamic>>? _cachedProducts;
   static DateTime? _lastFetchTime;

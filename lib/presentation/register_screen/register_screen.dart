@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/app_export.dart';
+import '../../services/auth_service.dart';
 import '../login_screen/widgets/app_logo_widget.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -491,32 +493,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
+      final authService = Provider.of<AuthService>(context, listen: false);
+      
+      // Call the actual register method
+      final success = await authService.register(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        fullName: _nameController.text.trim(),
+      );
 
-      // Success haptic feedback
-      HapticFeedback.lightImpact();
+      if (success) {
+        // Success haptic feedback
+        HapticFeedback.lightImpact();
 
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...'),
-            backgroundColor: AppTheme.positiveGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Kayıt başarılı! Ana ekrana yönlendiriliyorsunuz...'),
+              backgroundColor: AppTheme.positiveGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-          ),
-        );
+          );
 
-        // Navigate back to login screen after a short delay
-        await Future.delayed(const Duration(seconds: 1));
-        Navigator.pop(context);
+          // Navigate to main screen (replace entire navigation stack)
+          await Future.delayed(const Duration(milliseconds: 500));
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoutes.dashboard,
+            (route) => false,
+          );
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Bu email adresi zaten kayıtlı veya geçersiz bilgiler girdiniz.';
+        });
+        HapticFeedback.mediumImpact();
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.';
+        if (e.toString().contains('409') || e.toString().contains('already')) {
+          _errorMessage = 'Bu email adresi zaten kayıtlı. Giriş yapmayı deneyin.';
+        } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+          _errorMessage = 'İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+        } else {
+          _errorMessage = 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.';
+        }
       });
       HapticFeedback.mediumImpact();
     } finally {

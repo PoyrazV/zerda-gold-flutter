@@ -88,7 +88,7 @@ class NotificationService {
 
   // Admin panel HTTP URL
   static const String _baseUrl = 'http://10.0.2.2:3009';
-  static const String _customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+  static const String _customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
   
   // Flutter Local Notifications
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();

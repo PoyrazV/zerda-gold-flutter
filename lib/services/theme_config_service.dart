@@ -146,12 +146,12 @@ class ThemeConfigService {
       final prefs = await SharedPreferences.getInstance();
       
       // Force new customer ID - eski cache'i temizle
-      _customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+      _customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
       await prefs.setString('customer_id', _customerId);
       print('🔄 Theme Customer ID forced to: $_customerId');
     } catch (e) {
       print('Error initializing customer ID for theme, using hardcoded: $e');
-      _customerId = '112e0e89-1c16-485d-acda-d0a21a24bb95';
+      _customerId = 'ffeee61a-8497-4c70-857e-c8f0efb13a2a';
     }
   }
 

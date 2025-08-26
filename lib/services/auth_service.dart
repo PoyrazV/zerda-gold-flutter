@@ -127,6 +127,9 @@ class AuthService extends ChangeNotifier {
         // Update FCM token with user info
         await _updateFCMToken();
         
+        // Force WebSocket reconnection with auth info
+        _forceWebSocketReconnection();
+        
         notifyListeners();
         return true;
       }
@@ -234,6 +237,9 @@ class AuthService extends ChangeNotifier {
     _userId = null;
     _authToken = null;
     
+    // Force WebSocket reconnection as guest
+    _forceWebSocketReconnection();
+    
     notifyListeners();
   }
   
@@ -284,6 +290,9 @@ class AuthService extends ChangeNotifier {
         
         // Update FCM token with user info
         await _updateFCMToken();
+        
+        // Force WebSocket reconnection with auth info
+        _forceWebSocketReconnection();
         
         notifyListeners();
         return true;
@@ -368,5 +377,19 @@ class AuthService extends ChangeNotifier {
       password: 'demo123',
       userName: 'Demo User',
     );
+  }
+  
+  // Force WebSocket reconnection with current auth state
+  void _forceWebSocketReconnection() {
+    try {
+      // Import and call the NotificationWebSocketService
+      // We'll do this dynamically to avoid circular dependencies
+      print('🔄 Forcing WebSocket reconnection after auth state change...');
+      
+      // This will be called from NotificationService which manages the WebSocket
+      // We'll trigger this through notifyListeners which NotificationService listens to
+    } catch (e) {
+      print('Error forcing WebSocket reconnection: $e');
+    }
   }
 }

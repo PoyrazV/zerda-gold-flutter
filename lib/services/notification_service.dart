@@ -8,89 +8,118 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'notification_websocket_service.dart';
+import 'auth_service.dart';
 
-// Top-level function for background message handling
+// Top-level function for background message handling (called from other files)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Initialize Firebase if it hasn't been initialized yet
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp();
-  }
-  
-  // DATA-ONLY message handling - get title and body from data payload
-  final String title = message.data['title'] ?? 'Zerda Gold';
-  final String body = message.data['body'] ?? 'Yeni bildirim';
-  
-  print('🔥 Background DATA-ONLY message received');
-  print('   Title: $title');
-  print('   Body: $body');
-  print('   Type: ${message.data['type']}');
-  
-  // Initialize local notifications plugin for background
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
-      FlutterLocalNotificationsPlugin();
-      
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'zerda_notifications',
-    'Zerda Notifications',
-    description: 'Zerda Gold notifications',
-    importance: Importance.high,
-  );
-  
-  // Initialize with Android settings
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  const InitializationSettings initializationSettings =
-      InitializationSettings(android: initializationSettingsAndroid);
-      
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  
-  // Create notification details
-  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-    'zerda_notifications',
-    'Zerda Notifications',
-    channelDescription: 'Zerda Gold notifications',
-    importance: Importance.high,
-    priority: Priority.high,
-    showWhen: true,
-  );
-  
-  const NotificationDetails details = NotificationDetails(android: androidDetails);
-  
-  // Show the notification ONCE (no duplicate since Firebase won't auto-display)
-  await flutterLocalNotificationsPlugin.show(
-    message.hashCode,
-    title,
-    body,
-    details,
-    payload: message.data.toString(),
-  );
-  
-  // Save to SharedPreferences for later retrieval
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final notifications = prefs.getStringList('background_notifications') ?? [];
-    notifications.add(jsonEncode({
-      'title': title,  // Use extracted title from data
-      'body': body,    // Use extracted body from data
-      'data': message.data,
-      'timestamp': DateTime.now().toIso8601String(),
-    }));
-    await prefs.setStringList('background_notifications', notifications);
-  } catch (e) {
-    print('❌ Error saving background notification: $e');
-  }
+  await NotificationService.handleBackgroundMessage(message);
 }
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
-
-  // Polling removed - using FCM only
-  // Timer? _pollingTimer;
-  // bool _isPolling = false;
-  // String? _lastNotificationId;
+  
+  // Static method for handling background messages
+  static Future<void> handleBackgroundMessage(RemoteMessage message) async {
+    // Ensure Firebase is initialized
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+    
+    // Extract title and body from notification or data payload
+    final String title = message.notification?.title ?? 
+                        message.data['title'] ?? 
+                        'Zerda Gold';
+    final String body = message.notification?.body ?? 
+                       message.data['body'] ?? 
+                       'Yeni bildirim';
+    
+    print('🔔 Background message received');
+    print('   Title: $title');
+    print('   Body: $body');
+    print('   Has notification field: ${message.notification != null}');
+    print('   Type: ${message.data['type']}');
+    
+    // Only show local notification if Firebase didn't already show one
+    // (Firebase auto-shows if notification field exists)
+    if (message.notification == null) {
+      // Initialize local notifications plugin for background
+      final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
+          FlutterLocalNotificationsPlugin();
+      
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'zerda_notifications',
+        'Zerda Notifications',
+        description: 'Zerda Gold notifications',
+        importance: Importance.high,
+        enableVibration: true,
+        playSound: true,
+      );
+      
+      // Initialize with Android settings
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+      
+      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      
+      // Create Android notification channel
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel);
+      
+      // Create notification details with wake lock
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'zerda_notifications',
+        'Zerda Notifications',
+        channelDescription: 'Zerda Gold notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        playSound: true,
+        fullScreenIntent: true, // Wake up device
+        category: AndroidNotificationCategory.message,
+      );
+      
+      const NotificationDetails details = NotificationDetails(android: androidDetails);
+      
+      // Show the notification
+      await flutterLocalNotificationsPlugin.show(
+        message.hashCode,
+        title,
+        body,
+        details,
+        payload: message.data.toString(),
+      );
+      
+      print('✅ Local notification shown in background');
+    } else {
+      print('ℹ️ Skipping local notification (Firebase will show it)');
+    }
+    
+    // Always save to SharedPreferences for later retrieval
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final notifications = prefs.getStringList('background_notifications') ?? [];
+      notifications.add(jsonEncode({
+        'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'title': title,
+        'body': body,
+        'type': message.data['type'] ?? 'info',
+        'timestamp': DateTime.now().toIso8601String(),
+        'data': message.data,
+      }));
+      await prefs.setStringList('background_notifications', notifications);
+      print('📬 Stored background notification for later processing');
+    } catch (e) {
+      print('❌ Error saving background notification: $e');
+    }
+  }
 
   // Admin panel HTTP URL
   static const String _baseUrl = 'http://10.0.2.2:3009';
@@ -110,6 +139,11 @@ class NotificationService {
   
   // Son bildirimleri sakla
   final List<Map<String, dynamic>> _recentNotifications = [];
+  
+  // WebSocket service for real-time notifications
+  NotificationWebSocketService? _webSocketService;
+  StreamSubscription? _webSocketSubscription;
+  AuthService? _authService;
   
   // Public getters
   String? get fcmToken => _fcmToken;
@@ -141,16 +175,14 @@ class NotificationService {
     
     // Initialize local notifications
     await _initializeNotifications();
-    // Polling removed - no need to load last notification ID
-    // await _loadLastNotificationId();
+    
+    // Initialize WebSocket service for real-time notifications
+    await _initializeWebSocketService();
     
     // Check for background notifications
     await _checkBackgroundNotifications();
     
-    // Polling removed - using FCM only
-    // _startPolling();
-    
-    print('🔔 NotificationService fully initialized with FCM support');
+    print('🔔 NotificationService fully initialized with FCM and WebSocket support');
   }
 
   Future<void> _initializeFirebase() async {
@@ -167,9 +199,6 @@ class NotificationService {
       
       // Initialize Firebase Messaging
       _firebaseMessaging = FirebaseMessaging.instance;
-      
-      // Background handler is already registered in main.dart
-      // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
       
       // Request notification permissions
       NotificationSettings settings = await _firebaseMessaging!.requestPermission(
@@ -209,30 +238,38 @@ class NotificationService {
     }
   }
 
-  // Polling removed - no longer tracking last notification ID
-  // Future<void> _loadLastNotificationId() async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     // Reset last notification ID to get all notifications
-  //     await prefs.remove('last_notification_id');
-  //     _lastNotificationId = null;
-  //     print('📖 Reset last notification ID to get all notifications');
-  //   } catch (e) {
-  //     print('❌ Failed to load last notification ID: $e');
-  //   }
-  // }
-
-  // Polling removed - no longer saving last notification ID
-  // Future<void> _saveLastNotificationId(String id) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     await prefs.setString('last_notification_id', id);
-  //     _lastNotificationId = id;
-  //   } catch (e) {
-  //     print('❌ Failed to save last notification ID: $e');
-  //   }
-  // }
-
+  Future<void> _initializeWebSocketService() async {
+    try {
+      print('🔌 Initializing NotificationWebSocketService...');
+      
+      // Initialize auth service reference
+      _authService = AuthService();
+      
+      // Initialize WebSocket service
+      _webSocketService = NotificationWebSocketService();
+      await _webSocketService!.initialize();
+      
+      // Listen to WebSocket notifications
+      _webSocketSubscription = _webSocketService!.notificationStream.listen((notificationData) {
+        print('📨 WebSocket notification received in NotificationService');
+        _handleNotificationReceived(notificationData);
+      });
+      
+      // Listen to auth state changes to force WebSocket reconnection
+      _authService!.addListener(_onAuthStateChanged);
+      
+      print('✅ NotificationWebSocketService initialized successfully');
+    } catch (e) {
+      print('❌ Failed to initialize NotificationWebSocketService: $e');
+      // Continue without WebSocket - FCM will still work
+    }
+  }
+  
+  void _onAuthStateChanged() {
+    print('🔄 Auth state changed in NotificationService, forcing WebSocket reconnection...');
+    _webSocketService?.forceReconnect();
+  }
+  
   Future<void> _checkBackgroundNotifications() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -271,21 +308,6 @@ class NotificationService {
     }
   }
 
-  // Polling removed - using FCM for real-time notifications
-  // void _startPolling() {
-  //   if (_isPolling) return;
-  //   
-  //   _isPolling = true;
-  //   print('🔄 Starting notification polling...');
-  //   
-  //   // Poll every 30 seconds for new notifications
-  //   _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-  //     _checkForNewNotifications().catchError((error) {
-  //       // Hataları sessizce yoksay
-  //     });
-  //   });
-  // }
-
   // Manual refresh method for testing or fallback
   Future<void> manualRefresh() async {
     try {
@@ -296,60 +318,6 @@ class NotificationService {
       print('❌ Manual refresh error: $e');
     }
   }
-  
-  // Polling removed - using FCM for real-time notifications
-  // Future<void> _checkForNewNotifications() async {
-  //   try {
-  //     // Use public mobile endpoint that doesn't require authentication
-  //     String url = '$_baseUrl/api/mobile/notifications/$_customerId';
-  //     if (_lastNotificationId != null) {
-  //       url += '?since=$_lastNotificationId';
-  //     }
-  //     
-  //     final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-  //     
-  //     if (response.statusCode == 200) {
-  //       final data = json.decode(response.body);
-  //       
-  //       if (data['success'] == true) {
-  //         final notifications = data['notifications'] as List;
-  //         
-  //         print('📡 Polling check: Found ${notifications.length} notifications');
-  //         
-  //         // Process new notifications (they're already filtered by 'since' parameter)
-  //         for (final notification in notifications) {
-  //           final notificationId = notification['id'].toString();
-  //           print('🔔 New notification found: ${notification['title']} (ID: $notificationId)');
-  //           _handleNotificationReceived(Map<String, dynamic>.from(notification));
-  //           await _saveLastNotificationId(notificationId);
-  //         }
-  //       }
-  //     } else {
-  //       print('❌ Failed to fetch notifications: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     // Hataları sessizce yoksay, sadece debug modda log yaz
-  //     if (e is TimeoutException) {
-  //       // Timeout normal, sessizce devam et
-  //     } else {
-  //       // Diğer hatalar için de sessiz ol
-  //     }
-  //   }
-  // }
-
-  // Polling removed - no longer comparing notification IDs
-  // bool _isNewerNotification(String newId, String lastId) {
-  //   // Simple comparison - in real app you might use timestamps
-  //   try {
-  //     final newIdNum = int.tryParse(newId) ?? 0;
-  //     final lastIdNum = int.tryParse(lastId) ?? 0;
-  //     return newIdNum > lastIdNum;
-  //   } catch (e) {
-  //     return newId != lastId;
-  //   }
-  // }
-
-
   void _handleNotificationReceived(Map<String, dynamic> notificationData) {
     // Add to recent notifications
     _recentNotifications.insert(0, {
@@ -618,14 +586,14 @@ class NotificationService {
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
-    // Data-only messages: extract from data payload
-    final String title = message.data['title'] ?? 'Zerda Gold';
-    final String body = message.data['body'] ?? 'Yeni bildirim';
-    
-    print('🔥 FCM foreground message (data-only): $title');
+    print('🔥 FCM foreground message received');
+    print('   Has notification field: ${message.notification != null}');
     
     // Convert FCM message to our notification format
     final notificationData = _fcmMessageToNotificationData(message);
+    
+    // In foreground, always show local notification
+    // (Firebase doesn't auto-show in foreground)
     _handleNotificationReceived(notificationData);
   }
 
@@ -646,14 +614,29 @@ class NotificationService {
   }
 
   Map<String, dynamic> _fcmMessageToNotificationData(RemoteMessage message) {
-    // Data-only messages: extract everything from data payload
+    // Extract from BOTH notification and data payloads
+    // Prefer notification field if available (sent when app is killed)
+    final String title = message.notification?.title ?? 
+                        message.data['title'] ?? 
+                        'Zerda Gold';
+    final String body = message.notification?.body ?? 
+                       message.data['body'] ?? 
+                       'Yeni bildirim';
+    
+    print('📨 Processing FCM message:');
+    print('   Has notification: ${message.notification != null}');
+    print('   Title: $title');
+    print('   Body: $body');
+    print('   Data: ${message.data}');
+    
     return {
       'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      'title': message.data['title'] ?? 'Zerda Gold',
-      'message': message.data['body'] ?? 'Yeni bildirim',
+      'title': title,
+      'message': body,
       'type': message.data['type'] ?? 'info',
       'timestamp': DateTime.now().toIso8601String(),
       'data': message.data,
+      'hasNotificationField': message.notification != null,
     };
   }
 
@@ -679,6 +662,17 @@ class NotificationService {
         print('🔄 Migrated device ID to new format for FCM: $deviceId');
       }
       
+      // Get authentication info if available
+      final authService = AuthService();
+      final isLoggedIn = authService.isLoggedIn;
+      final userId = authService.userId;
+      final userEmail = authService.userEmail;
+      
+      print('📱 Registering FCM token with auth state:');
+      print('   Is logged in: $isLoggedIn');
+      print('   User ID: $userId');
+      print('   User email: $userEmail');
+      
       final response = await http.post(
         Uri.parse('$_baseUrl/api/mobile/register-fcm-token'),
         headers: {'Content-Type': 'application/json'},
@@ -687,6 +681,9 @@ class NotificationService {
           'fcmToken': token,
           'deviceId': deviceId,
           'platform': 'flutter',
+          'userId': userId,
+          'userEmail': userEmail,
+          'isAuthenticated': isLoggedIn,
         }),
       );
       
@@ -710,11 +707,11 @@ class NotificationService {
   bool get isFCMInitialized => _fcmInitialized;
 
   void dispose() {
-    // Polling timer removed
-    // _pollingTimer?.cancel();
-    // _isPolling = false;
     _notificationListeners.clear();
     _recentNotifications.clear();
+    _webSocketSubscription?.cancel();
+    _webSocketService?.dispose();
+    _authService?.removeListener(_onAuthStateChanged);
   }
 
   // Test notification - for development

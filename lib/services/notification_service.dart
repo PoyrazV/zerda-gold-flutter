@@ -29,23 +29,29 @@ class NotificationService {
       await Firebase.initializeApp();
     }
     
-    // Extract title and body from notification or data payload
-    final String title = message.notification?.title ?? 
-                        message.data['title'] ?? 
-                        'Zerda Gold';
-    final String body = message.notification?.body ?? 
-                       message.data['body'] ?? 
-                       'Yeni bildirim';
-    
     print('🔔 Background message received');
-    print('   Title: $title');
-    print('   Body: $body');
     print('   Has notification field: ${message.notification != null}');
-    print('   Type: ${message.data['type']}');
+    print('   Has data field: ${message.data.isNotEmpty}');
     
-    // Only show local notification if Firebase didn't already show one
-    // (Firebase auto-shows if notification field exists)
-    if (message.notification == null) {
+    // If message has notification field, Firebase will auto-show it
+    // We don't need to do anything
+    if (message.notification != null) {
+      print('✅ Firebase will handle this notification automatically');
+      print('   Title: ${message.notification!.title}');
+      print('   Body: ${message.notification!.body}');
+      // DO NOT show local notification
+      // DO NOT save to SharedPreferences
+      // Let Firebase handle everything
+      return;
+    }
+    
+    // Only handle data-only messages (special cases where we need custom handling)
+    if (message.data.isNotEmpty && message.notification == null) {
+      print('📦 Data-only message received, showing custom notification');
+      
+      final String title = message.data['title'] ?? 'Zerda Gold';
+      final String body = message.data['body'] ?? message.data['message'] ?? 'Yeni bildirim';
+      
       // Initialize local notifications plugin for background
       final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = 
           FlutterLocalNotificationsPlugin();
@@ -72,7 +78,7 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(channel);
       
-      // Create notification details with wake lock
+      // Create notification details
       const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'zerda_notifications',
         'Zerda Notifications',
@@ -82,42 +88,24 @@ class NotificationService {
         showWhen: true,
         enableVibration: true,
         playSound: true,
-        fullScreenIntent: true, // Wake up device
         category: AndroidNotificationCategory.message,
       );
       
       const NotificationDetails details = NotificationDetails(android: androidDetails);
       
       // Show the notification
-      await flutterLocalNotificationsPlugin.show(
-        message.hashCode,
-        title,
-        body,
-        details,
-        payload: message.data.toString(),
-      );
-      
-      print('✅ Local notification shown in background');
-    } else {
-      print('ℹ️ Skipping local notification (Firebase will show it)');
-    }
-    
-    // Always save to SharedPreferences for later retrieval
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final notifications = prefs.getStringList('background_notifications') ?? [];
-      notifications.add(jsonEncode({
-        'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        'title': title,
-        'body': body,
-        'type': message.data['type'] ?? 'info',
-        'timestamp': DateTime.now().toIso8601String(),
-        'data': message.data,
-      }));
-      await prefs.setStringList('background_notifications', notifications);
-      print('📬 Stored background notification for later processing');
-    } catch (e) {
-      print('❌ Error saving background notification: $e');
+      try {
+        await flutterLocalNotificationsPlugin.show(
+          message.hashCode,
+          title,
+          body,
+          details,
+          payload: jsonEncode(message.data),
+        );
+        print('✅ Custom notification shown for data-only message');
+      } catch (e) {
+        print('❌ Error showing custom notification: $e');
+      }
     }
   }
 
@@ -271,40 +259,19 @@ class NotificationService {
   }
   
   Future<void> _checkBackgroundNotifications() async {
+    // This method is now simplified since Firebase handles most notifications
+    // We only check for any legacy data-only notifications that might be stored
     try {
       final prefs = await SharedPreferences.getInstance();
-      final notifications = prefs.getStringList('background_notifications') ?? [];
       
-      if (notifications.isNotEmpty) {
-        print('📬 Found ${notifications.length} background notifications');
-        
-        for (final notificationJson in notifications) {
-          try {
-            final notification = jsonDecode(notificationJson);
-            print('   - ${notification['title']} at ${notification['timestamp']}');
-            
-            // Add to recent notifications
-            _recentNotifications.insert(0, notification);
-            
-            // Notify listeners
-            for (final listener in _notificationListeners) {
-              try {
-                listener(notification);
-              } catch (e) {
-                print('❌ Error in notification listener: $e');
-              }
-            }
-          } catch (e) {
-            print('❌ Error parsing background notification: $e');
-          }
-        }
-        
-        // Clear background notifications after processing
+      // Clean up any old background notifications
+      // We no longer need this system since Firebase handles everything
+      if (prefs.containsKey('background_notifications')) {
         await prefs.remove('background_notifications');
-        print('✅ Background notifications processed and cleared');
+        print('🧹 Cleaned up legacy background notifications');
       }
     } catch (e) {
-      print('❌ Error checking background notifications: $e');
+      print('❌ Error in background notifications cleanup: $e');
     }
   }
 
@@ -319,6 +286,21 @@ class NotificationService {
     }
   }
   void _handleNotificationReceived(Map<String, dynamic> notificationData) {
+    // Check for duplicate notifications by ID
+    final notificationId = notificationData['id']?.toString();
+    
+    if (notificationId != null) {
+      // Check if we already have this notification
+      final isDuplicate = _recentNotifications.any((n) => 
+        n['id']?.toString() == notificationId
+      );
+      
+      if (isDuplicate) {
+        print('⏭️ Ignoring duplicate notification with ID: $notificationId');
+        return;
+      }
+    }
+    
     // Add to recent notifications
     _recentNotifications.insert(0, {
       ...notificationData,

@@ -13,6 +13,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const cron = require('node-cron');
 
 const app = express();
 const server = http.createServer(app);
@@ -1029,15 +1030,66 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
   }
 
   const notificationId = uuidv4();
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+  
+  // Parse and validate scheduled_time
+  let scheduledDate = null;
+  let isScheduled = false;
+  
+  if (scheduled_time) {
+    // Handle datetime-local format (YYYY-MM-DDTHH:mm) from HTML input
+    // This format is missing seconds and timezone indicator
+    if (scheduled_time.length === 16 && !scheduled_time.includes('Z')) {
+      // Add :00 seconds to make it a properly formatted datetime string
+      scheduled_time = scheduled_time + ':00';
+      console.log('📝 Detected datetime-local format, added seconds:', scheduled_time);
+    }
+    
+    // Parse the incoming date (could be in various formats)
+    scheduledDate = new Date(scheduled_time);
+    
+    // Check if the date is valid
+    if (isNaN(scheduledDate.getTime())) {
+      console.log('⚠️ Invalid scheduled_time format:', scheduled_time);
+      scheduledDate = null;
+    } else {
+      // Convert to ISO string for SQLite storage
+      const scheduledISO = scheduledDate.toISOString();
+      
+      // Check if scheduled time is in the future (with 10 second tolerance for processing time)
+      // Using 10 seconds to allow quick testing while preventing race conditions
+      isScheduled = scheduledDate.getTime() > (nowDate.getTime() + 10000); // 10 seconds from now
+      
+      console.log('📅 Scheduled notification check:');
+      console.log('  - scheduled_time (raw):', scheduled_time);
+      console.log('  - scheduled_time (parsed):', scheduledDate.toISOString());
+      console.log('  - scheduled_time (ms):', scheduledDate.getTime());
+      console.log('  - current time (ISO):', nowDate.toISOString());
+      console.log('  - current time (ms):', nowDate.getTime());
+      console.log('  - difference (ms):', scheduledDate.getTime() - nowDate.getTime());
+      console.log('  - is future (>10s)?:', isScheduled);
+      
+      // Additional validation: reject dates too far in the past
+      if (scheduledDate.getTime() < (nowDate.getTime() - 60000)) { // More than 1 minute in the past
+        console.log('⚠️ Scheduled time is in the past, treating as immediate');
+        isScheduled = false;
+      }
+    }
+  }
+  
+  const initialStatus = isScheduled ? 'scheduled' : 'pending';
+  // Keep the original scheduled_time format for database storage
+  // This preserves local time without UTC conversion
+  const finalScheduledTime = isScheduled ? scheduled_time : null;
 
   try {
     // Insert notification
     await new Promise((resolve, reject) => {
       db.run(
         `INSERT INTO notifications (id, customer_id, title, message, type, target, status, scheduled_time, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
-        [notificationId, customerId, title, message, type, target, scheduled_time, now, now],
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [notificationId, customerId, title, message, type, target, initialStatus, finalScheduledTime, now, now],
         function(err) {
           if (err) reject(err);
           else resolve();
@@ -1045,8 +1097,8 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
       );
     });
 
-    // Anlık gönderim için (scheduled_time null ise)
-    if (!scheduled_time) {
+    // Anlık gönderim için (scheduled_time null veya geçmiş tarih ise)
+    if (!isScheduled) {
       try {
         // Status'u sent olarak güncelle
         await new Promise((resolve, reject) => {
@@ -1093,14 +1145,15 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
 
     res.status(201).json({
       success: true,
-      message: 'Bildirim başarıyla oluşturuldu',
+      message: isScheduled ? 'Bildirim zamanlandı' : 'Bildirim başarıyla gönderildi',
       data: {
         id: notificationId,
         title,
         message,
         type,
         target,
-        status: scheduled_time ? 'scheduled' : 'sent',
+        status: isScheduled ? 'scheduled' : 'sent',
+        scheduled_time: scheduled_time,
         created_at: now
       }
     });
@@ -1180,7 +1233,7 @@ app.delete('/api/customers/:customerId/notifications/:notificationId', authentic
 
 // POST - Toplu bildirim gönder
 app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => {
-  const { title, message, type = 'info', target = 'all', customerIds = [], excludeCustomerIds = [] } = req.body;
+  const { title, message, type = 'info', target = 'all', customerIds = [], excludeCustomerIds = [], scheduled_time = null } = req.body;
 
   if (!title || !message) {
     return res.status(400).json({
@@ -1249,10 +1302,61 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
   
   console.log(`📢 Broadcast notification - Target: ${target}, Customers found: ${customersToNotify.length}`);
 
+  // Parse and validate scheduled_time for broadcast
+  let scheduledDate = null;
+  let isScheduled = false;
+  const nowDate = new Date(); // Single time reference for consistency
+  
+  if (scheduled_time) {
+    // Handle datetime-local format (YYYY-MM-DDTHH:mm) from HTML input
+    // This format is missing seconds and timezone indicator
+    if (scheduled_time.length === 16 && !scheduled_time.includes('Z')) {
+      // Add :00 seconds to make it a properly formatted datetime string
+      scheduled_time = scheduled_time + ':00';
+      console.log('📝 Detected datetime-local format for broadcast, added seconds:', scheduled_time);
+    }
+    
+    // Parse the incoming date (could be in various formats)
+    scheduledDate = new Date(scheduled_time);
+    
+    // Check if the date is valid
+    if (isNaN(scheduledDate.getTime())) {
+      console.log('⚠️ Invalid scheduled_time format:', scheduled_time);
+      scheduledDate = null;
+    } else {
+      // Convert to ISO string for SQLite storage
+      const scheduledISO = scheduledDate.toISOString();
+      
+      // Check if scheduled time is in the future (with 10 second tolerance for processing time)
+      // Using 10 seconds to allow quick testing while preventing race conditions
+      isScheduled = scheduledDate.getTime() > (nowDate.getTime() + 10000); // 10 seconds from now
+      
+      console.log('📅 Broadcast scheduled notification check:');
+      console.log('  - scheduled_time (raw):', scheduled_time);
+      console.log('  - scheduled_time (parsed):', scheduledDate.toISOString());
+      console.log('  - scheduled_time (ms):', scheduledDate.getTime());
+      console.log('  - current time (ISO):', nowDate.toISOString());
+      console.log('  - current time (ms):', nowDate.getTime());
+      console.log('  - difference (ms):', scheduledDate.getTime() - nowDate.getTime());
+      console.log('  - is future (>10s)?:', isScheduled);
+      
+      // Additional validation: reject dates too far in the past
+      if (scheduledDate.getTime() < (nowDate.getTime() - 60000)) { // More than 1 minute in the past
+        console.log('⚠️ Scheduled time is in the past, treating as immediate');
+        isScheduled = false;
+      }
+    }
+  }
+  
+  // Keep the original scheduled_time format for database storage
+  // This preserves local time without UTC conversion
+  const finalScheduledTime = isScheduled ? scheduled_time : null;
+
   try {
     const customers = customersToNotify;
 
-    const now = new Date().toISOString();
+    const now = nowDate.toISOString(); // Use the same time reference
+    const initialStatus = isScheduled ? 'scheduled' : 'sent';
     const sentNotifications = [];
     const failedNotifications = [];
 
@@ -1263,9 +1367,9 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
       try {
         await new Promise((resolve, reject) => {
           db.run(
-            `INSERT INTO notifications (id, customer_id, title, message, type, target, status, created_at, updated_at, sent_at)
-             VALUES (?, ?, ?, ?, ?, ?, 'sent', ?, ?, ?)`,
-            [notificationId, customer.id, title, message, type, target, now, now, now],
+            `INSERT INTO notifications (id, customer_id, title, message, type, target, status, scheduled_time, created_at, updated_at, sent_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [notificationId, customer.id, title, message, type, target, initialStatus, finalScheduledTime, now, now, isScheduled ? null : now],
             function(err) {
               if (err) reject(err);
               else resolve();
@@ -1273,33 +1377,46 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
           );
         });
 
-        // WebSocket ile anlık bildirim gönder
-        io.to(`customer_${customer.id}`).emit('notification_sent', {
-          id: notificationId,
-          title,
-          message,
-          type,
-          target,
-          timestamp: now
-        });
+        // Sadece zamanlanmamış bildirimleri hemen gönder
+        if (!isScheduled) {
+          // WebSocket ile anlık bildirim gönder
+          io.to(`customer_${customer.id}`).emit('notification_sent', {
+            id: notificationId,
+            title,
+            message,
+            type,
+            target,
+            timestamp: now
+          });
 
-        // FCM push notification gönder
-        const fcmResult = await sendFCMNotification(customer.id, {
-          id: notificationId,
-          title,
-          message,
-          type,
-          target
-        });
+          // FCM push notification gönder
+          const fcmResult = await sendFCMNotification(customer.id, {
+            id: notificationId,
+            title,
+            message,
+            type,
+            target
+          });
 
-        sentNotifications.push({
-          customerId: customer.id,
-          notificationId,
-          status: 'sent',
-          fcm: fcmResult.success ? `✅ ${fcmResult.successCount}` : `❌ ${fcmResult.reason || fcmResult.error}`
-        });
+          sentNotifications.push({
+            customerId: customer.id,
+            notificationId,
+            status: 'sent',
+            fcm: fcmResult.success ? `✅ ${fcmResult.successCount}` : `❌ ${fcmResult.reason || fcmResult.error}`
+          });
 
-        console.log(`📱 Broadcast Notification Gönderildi - Customer: ${customer.id}, FCM: ${fcmResult.success ? `✅ ${fcmResult.successCount} sent` : `❌ ${fcmResult.reason || fcmResult.error}`}`);
+          console.log(`📱 Broadcast Notification Gönderildi - Customer: ${customer.id}, FCM: ${fcmResult.success ? `✅ ${fcmResult.successCount} sent` : `❌ ${fcmResult.reason || fcmResult.error}`}`);
+        } else {
+          // Zamanlanmış bildirimler için
+          sentNotifications.push({
+            customerId: customer.id,
+            notificationId,
+            status: 'scheduled',
+            scheduled_for: scheduled_time
+          });
+
+          console.log(`⏰ Broadcast Notification Zamanlandı - Customer: ${customer.id}, Scheduled for: ${scheduled_time}`);
+        }
       } catch (dbError) {
         failedNotifications.push({
           customerId: customer.id,
@@ -1309,9 +1426,13 @@ app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => 
       }
     }
 
+    const messageText = isScheduled 
+      ? `${sentNotifications.length} müşteriye bildirim zamanlandı${failedNotifications.length > 0 ? `, ${failedNotifications.length} başarısız` : ''}`
+      : `${sentNotifications.length} müşteriye bildirim gönderildi${failedNotifications.length > 0 ? `, ${failedNotifications.length} başarısız` : ''}`;
+
     res.json({
       success: true,
-      message: `${sentNotifications.length} müşteriye bildirim gönderildi${failedNotifications.length > 0 ? `, ${failedNotifications.length} başarısız` : ''}`,
+      message: messageText,
       sentCount: sentNotifications.length,
       data: {
         totalSent: sentNotifications.length,
@@ -2057,6 +2178,201 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ============= SCHEDULED NOTIFICATION PROCESSOR =============
+
+// Track processing state to prevent concurrent runs
+let isProcessingScheduled = false;
+
+// Process scheduled notifications every minute
+async function processScheduledNotifications() {
+  // Prevent concurrent processing
+  if (isProcessingScheduled) {
+    console.log('⏳ Scheduled notification processor already running, skipping this cycle');
+    return;
+  }
+  
+  isProcessingScheduled = true;
+  const now = new Date();
+  const nowISO = now.toISOString();
+  
+  // Log current processing cycle
+  console.log(`\n⏰ Cron Job Running at ${nowISO}`);
+  console.log(`   Local time: ${now.toLocaleString('tr-TR')}`);
+  console.log(`   Checking for scheduled notifications...`);
+  
+  try {
+    // First, let's check how many scheduled notifications exist
+    const countResult = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT COUNT(*) as total FROM notifications WHERE status = 'scheduled'`,
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+    
+    console.log(`   Total scheduled notifications in database: ${countResult.total}`);
+    
+    // Find all scheduled notifications whose time has come
+    // Compare using local datetime format
+    const notifications = await new Promise((resolve, reject) => {
+      // Format current time as local datetime string for comparison
+      const nowLocal = now.toISOString().slice(0, 19).replace('T', ' ');
+      console.log(`   Checking for notifications <= ${nowLocal} (local format)`);
+      
+      db.all(
+        `SELECT * FROM notifications 
+         WHERE status = 'scheduled' 
+         AND scheduled_time IS NOT NULL 
+         AND datetime(substr(scheduled_time, 1, 19)) <= datetime('now', 'localtime')
+         ORDER BY scheduled_time ASC
+         LIMIT 50`, // Process max 50 notifications per cycle to prevent overload
+        [],
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        }
+      );
+    });
+    
+    console.log(`   Notifications ready to send: ${notifications.length}`);
+    
+    if (notifications.length === 0) {
+      // Check next scheduled notification
+      const nextScheduled = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT scheduled_time FROM notifications 
+           WHERE status = 'scheduled' 
+           AND scheduled_time IS NOT NULL 
+           AND datetime(substr(scheduled_time, 1, 19)) > datetime('now', 'localtime')
+           ORDER BY scheduled_time ASC 
+           LIMIT 1`,
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
+      });
+      
+      if (nextScheduled) {
+        const nextTime = new Date(nextScheduled.scheduled_time);
+        const diffMs = nextTime.getTime() - now.getTime();
+        const diffMinutes = Math.ceil(diffMs / 60000);
+        console.log(`   Next scheduled notification in ${diffMinutes} minutes (${nextTime.toLocaleString('tr-TR')})`);
+      } else {
+        console.log(`   No scheduled notifications pending`);
+      }
+      
+      isProcessingScheduled = false;
+      return;
+    }
+    
+    console.log(`⏰ Processing ${notifications.length} scheduled notifications at ${nowISO}`);
+    
+    // Process notifications with better error handling
+    const results = {
+      sent: 0,
+      failed: 0,
+      errors: []
+    };
+    
+    for (const notification of notifications) {
+      try {
+        // Start transaction-like processing
+        console.log(`📤 Processing notification ${notification.id} (scheduled for ${notification.scheduled_time})`);
+        
+        // First, mark as processing to prevent duplicate sends
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE notifications SET status = "processing", updated_at = ? WHERE id = ? AND status = "scheduled"',
+            [nowISO, notification.id],
+            function(err) {
+              if (err) reject(err);
+              else if (this.changes === 0) reject(new Error('Notification already processed'));
+              else resolve();
+            }
+          );
+        });
+        
+        // Send WebSocket notification
+        io.to(`customer_${notification.customer_id}`).emit('notification_sent', {
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          target: notification.target,
+          timestamp: nowISO
+        });
+        
+        // Send FCM push notification
+        const fcmResult = await sendFCMNotification(notification.customer_id, {
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          target: notification.target
+        });
+        
+        // Update status to sent
+        await new Promise((resolve, reject) => {
+          db.run(
+            'UPDATE notifications SET status = "sent", sent_at = ?, updated_at = ? WHERE id = ?',
+            [nowISO, nowISO, notification.id],
+            function(err) {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+        
+        results.sent++;
+        
+        console.log(`✅ Scheduled Notification Sent:
+  ID: ${notification.id}
+  Customer: ${notification.customer_id}
+  Title: ${notification.title}
+  Scheduled for: ${notification.scheduled_time}
+  Sent at: ${nowISO}
+  FCM: ${fcmResult.success ? `✅ ${fcmResult.successCount} devices` : `❌ ${fcmResult.reason || fcmResult.error}`}`);
+          
+      } catch (error) {
+        results.failed++;
+        results.errors.push({ notificationId: notification.id, error: error.message });
+        
+        console.error(`❌ Failed to process scheduled notification ${notification.id}:`, error.message);
+        
+        // Update status to failed (only if not already processing)
+        db.run(
+          'UPDATE notifications SET status = "failed", updated_at = ? WHERE id = ? AND status IN ("scheduled", "processing")',
+          [nowISO, notification.id],
+          (err) => {
+            if (err) console.error('Failed to update notification status to failed:', err);
+          }
+        );
+      }
+    }
+    
+    // Log summary
+    console.log(`📊 Scheduled notification processing complete:
+  Total: ${notifications.length}
+  Sent: ${results.sent}
+  Failed: ${results.failed}
+  ${results.errors.length > 0 ? 'Errors: ' + JSON.stringify(results.errors) : ''}`);
+    
+  } catch (error) {
+    console.error('❌ Critical error in scheduled notification processor:', error);
+  } finally {
+    // Always reset the processing flag
+    isProcessingScheduled = false;
+  }
+}
+
+// Schedule the processor to run every minute
+cron.schedule('* * * * *', () => {
+  processScheduledNotifications();
+});
+
 // Server'ı başlat
 server.listen(PORT, () => {
   console.log(`🚀 Zerda Advanced Admin Panel çalışıyor: http://localhost:${PORT}`);
@@ -2066,8 +2382,12 @@ server.listen(PORT, () => {
   console.log(`🔌 WebSocket: Aktif`);
   console.log(`📊 Multi-tenant: Aktif`);
   console.log(`🎨 Theme Management: Aktif`);
+  console.log(`⏰ Scheduled Notifications: Aktif (checking every minute)`);
   
   console.log('✅ Gelişmiş admin panel hazır!');
+  
+  // Process any pending scheduled notifications on startup
+  processScheduledNotifications();
 });
 
 module.exports = { app, server, io };

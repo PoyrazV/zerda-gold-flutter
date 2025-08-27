@@ -778,17 +778,23 @@ app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
       });
     }),
     new Promise((resolve) => {
-      db.get('SELECT COUNT(*) as count FROM assets', (err, result) => {
+      db.get('SELECT COUNT(*) as count FROM gold_products', (err, result) => {
+        resolve(err ? 0 : result.count);
+      });
+    }),
+    new Promise((resolve) => {
+      db.get('SELECT COUNT(*) as count FROM mobile_users', (err, result) => {
         resolve(err ? 0 : result.count);
       });
     })
-  ]).then(([customers, activeFeatures, totalAssets]) => {
+  ]).then(([customers, activeFeatures, totalGoldAssets, totalUsers]) => {
     res.json({
       success: true,
       data: {
         totalCustomers: customers,
         activeFeatures: activeFeatures,
-        totalAssets: totalAssets,
+        totalGoldAssets: totalGoldAssets,
+        totalUsers: totalUsers,
         lastUpdate: new Date().toISOString()
       }
     });

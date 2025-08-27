@@ -1486,7 +1486,6 @@
                 const [notificationForm, setNotificationForm] = useState({
                     title: '',
                     message: '',
-                    type: 'info',
                     target: 'all',
                     scheduled_time: ''
                 });
@@ -1591,8 +1590,8 @@
                     }
 
                     try {
-                        // Send datetime-local value directly to server
-                        // Server will handle the format conversion and timezone
+                        // Convert datetime-local to ISO format for consistent timezone handling
+                        // This ensures the server receives a proper timestamp with timezone info
                         let scheduledTimeToSend = null;
                         if (notificationForm.scheduled_time) {
                             const localDateStr = notificationForm.scheduled_time;
@@ -1601,9 +1600,9 @@
                             const localDate = new Date(localDateStr);
                             
                             if (!isNaN(localDate.getTime())) {
-                                // Send the datetime-local format directly
-                                // This will be in format: YYYY-MM-DDTHH:mm
-                                scheduledTimeToSend = localDateStr;
+                                // Convert to ISO string for consistent timezone handling
+                                // This includes timezone information
+                                scheduledTimeToSend = localDate.toISOString();
                                 
                                 // Enhanced logging
                                 console.log('📅 Sending scheduled time:');
@@ -1646,7 +1645,7 @@
 
                         if (data.success) {
                             showNotification('Bildirim başarıyla gönderildi!', 'success');
-                            setNotificationForm({ title: '', message: '', type: 'info', target: 'all', scheduled_time: '' });
+                            setNotificationForm({ title: '', message: '', target: 'all', scheduled_time: '' });
                             setShowForm(false);
                             loadNotifications();
                             loadNotificationStats();
@@ -1674,8 +1673,8 @@
                     }
 
                     try {
-                        // Send datetime-local value directly to server for broadcast
-                        // Server will handle the format conversion and timezone
+                        // Convert datetime-local to ISO format for broadcast too
+                        // This ensures consistent timezone handling for all notifications
                         let scheduledTimeToSend = null;
                         if (notificationForm.scheduled_time) {
                             const localDateStr = notificationForm.scheduled_time;
@@ -1684,9 +1683,9 @@
                             const localDate = new Date(localDateStr);
                             
                             if (!isNaN(localDate.getTime())) {
-                                // Send the datetime-local format directly
-                                // This will be in format: YYYY-MM-DDTHH:mm
-                                scheduledTimeToSend = localDateStr;
+                                // Convert to ISO string for consistent timezone handling
+                                // This includes timezone information
+                                scheduledTimeToSend = localDate.toISOString();
                                 
                                 // Enhanced logging
                                 console.log('📅 Sending broadcast scheduled time:');
@@ -1712,7 +1711,6 @@
                         const payload = {
                             title: notificationForm.title,
                             message: notificationForm.message,
-                            type: notificationForm.type,
                             target: notificationForm.target,
                             scheduled_time: scheduledTimeToSend
                         };
@@ -1733,7 +1731,7 @@
                         if (data.success) {
                             const sentCount = data.sentCount || data.data?.totalSent || 0;
                             showNotification(`Toplu bildirim gönderildi! (${sentCount} müşteri)`, 'success');
-                            setNotificationForm({ title: '', message: '', type: 'info', target: 'all', scheduled_time: '' });
+                            setNotificationForm({ title: '', message: '', target: 'all', scheduled_time: '' });
                             setShowForm(false);
                             // Reload notifications
                             if (selectedCustomer) {
@@ -1879,30 +1877,6 @@
                                                     fontSize: '14px'
                                                 }}
                                             />
-                                        </div>
-
-                                        <div>
-                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                                                <i className="fas fa-tag" style={{ marginRight: '8px' }}></i>
-                                                Tip:
-                                            </label>
-                                            <select
-                                                value={notificationForm.type}
-                                                onChange={(e) => handleFormChange('type', e.target.value)}
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '12px',
-                                                    border: '2px solid #e9ecef',
-                                                    borderRadius: '8px',
-                                                    fontSize: '14px',
-                                                    backgroundColor: 'white'
-                                                }}
-                                            >
-                                                <option value="info">Bilgi</option>
-                                                <option value="success">Başarı</option>
-                                                <option value="warning">Uyarı</option>
-                                                <option value="error">Hata</option>
-                                            </select>
                                         </div>
 
                                         <div>

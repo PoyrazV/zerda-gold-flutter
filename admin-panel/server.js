@@ -1020,7 +1020,8 @@ app.get('/api/customers/:customerId/notifications', authenticateToken, (req, res
 // POST - Yeni bildirim gönder
 app.post('/api/customers/:customerId/notifications', authenticateToken, async (req, res) => {
   const { customerId } = req.params;
-  const { title, message, type = 'info', target = 'all', scheduled_time = null } = req.body;
+  const { title, message, target = 'all', scheduled_time = null } = req.body;
+  const type = 'info'; // Always use 'info' type for simplicity
 
   if (!title || !message) {
     return res.status(400).json({
@@ -1038,15 +1039,10 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
   let isScheduled = false;
   
   if (scheduled_time) {
-    // Handle datetime-local format (YYYY-MM-DDTHH:mm) from HTML input
-    // This format is missing seconds and timezone indicator
-    if (scheduled_time.length === 16 && !scheduled_time.includes('Z')) {
-      // Add :00 seconds to make it a properly formatted datetime string
-      scheduled_time = scheduled_time + ':00';
-      console.log('📝 Detected datetime-local format, added seconds:', scheduled_time);
-    }
+    // Now we receive ISO format from admin panel, no need for format detection
+    // Both admin panel and test scripts send ISO format
     
-    // Parse the incoming date (could be in various formats)
+    // Parse the incoming date (should be in ISO format)
     scheduledDate = new Date(scheduled_time);
     
     // Check if the date is valid
@@ -1079,9 +1075,8 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
   }
   
   const initialStatus = isScheduled ? 'scheduled' : 'pending';
-  // Keep the original scheduled_time format for database storage
-  // This preserves local time without UTC conversion
-  const finalScheduledTime = isScheduled ? scheduled_time : null;
+  // Store the ISO format scheduled_time in database for consistent UTC timestamps
+  const finalScheduledTime = isScheduled ? scheduledDate.toISOString() : null;
 
   try {
     // Insert notification
@@ -1170,7 +1165,8 @@ app.post('/api/customers/:customerId/notifications', authenticateToken, async (r
 // PUT - Bildirim güncelle
 app.put('/api/customers/:customerId/notifications/:notificationId', authenticateToken, (req, res) => {
   const { customerId, notificationId } = req.params;
-  const { title, message, type, target, scheduled_time, status } = req.body;
+  const { title, message, target, scheduled_time, status } = req.body;
+  const type = 'info'; // Always use 'info' type for simplicity
   const now = new Date().toISOString();
 
   db.run(
@@ -1233,7 +1229,8 @@ app.delete('/api/customers/:customerId/notifications/:notificationId', authentic
 
 // POST - Toplu bildirim gönder
 app.post('/api/notifications/broadcast', authenticateToken, async (req, res) => {
-  const { title, message, type = 'info', target = 'all', customerIds = [], excludeCustomerIds = [], scheduled_time = null } = req.body;
+  const { title, message, target = 'all', customerIds = [], excludeCustomerIds = [], scheduled_time = null } = req.body;
+  const type = 'info'; // Always use 'info' type for simplicity
 
   if (!title || !message) {
     return res.status(400).json({
@@ -2225,7 +2222,7 @@ async function processScheduledNotifications() {
         `SELECT * FROM notifications 
          WHERE status = 'scheduled' 
          AND scheduled_time IS NOT NULL 
-         AND datetime(substr(scheduled_time, 1, 19)) <= datetime('now', 'localtime')
+         AND datetime(scheduled_time) <= datetime('now')
          ORDER BY scheduled_time ASC
          LIMIT 50`, // Process max 50 notifications per cycle to prevent overload
         [],
@@ -2245,7 +2242,7 @@ async function processScheduledNotifications() {
           `SELECT scheduled_time FROM notifications 
            WHERE status = 'scheduled' 
            AND scheduled_time IS NOT NULL 
-           AND datetime(substr(scheduled_time, 1, 19)) > datetime('now', 'localtime')
+           AND datetime(scheduled_time) > datetime('now')
            ORDER BY scheduled_time ASC 
            LIMIT 1`,
           (err, row) => {

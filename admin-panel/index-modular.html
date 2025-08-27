@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zerda Advanced Admin Panel v2.0</title>
+    
+    <!-- React and Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="public/styles/admin.css" rel="stylesheet">
+</head>
+<body>
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+    <!-- Load constants and utilities first -->
+    <script type="text/babel" src="public/js/constants.js"></script>
+    <script type="text/babel" src="public/js/api.js"></script>
+    
+    <!-- Load components -->
+    <script type="text/babel" src="public/js/components/Login.js"></script>
+    <script type="text/babel" src="public/js/components/Dashboard.js"></script>
+    <script type="text/babel" src="public/js/components/Features.js"></script>
+    <script type="text/babel" src="public/js/components/ThemeCustomization.js"></script>
+    <script type="text/babel" src="public/js/components/Notifications.js"></script>
+    <script type="text/babel" src="public/js/components/GoldManagement.js"></script>
+    <script type="text/babel" src="public/js/components/GoldCalculator.js"></script>
+    
+    <!-- Load main app last -->
+    <script type="text/babel" src="public/js/app.js"></script>
+</body>
+</html>

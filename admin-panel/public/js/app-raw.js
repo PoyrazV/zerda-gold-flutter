@@ -1,0 +1,2418 @@
+        const { useState, useEffect, useCallback } = React;
+        
+        const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [currentUser, setCurrentUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [loading, setLoading] = useState(true);
+            const [customers, setCustomers] = useState([]);
+            const [selectedCustomer, setSelectedCustomer] = useState(null);
+            const [features, setFeatures] = useState({});
+            const [themeConfig, setThemeConfig] = useState({});
+            const [stats, setStats] = useState({});
+            const [notification, setNotification] = useState(null);
+            const [socket, setSocket] = useState(null);
+            const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
+
+            // Feature display names (Türkçe isimler)
+            const featureDisplayNames = {
+                dashboard: 'Döviz',
+                goldPrices: 'Altın', 
+                converter: 'Çevirici',
+                alarms: 'Alarmlar',
+                portfolio: 'Portföy',
+                profile: 'Profil',
+                watchlist: 'Takip Listem',
+                profitLossCalculator: 'Kar/Zarar Hesaplama',
+                performanceHistory: 'Performans Geçmişi',
+                sarrafiyeIscilik: 'Sarrafiye İşçilikleri',
+                gecmisKurlar: 'Geçmiş Kurlar'
+            };
+            
+            // Feature order for display
+            const featureOrder = [
+                'dashboard', 
+                'goldPrices', 
+                'converter', 
+                'alarms', 
+                'portfolio', 
+                'profile', 
+                'watchlist', 
+                'profitLossCalculator', 
+                'performanceHistory', 
+                'sarrafiyeIscilik', 
+                'gecmisKurlar'
+            ];
+            
+            // Feature descriptions
+            const featureDescriptions = {
+                dashboard: 'Ana sayfa - Genel bakış ve istatistikler',
+                goldPrices: 'Altın fiyatları ve piyasa verileri',
+                converter: 'Döviz çevirici araçları',
+                alarms: 'Fiyat alarm ve bildirimleri',
+                portfolio: 'Portföy yönetimi ve takibi',
+                profile: 'Kullanıcı profil ayarları',
+                watchlist: 'Favori dövizler izleme listesi',
+                profitLossCalculator: 'Kâr/zarar hesaplama araçları',
+                performanceHistory: 'Geçmiş performans analizi',
+                sarrafiyeIscilik: 'Sarrafiye işçilik hesaplaması',
+                gecmisKurlar: 'Geçmiş kurlar ve trend analizi'
+            };
+
+            // Initialize app
+            useEffect(() => {
+                const token = localStorage.getItem('admin_token');
+                if (token) {
+                    setIsAuthenticated(true);
+                    setCurrentUser(JSON.parse(localStorage.getItem('admin_user') || '{}'));
+                    initializeSocket();
+                }
+                setLoading(false);
+            }, []);
+
+            // Initialize Socket.IO
+            const initializeSocket = useCallback(() => {
+                const newSocket = io('http://localhost:3009');
+                
+                newSocket.on('connect', () => {
+                    console.log('✅ WebSocket connected');
+                    setRealtimeStatus('connected');
+                    if (selectedCustomer) {
+                        newSocket.emit('join_customer', selectedCustomer.id);
+                    }
+                });
+
+                newSocket.on('disconnect', () => {
+                    console.log('❌ WebSocket disconnected');
+                    setRealtimeStatus('disconnected');
+                });
+
+                newSocket.on('feature_updated', (data) => {
+                    console.log('🔄 Feature updated via WebSocket:', data);
+                    loadFeatures();
+                    showNotification('Feature güncellendi: ' + (featureDisplayNames[data.featureName] || data.featureName), 'success');
+                });
+
+                newSocket.on('theme_updated', (data) => {
+                    console.log('🎨 Theme updated via WebSocket:', data);
+                    loadThemeConfig();
+                    showNotification('Tema güncellendi', 'success');
+                });
+
+                setSocket(newSocket);
+                
+                return () => newSocket.close();
+            }, [selectedCustomer]);
+
+            // Load initial data when authenticated
+            useEffect(() => {
+                if (isAuthenticated) {
+                    loadDashboardData();
+                }
+            }, [isAuthenticated]);
+
+            const loadDashboardData = async () => {
+                await Promise.all([
+                    loadCustomers(),
+                    loadStats()
+                ]);
+            };
+
+            // Login
+            const login = async (username, password) => {
+                setLoading(true);
+                try {
+                    const response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        localStorage.setItem('admin_token', data.data.token);
+                        localStorage.setItem('admin_user', JSON.stringify(data.data.user));
+                        setCurrentUser(data.data.user);
+                        setIsAuthenticated(true);
+                        initializeSocket();
+                        showNotification('Başarıyla giriş yapıldı!', 'success');
+                    } else {
+                        showNotification(data.error || 'Giriş başarısız', 'error');
+                    }
+                } catch (error) {
+                    showNotification('Bağlantı hatası', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Logout
+            const logout = () => {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_user');
+                setIsAuthenticated(false);
+                setCurrentUser(null);
+                if (socket) socket.close();
+                showNotification('Çıkış yapıldı', 'success');
+            };
+
+            // Load customers
+            const loadCustomers = async () => {
+                try {
+                    const response = await fetch('/api/customers', {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setCustomers(data.data);
+                        if (data.data.length > 0 && !selectedCustomer) {
+                            setSelectedCustomer(data.data[0]);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading customers:', error);
+                }
+            };
+
+            // Load features
+            const loadFeatures = async () => {
+                if (!selectedCustomer) return;
+                
+                try {
+                    const response = await fetch(`/api/customers/${selectedCustomer.id}/features`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setFeatures(data.features);
+                    }
+                } catch (error) {
+                    console.error('Error loading features:', error);
+                }
+            };
+
+            // Load theme config
+            const loadThemeConfig = async () => {
+                if (!selectedCustomer) return;
+                
+                try {
+                    const response = await fetch(`/api/customers/${selectedCustomer.id}/theme`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setThemeConfig(data.data);
+                    }
+                } catch (error) {
+                    console.error('Error loading theme config:', error);
+                }
+            };
+
+            // Load stats
+            const loadStats = async () => {
+                try {
+                    const response = await fetch('/api/dashboard/stats', {
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setStats(data.data);
+                    }
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            };
+
+            // Load customer-specific data
+            useEffect(() => {
+                if (selectedCustomer) {
+                    loadFeatures();
+                    loadThemeConfig();
+                    if (socket) {
+                        socket.emit('join_customer', selectedCustomer.id);
+                    }
+                }
+            }, [selectedCustomer, socket]);
+
+            // Toggle feature
+            const toggleFeature = async (featureName, enabled) => {
+                if (!selectedCustomer) return;
+                
+                try {
+                    const response = await fetch(`/api/customers/${selectedCustomer.id}/features/${featureName}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                        },
+                        body: JSON.stringify({ enabled })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setFeatures(prev => ({ ...prev, [featureName]: enabled }));
+                        showNotification(data.message, 'success');
+                    } else {
+                        showNotification(data.error, 'error');
+                    }
+                } catch (error) {
+                    showNotification('Feature güncellenirken hata oluştu', 'error');
+                }
+            };
+
+            // Update theme
+            const updateTheme = async (newThemeConfig) => {
+                if (!selectedCustomer) return;
+                
+                try {
+                    const response = await fetch(`/api/customers/${selectedCustomer.id}/theme`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                        },
+                        body: JSON.stringify(newThemeConfig)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setThemeConfig(newThemeConfig);
+                        showNotification(data.message, 'success');
+                    } else {
+                        showNotification(data.error, 'error');
+                    }
+                } catch (error) {
+                    showNotification('Tema güncellenirken hata oluştu', 'error');
+                }
+            };
+
+            // Show notification
+            const showNotification = (message, type = 'success') => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification(null), 4000);
+            };
+
+            // Login Component
+            const LoginForm = () => {
+                const [username, setUsername] = useState('admin');
+                const [password, setPassword] = useState('admin123');
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    login(username, password);
+                };
+
+                return (
+                    <div className="login-container">
+                        <div className="login-card">
+                            <h1><i className="fas fa-shield-alt"></i> Zerda Admin</h1>
+                            <p>Gelişmiş Yönetim Paneli v2.0</p>
+                            
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-group">
+                                    <label>Kullanıcı Adı</label>
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Şifre</label>
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                
+                                <button type="submit" className="login-btn" disabled={loading}>
+                                    {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Dashboard Component
+            const Dashboard = () => (
+                <div>
+                    <div className="stats-grid">
+                        <div className="stat-card customers">
+                            <div className="stat-icon"><i className="fas fa-users"></i></div>
+                            <div className="stat-number">{stats.totalCustomers || 0}</div>
+                            <div className="stat-label">Müşteriler</div>
+                        </div>
+                        
+                        <div className="stat-card features">
+                            <div className="stat-icon"><i className="fas fa-toggle-on"></i></div>
+                            <div className="stat-number">{stats.activeFeatures || 0}</div>
+                            <div className="stat-label">Aktif Özellikler</div>
+                        </div>
+                        
+                        <div className="stat-card assets">
+                            <div className="stat-icon"><i className="fas fa-coins"></i></div>
+                            <div className="stat-number">{stats.totalGoldAssets || 0}</div>
+                            <div className="stat-label">Eklenen Altın Varlıkları</div>
+                        </div>
+                        
+                        <div className="stat-card builds">
+                            <div className="stat-icon"><i className="fas fa-user-check"></i></div>
+                            <div className="stat-number">{stats.totalUsers || 0}</div>
+                            <div className="stat-label">Kullanıcı Sayısı</div>
+                        </div>
+                    </div>
+
+                    <div className="section-card">
+                        <div className="section-header">
+                            <h2 className="section-title"><i className="fas fa-chart-line"></i> Sistem Durumu</h2>
+                        </div>
+                        <div className="section-content">
+                            <p>📊 Sistem sağlıklı çalışıyor</p>
+                            <p>🔌 WebSocket Bağlantısı: <strong>{realtimeStatus === 'connected' ? 'Aktif' : 'Pasif'}</strong></p>
+                            <p>👥 Seçili Müşteri: <strong>{selectedCustomer?.display_name || 'Seçilmedi'}</strong></p>
+                            <p>⚡ Son Güncelleme: <strong>{new Date().toLocaleString('tr-TR')}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Features Component
+            const Features = () => (
+                <div className="section-card">
+                    <div className="section-header">
+                        <h2 className="section-title"><i className="fas fa-toggle-on"></i> Özellik Yönetimi</h2>
+                        <div style={{ color: '#D4B896', fontSize: '14px' }}>
+                            Müşteri: {selectedCustomer?.display_name}
+                        </div>
+                    </div>
+                    <div className="section-content">
+                        <div className="feature-grid">
+                            {featureOrder.map((name) => {
+                                const enabled = features[name];
+                                if (enabled === undefined) return null;
+                                return (
+                                <div key={name} className={`feature-card ${enabled ? 'enabled' : 'disabled'}`}>
+                                    <div className="feature-header">
+                                        <div>
+                                            <div className="feature-name">{featureDisplayNames[name] || name}</div>
+                                            <div className="feature-description">
+                                                {featureDescriptions[name] || 'Özellik açıklaması'}
+                                            </div>
+                                        </div>
+                                        <div 
+                                            className={`toggle-switch ${enabled ? 'active' : ''}`}
+                                            onClick={() => toggleFeature(name, !enabled)}
+                                        >
+                                            <div className="toggle-slider"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Theme Component
+            const ThemeCustomization = () => {
+                const [localTheme, setLocalTheme] = useState(themeConfig);
+                const [uploading, setUploading] = useState(false);
+                const [previewColors, setPreviewColors] = useState({});
+
+                useEffect(() => {
+                    setLocalTheme(themeConfig);
+                }, [themeConfig]);
+
+                const handleColorChange = (property, value) => {
+                    setLocalTheme(prev => ({ ...prev, [property]: value }));
+                    setPreviewColors(prev => ({ ...prev, [property]: value }));
+                };
+
+                const saveTheme = async () => {
+                    try {
+                        await updateTheme(localTheme);
+                        showNotification('Tema ayarları başarıyla kaydedildi!', 'success');
+                        setPreviewColors({});
+                    } catch (error) {
+                        showNotification('Tema kaydetme hatası: ' + error.message, 'error');
+                    }
+                };
+
+                const resetTheme = () => {
+                    const defaultTheme = {
+                        theme_type: 'dark',
+                        primary_color: '#18214F',
+                        secondary_color: '#D4B896',
+                        accent_color: '#FF6B6B',
+                        background_color: '#FFFFFF',
+                        text_color: '#000000',
+                        success_color: '#4CAF50',
+                        error_color: '#F44336',
+                        warning_color: '#FF9800',
+                        font_family: 'Inter',
+                        font_size_scale: 1.0
+                    };
+                    setLocalTheme(defaultTheme);
+                    setPreviewColors({});
+                };
+
+                const handleAssetUpload = async (assetType, file) => {
+                    if (!selectedCustomer || !file) return;
+                    
+                    setUploading(true);
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/assets/${assetType}`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                            },
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification(`${assetType} başarıyla yüklendi!`, 'success');
+                            // Asset path'i tema konfigürasyonuna ekle
+                            handleColorChange(`${assetType}_path`, data.data.path);
+                        } else {
+                            showNotification(data.error, 'error');
+                        }
+                    } catch (error) {
+                        showNotification('Asset yükleme hatası: ' + error.message, 'error');
+                    } finally {
+                        setUploading(false);
+                    }
+                };
+
+                const ColorInput = ({ label, property, icon }) => (
+                    <div className="color-input-group">
+                        <label><i className={icon}></i> {label}:</label>
+                        <div className="color-controls">
+                            <input
+                                type="color"
+                                value={localTheme[property] || '#000000'}
+                                onChange={(e) => handleColorChange(property, e.target.value)}
+                                className="color-picker"
+                            />
+                            <input
+                                type="text"
+                                value={localTheme[property] || '#000000'}
+                                onChange={(e) => handleColorChange(property, e.target.value)}
+                                className="color-text"
+                                placeholder="#000000"
+                            />
+                            <div 
+                                className="color-preview"
+                                style={{ backgroundColor: previewColors[property] || localTheme[property] || '#000000' }}
+                            ></div>
+                        </div>
+                    </div>
+                );
+
+                const AssetUpload = ({ label, assetType, icon, accept = "image/*" }) => (
+                    <div className="asset-upload-group">
+                        <label><i className={icon}></i> {label}:</label>
+                        <div className="upload-controls">
+                            <input
+                                type="file"
+                                accept={accept}
+                                onChange={(e) => handleAssetUpload(assetType, e.target.files[0])}
+                                className="file-input"
+                                id={`upload-${assetType}`}
+                                disabled={uploading}
+                            />
+                            <label htmlFor={`upload-${assetType}`} className="upload-btn">
+                                <i className="fas fa-upload"></i>
+                                {uploading ? 'Yükleniyor...' : `${label} Seç`}
+                            </label>
+                            {localTheme[`${assetType}_path`] && (
+                                <span className="current-asset">
+                                    <i className="fas fa-check"></i> Yüklendi
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+
+                return (
+                    <div className="section-card">
+                        <div className="section-header">
+                            <h2 className="section-title"><i className="fas fa-palette"></i> Marka Özelleştirme</h2>
+                            <div style={{ color: '#D4B896', fontSize: '14px' }}>
+                                Müşteri: {selectedCustomer?.display_name}
+                            </div>
+                        </div>
+                        <div className="section-content">
+                            <div className="theme-tabs">
+                                <div className="tab-content">
+                                    {/* Renk Ayarları */}
+                                    <div className="theme-section">
+                                        <h3><i className="fas fa-brush"></i> Renk Paleti</h3>
+                                        <div className="color-groups">
+                                            <div className="color-group">
+                                                <h4>Ana Renkler</h4>
+                                                <ColorInput label="Ana Renk" property="primary_color" icon="fas fa-paint-brush" />
+                                                <ColorInput label="İkincil Renk" property="secondary_color" icon="fas fa-palette" />
+                                                <ColorInput label="Vurgu Rengi" property="accent_color" icon="fas fa-star" />
+                                            </div>
+
+                                            <div className="color-group">
+                                                <h4>Durum Renkleri</h4>
+                                                <ColorInput label="Başarı" property="success_color" icon="fas fa-check-circle" />
+                                                <ColorInput label="Hata" property="error_color" icon="fas fa-times-circle" />
+                                                <ColorInput label="Uyarı" property="warning_color" icon="fas fa-exclamation-triangle" />
+                                            </div>
+
+                                            <div className="color-group">
+                                                <h4>Temel Renkler</h4>
+                                                <ColorInput label="Arkaplan" property="background_color" icon="fas fa-fill" />
+                                                <ColorInput label="Metin" property="text_color" icon="fas fa-font" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Asset Yükleme */}
+                                    <div className="theme-section">
+                                        <h3><i className="fas fa-images"></i> Görsel Varlıklar</h3>
+                                        <div className="asset-groups">
+                                            <div className="asset-group">
+                                                <h4>Uygulama İkonları</h4>
+                                                <AssetUpload 
+                                                    label="Ana İkon" 
+                                                    assetType="app_icon" 
+                                                    icon="fas fa-mobile-alt"
+                                                    accept="image/png,image/jpg,image/jpeg"
+                                                />
+                                                <AssetUpload 
+                                                    label="Splash Logo" 
+                                                    assetType="splash_logo" 
+                                                    icon="fas fa-image"
+                                                    accept="image/png,image/jpg,image/jpeg,image/svg+xml"
+                                                />
+                                            </div>
+
+                                            <div className="asset-group">
+                                                <h4>Markalar</h4>
+                                                <AssetUpload 
+                                                    label="Logo" 
+                                                    assetType="brand_logo" 
+                                                    icon="fas fa-copyright"
+                                                    accept="image/*"
+                                                />
+                                                <AssetUpload 
+                                                    label="Favicon" 
+                                                    assetType="favicon" 
+                                                    icon="fas fa-bookmark"
+                                                    accept=".ico,image/png,image/jpg"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Tipografi */}
+                                    <div className="theme-section">
+                                        <h3><i className="fas fa-font"></i> Tipografi</h3>
+                                        <div className="typography-controls">
+                                            <div className="font-control">
+                                                <label>Font Ailesi:</label>
+                                                <select 
+                                                    value={localTheme.font_family || 'Inter'}
+                                                    onChange={(e) => handleColorChange('font_family', e.target.value)}
+                                                >
+                                                    <option value="Inter">Inter</option>
+                                                    <option value="Roboto">Roboto</option>
+                                                    <option value="Montserrat">Montserrat</option>
+                                                    <option value="Poppins">Poppins</option>
+                                                    <option value="Lato">Lato</option>
+                                                </select>
+                                            </div>
+                                            <div className="font-control">
+                                                <label>Font Boyutu Ölçeği:</label>
+                                                <input
+                                                    type="range"
+                                                    min="0.8"
+                                                    max="1.5"
+                                                    step="0.1"
+                                                    value={localTheme.font_size_scale || 1.0}
+                                                    onChange={(e) => handleColorChange('font_size_scale', parseFloat(e.target.value))}
+                                                />
+                                                <span>{localTheme.font_size_scale || 1.0}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div className="theme-actions">
+                                <button className="reset-btn" onClick={resetTheme}>
+                                    <i className="fas fa-undo"></i> Varsayılan Ayarlara Dön
+                                </button>
+                                <button className="save-btn" onClick={saveTheme} disabled={uploading}>
+                                    <i className="fas fa-save"></i> {uploading ? 'Kaydediliyor...' : 'Tema Ayarlarını Kaydet'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Notifications Component
+            const Notifications = () => {
+                const [notifications, setNotifications] = useState([]);
+                const [notificationForm, setNotificationForm] = useState({
+                    title: '',
+                    message: '',
+                    target: 'all',
+                    scheduled_time: ''
+                });
+                const [stats, setStats] = useState({ total: 0, sent: 0, pending: 0, failed: 0 });
+                const [showForm, setShowForm] = useState(false);
+                const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+                useEffect(() => {
+                    if (selectedCustomer) {
+                        loadNotifications();
+                        loadNotificationStats();
+                    }
+                }, [selectedCustomer]);
+
+                const loadNotifications = async () => {
+                    if (!selectedCustomer) return;
+                    
+                    setLoadingNotifications(true);
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications?limit=50`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            setNotifications(data.data || []);
+                        }
+                    } catch (error) {
+                        console.error('Error loading notifications:', error);
+                        showNotification('Bildirimler yüklenirken hata oluştu', 'error');
+                    } finally {
+                        setLoadingNotifications(false);
+                    }
+                };
+                
+                // Load notifications for all customers (for broadcast)
+                const loadAllNotifications = async () => {
+                    setLoadingNotifications(true);
+                    try {
+                        // Get all customers
+                        const customersResponse = await fetch('/api/customers', {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const customersData = await customersResponse.json();
+                        
+                        if (customersData.success && customersData.data.length > 0) {
+                            // Load notifications for the first customer or default customer
+                            const defaultCustomer = customersData.data.find(c => c.id === 'ffeee61a-8497-4c70-857e-c8f0efb13a2a') || customersData.data[0];
+                            
+                            const response = await fetch(`/api/customers/${defaultCustomer.id}/notifications?limit=50`, {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                            });
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                setNotifications(data.data || []);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading all notifications:', error);
+                    } finally {
+                        setLoadingNotifications(false);
+                    }
+                };
+
+                const loadNotificationStats = async () => {
+                    if (!selectedCustomer) return;
+                    
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications/stats`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            setStats(data.data.totals);
+                        }
+                    } catch (error) {
+                        console.error('Error loading notification stats:', error);
+                    }
+                };
+
+                const handleFormChange = (field, value) => {
+                    setNotificationForm(prev => ({
+                        ...prev,
+                        [field]: value
+                    }));
+                };
+
+                const sendNotification = async () => {
+                    if (!selectedCustomer || !notificationForm.title || !notificationForm.message) {
+                        showNotification('Başlık ve mesaj gerekli', 'error');
+                        return;
+                    }
+
+                    // Debug logging
+                    console.log('📅 Sending notification with scheduled_time:', notificationForm.scheduled_time);
+                    if (notificationForm.scheduled_time) {
+                        console.log('  - scheduled Date:', new Date(notificationForm.scheduled_time));
+                        console.log('  - current Date:', new Date());
+                        console.log('  - is future?:', new Date(notificationForm.scheduled_time) > new Date());
+                    }
+
+                    try {
+                        // Convert datetime-local to ISO format for consistent timezone handling
+                        // This ensures the server receives a proper timestamp with timezone info
+                        let scheduledTimeToSend = null;
+                        if (notificationForm.scheduled_time) {
+                            const localDateStr = notificationForm.scheduled_time;
+                            
+                            // Validate the date locally for user feedback
+                            const localDate = new Date(localDateStr);
+                            
+                            if (!isNaN(localDate.getTime())) {
+                                // Convert to ISO string for consistent timezone handling
+                                // This includes timezone information
+                                scheduledTimeToSend = localDate.toISOString();
+                                
+                                // Enhanced logging
+                                console.log('📅 Sending scheduled time:');
+                                console.log('  - datetime-local value:', localDateStr);
+                                console.log('  - Will be sent as:', scheduledTimeToSend);
+                                console.log('  - Local interpretation:', localDate.toString());
+                                console.log('  - User sees:', localDate.toLocaleString('tr-TR'));
+                                
+                                // Validate it's in the future
+                                const now = new Date();
+                                const diffMs = localDate.getTime() - now.getTime();
+                                const diffMinutes = Math.floor(diffMs / 60000);
+                                console.log('  - Time until scheduled:', diffMinutes, 'minutes');
+                                
+                                if (diffMs < 0) {
+                                    console.warn('⚠️ Selected time is in the past!');
+                                }
+                            } else {
+                                console.error('❌ Invalid date format:', localDateStr);
+                            }
+                        }
+                        
+                        const payload = {
+                            ...notificationForm,
+                            scheduled_time: scheduledTimeToSend
+                        };
+                        
+                        console.log('📤 Payload being sent:', payload);
+
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification('Bildirim başarıyla gönderildi!', 'success');
+                            setNotificationForm({ title: '', message: '', target: 'all', scheduled_time: '' });
+                            setShowForm(false);
+                            loadNotifications();
+                            loadNotificationStats();
+                        } else {
+                            showNotification('Bildirim gönderilemedi: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error sending notification:', error);
+                        showNotification('Bildirim gönderme hatası', 'error');
+                    }
+                };
+
+                const sendBroadcast = async () => {
+                    if (!notificationForm.title || !notificationForm.message) {
+                        showNotification('Başlık ve mesaj gerekli', 'error');
+                        return;
+                    }
+
+                    // Debug logging for broadcast
+                    console.log('📅 Sending BROADCAST with scheduled_time:', notificationForm.scheduled_time);
+                    if (notificationForm.scheduled_time) {
+                        console.log('  - scheduled Date:', new Date(notificationForm.scheduled_time));
+                        console.log('  - current Date:', new Date());
+                        console.log('  - is future?:', new Date(notificationForm.scheduled_time) > new Date());
+                    }
+
+                    try {
+                        // Convert datetime-local to ISO format for broadcast too
+                        // This ensures consistent timezone handling for all notifications
+                        let scheduledTimeToSend = null;
+                        if (notificationForm.scheduled_time) {
+                            const localDateStr = notificationForm.scheduled_time;
+                            
+                            // Validate the date locally for user feedback
+                            const localDate = new Date(localDateStr);
+                            
+                            if (!isNaN(localDate.getTime())) {
+                                // Convert to ISO string for consistent timezone handling
+                                // This includes timezone information
+                                scheduledTimeToSend = localDate.toISOString();
+                                
+                                // Enhanced logging
+                                console.log('📅 Sending broadcast scheduled time:');
+                                console.log('  - datetime-local value:', localDateStr);
+                                console.log('  - Will be sent as:', scheduledTimeToSend);
+                                console.log('  - Local interpretation:', localDate.toString());
+                                console.log('  - User sees:', localDate.toLocaleString('tr-TR'));
+                                
+                                // Validate it's in the future
+                                const now = new Date();
+                                const diffMs = localDate.getTime() - now.getTime();
+                                const diffMinutes = Math.floor(diffMs / 60000);
+                                console.log('  - Time until scheduled:', diffMinutes, 'minutes');
+                                
+                                if (diffMs < 0) {
+                                    console.warn('⚠️ Selected time is in the past!');
+                                }
+                            } else {
+                                console.error('❌ Invalid date format:', localDateStr);
+                            }
+                        }
+                        
+                        const payload = {
+                            title: notificationForm.title,
+                            message: notificationForm.message,
+                            target: notificationForm.target,
+                            scheduled_time: scheduledTimeToSend
+                        };
+                        
+                        console.log('📤 Broadcast payload being sent:', payload);
+
+                        const response = await fetch('/api/notifications/broadcast', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            const sentCount = data.sentCount || data.data?.totalSent || 0;
+                            showNotification(`Toplu bildirim gönderildi! (${sentCount} müşteri)`, 'success');
+                            setNotificationForm({ title: '', message: '', target: 'all', scheduled_time: '' });
+                            setShowForm(false);
+                            // Reload notifications
+                            if (selectedCustomer) {
+                                loadNotifications();
+                            } else {
+                                loadAllNotifications();
+                            }
+                            loadNotificationStats();
+                        } else {
+                            showNotification('Toplu bildirim gönderilemedi: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error sending broadcast:', error);
+                        showNotification('Toplu bildirim gönderme hatası', 'error');
+                    }
+                };
+
+                const deleteNotification = async (notificationId) => {
+                    if (!confirm('Bu bildirimi silmek istediğinizden emin misiniz?')) return;
+
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/notifications/${notificationId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            showNotification('Bildirim silindi', 'success');
+                            loadNotifications();
+                            loadNotificationStats();
+                        } else {
+                            showNotification('Bildirim silinemedi: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting notification:', error);
+                        showNotification('Bildirim silme hatası', 'error');
+                    }
+                };
+
+                const formatDate = (dateString) => {
+                    return new Date(dateString).toLocaleString('tr-TR');
+                };
+
+                const getTypeIcon = (type) => {
+                    switch (type) {
+                        case 'success': return 'fa-check-circle';
+                        case 'warning': return 'fa-exclamation-triangle';
+                        case 'error': return 'fa-times-circle';
+                        default: return 'fa-info-circle';
+                    }
+                };
+
+                const getTypeColor = (type) => {
+                    switch (type) {
+                        case 'success': return '#28a745';
+                        case 'warning': return '#ffc107';
+                        case 'error': return '#dc3545';
+                        default: return '#007bff';
+                    }
+                };
+
+                if (!selectedCustomer) {
+                    return (
+                        <div className="section-card">
+                            <div className="section-content">
+                                <p>Bildirim yönetimi için önce bir müşteri seçin.</p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div>
+                        {/* İstatistikler */}
+                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '30px' }}>
+                            <div className="stat-card" style={{ borderLeftColor: '#007bff' }}>
+                                <div className="stat-icon" style={{ color: '#007bff' }}>
+                                    <i className="fas fa-bell"></i>
+                                </div>
+                                <div className="stat-number">{stats.total}</div>
+                                <div className="stat-label">Toplam Bildirim</div>
+                            </div>
+                            <div className="stat-card" style={{ borderLeftColor: '#28a745' }}>
+                                <div className="stat-icon" style={{ color: '#28a745' }}>
+                                    <i className="fas fa-check"></i>
+                                </div>
+                                <div className="stat-number">{stats.sent}</div>
+                                <div className="stat-label">Gönderilen</div>
+                            </div>
+                            <div className="stat-card" style={{ borderLeftColor: '#ffc107' }}>
+                                <div className="stat-icon" style={{ color: '#ffc107' }}>
+                                    <i className="fas fa-clock"></i>
+                                </div>
+                                <div className="stat-number">{stats.pending}</div>
+                                <div className="stat-label">Beklemede</div>
+                            </div>
+                            <div className="stat-card" style={{ borderLeftColor: '#dc3545' }}>
+                                <div className="stat-icon" style={{ color: '#dc3545' }}>
+                                    <i className="fas fa-times"></i>
+                                </div>
+                                <div className="stat-number">{stats.failed}</div>
+                                <div className="stat-label">Başarısız</div>
+                            </div>
+                        </div>
+
+                        {/* Bildirim Gönderme Formu */}
+                        <div className="section-card" style={{ marginBottom: '30px' }}>
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-paper-plane" style={{ marginRight: '10px' }}></i>
+                                    Yeni Bildirim Gönder
+                                </h2>
+                                <button 
+                                    className="save-btn" 
+                                    onClick={() => setShowForm(!showForm)}
+                                    style={{ padding: '8px 16px', fontSize: '14px' }}
+                                >
+                                    <i className={`fas ${showForm ? 'fa-minus' : 'fa-plus'}`}></i>
+                                    {showForm ? 'Kapat' : 'Yeni Bildirim'}
+                                </button>
+                            </div>
+                            
+                            {showForm && (
+                                <div className="section-content">
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-heading" style={{ marginRight: '8px' }}></i>
+                                                Başlık:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={notificationForm.title}
+                                                onChange={(e) => handleFormChange('title', e.target.value)}
+                                                placeholder="Bildirim başlığı..."
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-users" style={{ marginRight: '8px' }}></i>
+                                                Hedef:
+                                            </label>
+                                            <select
+                                                value={notificationForm.target}
+                                                onChange={(e) => handleFormChange('target', e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    backgroundColor: 'white'
+                                                }}
+                                            >
+                                                <option value="all">Tüm Kullanıcılar</option>
+                                                <option value="authenticated">Giriş Yapmış Kullanıcılar</option>
+                                                <option value="guests">Misafir Kullanıcılar</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                <i className="fas fa-calendar" style={{ marginRight: '8px' }}></i>
+                                                Zamanlanmış Gönderim (İsteğe Bağlı):
+                                            </label>
+                                            <input
+                                                type="datetime-local"
+                                                value={notificationForm.scheduled_time}
+                                                onChange={(e) => {
+                                                    const selectedDate = new Date(e.target.value);
+                                                    const now = new Date();
+                                                    if (selectedDate < now) {
+                                                        showNotification('Geçmiş tarih seçilemez! Lütfen gelecekte bir zaman seçin.', 'error');
+                                                        return;
+                                                    }
+                                                    handleFormChange('scheduled_time', e.target.value);
+                                                }}
+                                                min={new Date().toISOString().slice(0, 16)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                            {notificationForm.scheduled_time && (
+                                                <small style={{ 
+                                                    color: '#28a745', 
+                                                    marginTop: '8px', 
+                                                    display: 'block',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500'
+                                                }}>
+                                                    <i className="fas fa-clock" style={{ marginRight: '4px' }}></i>
+                                                    Bildirim {new Date(notificationForm.scheduled_time).toLocaleString('tr-TR')} tarihinde gönderilecek
+                                                </small>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '20px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                            <i className="fas fa-comment" style={{ marginRight: '8px' }}></i>
+                                            Mesaj:
+                                        </label>
+                                        <textarea
+                                            value={notificationForm.message}
+                                            onChange={(e) => handleFormChange('message', e.target.value)}
+                                            placeholder="Bildirim mesajı..."
+                                            rows="4"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '8px',
+                                                fontSize: '14px',
+                                                resize: 'vertical'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                        <button 
+                                            className="reset-btn" 
+                                            onClick={() => setNotificationForm({ title: '', message: '', type: 'info', target: 'all', scheduled_time: '' })}
+                                        >
+                                            <i className="fas fa-eraser"></i>
+                                            Temizle
+                                        </button>
+                                        <button className="save-btn" onClick={sendBroadcast}>
+                                            <i className="fas fa-paper-plane"></i>
+                                            Bildirimi Gönder
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bildirim Geçmişi */}
+                        <div className="section-card">
+                            <div className="section-header">
+                                <h2 className="section-title">
+                                    <i className="fas fa-history" style={{ marginRight: '10px' }}></i>
+                                    Bildirim Geçmişi ({selectedCustomer.display_name})
+                                </h2>
+                                <button className="save-btn" onClick={loadNotifications} style={{ padding: '8px 16px', fontSize: '14px' }}>
+                                    <i className="fas fa-sync"></i>
+                                    Yenile
+                                </button>
+                            </div>
+                            
+                            <div className="section-content">
+                                {loadingNotifications ? (
+                                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                                        <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px', color: '#18214F' }}></i>
+                                        <p style={{ marginTop: '10px' }}>Bildirimler yükleniyor...</p>
+                                    </div>
+                                ) : notifications.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                                        <i className="fas fa-bell-slash" style={{ fontSize: '48px', marginBottom: '20px' }}></i>
+                                        <p>Henüz bildirim gönderilmemiş.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gap: '15px' }}>
+                                        {notifications.map(notification => (
+                                            <div key={notification.id} style={{
+                                                background: '#f8f9fa',
+                                                border: '1px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                padding: '20px',
+                                                borderLeft: `4px solid ${getTypeColor(notification.type)}`
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <i className={`fas ${getTypeIcon(notification.type)}`} 
+                                                           style={{ color: getTypeColor(notification.type), fontSize: '18px' }}></i>
+                                                        <h4 style={{ margin: 0, color: '#18214F' }}>{notification.title}</h4>
+                                                        <span style={{
+                                                            padding: '4px 8px',
+                                                            borderRadius: '12px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            backgroundColor: notification.status === 'sent' ? '#d4edda' : 
+                                                                             notification.status === 'scheduled' ? '#cce5ff' :
+                                                                             notification.status === 'pending' ? '#fff3cd' : '#f8d7da',
+                                                            color: notification.status === 'sent' ? '#155724' : 
+                                                                   notification.status === 'scheduled' ? '#004085' :
+                                                                   notification.status === 'pending' ? '#856404' : '#721c24'
+                                                        }}>
+                                                            {notification.status === 'sent' ? 'Gönderildi' : 
+                                                             notification.status === 'scheduled' ? 'Zamanlanmış' :
+                                                             notification.status === 'pending' ? 'Beklemede' : 'Başarısız'}
+                                                        </span>
+                                                        {notification.scheduled_time && notification.status === 'scheduled' && (
+                                                            <span style={{
+                                                                fontSize: '11px',
+                                                                color: '#666',
+                                                                marginLeft: '8px'
+                                                            }}>
+                                                                <i className="fas fa-clock" style={{ marginRight: '4px' }}></i>
+                                                                {new Date(notification.scheduled_time).toLocaleString('tr-TR', { 
+                                                                    day: '2-digit',
+                                                                    month: '2-digit',
+                                                                    year: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                                        <button 
+                                                            onClick={() => deleteNotification(notification.id)}
+                                                            style={{
+                                                                background: '#dc3545',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                padding: '6px 10px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '12px'
+                                                            }}
+                                                            title="Sil"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <p style={{ margin: '10px 0', color: '#495057', lineHeight: '1.5' }}>
+                                                    {notification.message}
+                                                </p>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6c757d' }}>
+                                                    <span>
+                                                        <i className="fas fa-users" style={{ marginRight: '5px' }}></i>
+                                                        Hedef: {
+                                                            notification.target === 'all' ? 'Tüm Kullanıcılar' : 
+                                                            notification.target === 'authenticated' ? 'Giriş Yapmış Kullanıcılar' :
+                                                            notification.target === 'guests' ? 'Misafir Kullanıcılar' :
+                                                            notification.target
+                                                        }
+                                                    </span>
+                                                    <span>
+                                                        <i className="fas fa-clock" style={{ marginRight: '5px' }}></i>
+                                                        {notification.sent_at ? `Gönderildi: ${formatDate(notification.sent_at)}` : 
+                                                         `Oluşturuldu: ${formatDate(notification.created_at)}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Users Management Component
+            const Users = () => {
+                const [users, setUsers] = useState([]);
+                const [selectedUser, setSelectedUser] = useState(null);
+                const [showDetails, setShowDetails] = useState(false);
+                const [loading, setLoading] = useState(false);
+                const [searchTerm, setSearchTerm] = useState('');
+                const [statusFilter, setStatusFilter] = useState('all');
+                const [currentPage, setCurrentPage] = useState(1);
+                const [totalPages, setTotalPages] = useState(1);
+
+                useEffect(() => {
+                    loadUsers();
+                }, [currentPage, statusFilter]);
+
+                // Load users
+                const loadUsers = async () => {
+                    setLoading(true);
+                    try {
+                        const response = await fetch(
+                            `/api/mobile-users?page=${currentPage}&limit=20&search=${searchTerm}&status=${statusFilter}`,
+                            {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                            }
+                        );
+                        const data = await response.json();
+                        if (data.success) {
+                            setUsers(data.data);
+                            setTotalPages(data.pagination.totalPages);
+                        }
+                    } catch (error) {
+                        console.error('Error loading users:', error);
+                        showNotification('Kullanıcılar yüklenemedi', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Load user details
+                const loadUserDetails = async (userId) => {
+                    try {
+                        const response = await fetch(`/api/mobile-users/${userId}`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            setSelectedUser(data.data);
+                            setShowDetails(true);
+                        }
+                    } catch (error) {
+                        console.error('Error loading user details:', error);
+                        showNotification('Kullanıcı detayları yüklenemedi', 'error');
+                    }
+                };
+
+                // Toggle user status
+                const toggleUserStatus = async (userId, currentStatus) => {
+                    try {
+                        const response = await fetch(`/api/mobile-users/${userId}/status`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                            },
+                            body: JSON.stringify({ is_active: !currentStatus })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showNotification(data.message, 'success');
+                            loadUsers();
+                        }
+                    } catch (error) {
+                        console.error('Error updating user status:', error);
+                        showNotification('Durum güncellenemedi', 'error');
+                    }
+                };
+
+                // Delete user
+                const deleteUser = async (userId) => {
+                    if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+                    
+                    try {
+                        const response = await fetch(`/api/mobile-users/${userId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showNotification(data.message, 'success');
+                            loadUsers();
+                        }
+                    } catch (error) {
+                        console.error('Error deleting user:', error);
+                        showNotification('Kullanıcı silinemedi', 'error');
+                    }
+                };
+
+                // Format date
+                const formatDate = (dateString) => {
+                    if (!dateString) return 'Hiç giriş yapmadı';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('tr-TR') + ' ' + date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                };
+
+                // Search handler
+                const handleSearch = (e) => {
+                    e.preventDefault();
+                    setCurrentPage(1);
+                    loadUsers();
+                };
+
+                return (
+                    <div className="section-card">
+                        <div className="section-header">
+                            <h2><i className="fas fa-users"></i> Kullanıcı Yönetimi</h2>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Ad veya email ara..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        style={{
+                                            padding: '8px 12px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '6px',
+                                            width: '250px'
+                                        }}
+                                    />
+                                    <button type="submit" className="btn btn-primary">
+                                        <i className="fas fa-search"></i> Ara
+                                    </button>
+                                </form>
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => {
+                                        setStatusFilter(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                    style={{
+                                        padding: '8px 12px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '6px'
+                                    }}
+                                >
+                                    <option value="all">Tüm Kullanıcılar</option>
+                                    <option value="active">Aktif</option>
+                                    <option value="inactive">Pasif</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="section-content">
+                            {loading ? (
+                                <div style={{ textAlign: 'center', padding: '50px' }}>
+                                    <i className="fas fa-spinner fa-spin" style={{ fontSize: '24px' }}></i>
+                                    <p>Yükleniyor...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '2px solid #ddd' }}>
+                                                <th style={{ padding: '15px', textAlign: 'left' }}>Ad Soyad</th>
+                                                <th style={{ padding: '15px', textAlign: 'left' }}>Email</th>
+                                                <th style={{ padding: '15px', textAlign: 'left' }}>Kayıt Tarihi</th>
+                                                <th style={{ padding: '15px', textAlign: 'left' }}>Son Aktiflik</th>
+                                                <th style={{ padding: '15px', textAlign: 'center' }}>Durum</th>
+                                                <th style={{ padding: '15px', textAlign: 'center' }}>İşlemler</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {users.map(user => (
+                                                <tr key={user.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                    <td style={{ padding: '15px' }}>{user.full_name || 'İsimsiz'}</td>
+                                                    <td style={{ padding: '15px' }}>{user.email}</td>
+                                                    <td style={{ padding: '15px' }}>{formatDate(user.created_at)}</td>
+                                                    <td style={{ padding: '15px' }}>{formatDate(user.last_login)}</td>
+                                                    <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                        <button
+                                                            onClick={() => toggleUserStatus(user.id, user.is_active)}
+                                                            style={{
+                                                                padding: '5px 10px',
+                                                                background: user.is_active ? '#28a745' : '#dc3545',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '12px'
+                                                            }}
+                                                        >
+                                                            {user.is_active ? 'Aktif' : 'Pasif'}
+                                                        </button>
+                                                    </td>
+                                                    <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                        <button
+                                                            onClick={() => loadUserDetails(user.id)}
+                                                            style={{
+                                                                padding: '8px 12px',
+                                                                marginRight: '5px',
+                                                                background: '#007bff',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            <i className="fas fa-eye"></i>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteUser(user.id)}
+                                                            style={{
+                                                                padding: '8px 12px',
+                                                                background: '#dc3545',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {users.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: '#6c757d' }}>
+                                                        Kullanıcı bulunamadı
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+
+                                    {totalPages > 1 && (
+                                        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                disabled={currentPage === 1}
+                                                className="btn btn-secondary"
+                                            >
+                                                <i className="fas fa-chevron-left"></i> Önceki
+                                            </button>
+                                            <span style={{ padding: '10px' }}>
+                                                Sayfa {currentPage} / {totalPages}
+                                            </span>
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                disabled={currentPage === totalPages}
+                                                className="btn btn-secondary"
+                                            >
+                                                Sonraki <i className="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* User Details Modal */}
+                        {showDetails && selectedUser && (
+                            <div className="modal-overlay" onClick={() => setShowDetails(false)}>
+                                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>Kullanıcı Detayları</h3>
+                                        <button className="close-btn" onClick={() => setShowDetails(false)}>
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <h4>Kullanıcı Bilgileri</h4>
+                                            <table style={{ width: '100%' }}>
+                                                <tbody>
+                                                    <tr>
+                                                        <td style={{ padding: '10px', fontWeight: 'bold' }}>Ad Soyad:</td>
+                                                        <td style={{ padding: '10px' }}>{selectedUser.user.full_name || 'İsimsiz'}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style={{ padding: '10px', fontWeight: 'bold' }}>Email:</td>
+                                                        <td style={{ padding: '10px' }}>{selectedUser.user.email}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style={{ padding: '10px', fontWeight: 'bold' }}>Durum:</td>
+                                                        <td style={{ padding: '10px' }}>
+                                                            <span style={{
+                                                                padding: '5px 10px',
+                                                                background: selectedUser.user.is_active ? '#28a745' : '#dc3545',
+                                                                color: 'white',
+                                                                borderRadius: '4px',
+                                                                fontSize: '12px'
+                                                            }}>
+                                                                {selectedUser.user.is_active ? 'Aktif' : 'Pasif'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style={{ padding: '10px', fontWeight: 'bold' }}>Kayıt Tarihi:</td>
+                                                        <td style={{ padding: '10px' }}>{formatDate(selectedUser.user.created_at)}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style={{ padding: '10px', fontWeight: 'bold' }}>Son Giriş:</td>
+                                                        <td style={{ padding: '10px' }}>{formatDate(selectedUser.user.last_login)}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {selectedUser.sessions && selectedUser.sessions.length > 0 && (
+                                            <div style={{ marginBottom: '20px' }}>
+                                                <h4>Son Giriş Geçmişi</h4>
+                                                <table style={{ width: '100%' }}>
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '1px solid #ddd' }}>
+                                                            <th style={{ padding: '10px', textAlign: 'left' }}>Tarih</th>
+                                                            <th style={{ padding: '10px', textAlign: 'left' }}>IP Adresi</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {selectedUser.sessions.slice(0, 5).map((session, idx) => (
+                                                            <tr key={idx}>
+                                                                <td style={{ padding: '10px' }}>{formatDate(session.login_time)}</td>
+                                                                <td style={{ padding: '10px' }}>{session.ip_address || 'Bilinmiyor'}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+
+                                        {selectedUser.notifications && selectedUser.notifications.length > 0 && (
+                                            <div>
+                                                <h4>Son Bildirimler</h4>
+                                                <table style={{ width: '100%' }}>
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '1px solid #ddd' }}>
+                                                            <th style={{ padding: '10px', textAlign: 'left' }}>Başlık</th>
+                                                            <th style={{ padding: '10px', textAlign: 'left' }}>Tarih</th>
+                                                            <th style={{ padding: '10px', textAlign: 'left' }}>Durum</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {selectedUser.notifications.slice(0, 5).map((notif, idx) => (
+                                                            <tr key={idx}>
+                                                                <td style={{ padding: '10px' }}>{notif.title}</td>
+                                                                <td style={{ padding: '10px' }}>{formatDate(notif.created_at)}</td>
+                                                                <td style={{ padding: '10px' }}>
+                                                                    <span style={{
+                                                                        padding: '3px 8px',
+                                                                        background: notif.status === 'sent' ? '#28a745' : '#ffc107',
+                                                                        color: 'white',
+                                                                        borderRadius: '4px',
+                                                                        fontSize: '11px'
+                                                                    }}>
+                                                                        {notif.status === 'sent' ? 'Gönderildi' : 'Bekliyor'}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Gold Management Component
+            const GoldManagement = () => {
+                const [goldProducts, setGoldProducts] = useState([]);
+                const [goldPrice, setGoldPrice] = useState(null);
+                const [showForm, setShowForm] = useState(false);
+                const [editingProduct, setEditingProduct] = useState(null);
+                const [loading, setLoading] = useState(false);
+                const [productForm, setProductForm] = useState({
+                    name: '',
+                    weight_grams: '',
+                    buy_millesimal: '',
+                    sell_millesimal: '',
+                    display_order: 0
+                });
+
+                // Load gold products
+                const loadGoldProducts = async () => {
+                    if (!selectedCustomer) return;
+                    
+                    try {
+                        const response = await fetch(`/api/customers/${selectedCustomer.id}/gold-products`);
+                        const data = await response.json();
+                        if (data.success) {
+                            setGoldProducts(data.products);
+                        }
+                    } catch (error) {
+                        console.error('Error loading gold products:', error);
+                        showNotification('Altın ürünleri yüklenemedi', 'error');
+                    }
+                };
+
+                // Load current gold price
+                const loadGoldPrice = async () => {
+                    try {
+                        const response = await fetch('/api/gold-price/current');
+                        const data = await response.json();
+                        if (data.success) {
+                            setGoldPrice(data.data);
+                        } else if (data.fallback) {
+                            setGoldPrice(data.fallback);
+                        }
+                    } catch (error) {
+                        console.error('Error loading gold price:', error);
+                    }
+                };
+
+                // Calculate prices based on millesimal
+                const calculatePrices = (product) => {
+                    if (!goldPrice) return { buy: 0, sell: 0 };
+                    const gramPrice = goldPrice.gram_price_usd;
+                    const buyPrice = gramPrice * product.weight_grams * product.buy_millesimal;
+                    const sellPrice = gramPrice * product.weight_grams * product.sell_millesimal;
+                    return {
+                        buy: buyPrice.toFixed(2),
+                        sell: sellPrice.toFixed(2)
+                    };
+                };
+
+                // Handle form submit
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    setLoading(true);
+
+                    try {
+                        const url = editingProduct 
+                            ? `/api/customers/${selectedCustomer.id}/gold-products/${editingProduct.id}`
+                            : `/api/customers/${selectedCustomer.id}/gold-products`;
+                        
+                        const method = editingProduct ? 'PUT' : 'POST';
+                        
+                        const response = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(productForm)
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification(
+                                editingProduct ? 'Ürün güncellendi' : 'Ürün eklendi',
+                                'success'
+                            );
+                            setShowForm(false);
+                            setEditingProduct(null);
+                            setProductForm({
+                                name: '',
+                                weight_grams: '',
+                                buy_millesimal: '',
+                                sell_millesimal: '',
+                                display_order: 0
+                            });
+                            loadGoldProducts();
+                        } else {
+                            showNotification(data.error || 'İşlem başarısız', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error saving product:', error);
+                        showNotification('Bir hata oluştu', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Handle delete
+                const handleDelete = async (productId) => {
+                    if (!confirm('Bu ürünü silmek istediğinizden emin misiniz?')) return;
+
+                    try {
+                        const response = await fetch(
+                            `/api/customers/${selectedCustomer.id}/gold-products/${productId}`,
+                            { method: 'DELETE' }
+                        );
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification('Ürün silindi', 'success');
+                            loadGoldProducts();
+                        } else {
+                            showNotification(data.error || 'Silme işlemi başarısız', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting product:', error);
+                        showNotification('Bir hata oluştu', 'error');
+                    }
+                };
+
+                // Handle edit
+                const handleEdit = (product) => {
+                    setEditingProduct(product);
+                    setProductForm({
+                        name: product.name,
+                        weight_grams: product.weight_grams,
+                        buy_millesimal: product.buy_millesimal,
+                        sell_millesimal: product.sell_millesimal,
+                        display_order: product.display_order || 0
+                    });
+                    setShowForm(true);
+                };
+
+                // Toggle active status
+                const toggleActive = async (product) => {
+                    try {
+                        const response = await fetch(
+                            `/api/customers/${selectedCustomer.id}/gold-products/${product.id}`,
+                            {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ is_active: !product.is_active })
+                            }
+                        );
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            showNotification('Durum güncellendi', 'success');
+                            loadGoldProducts();
+                        }
+                    } catch (error) {
+                        console.error('Error toggling active:', error);
+                    }
+                };
+
+                useEffect(() => {
+                    if (selectedCustomer) {
+                        loadGoldProducts();
+                    }
+                    loadGoldPrice();
+                    
+                    // Refresh gold price every 5 minutes
+                    const interval = setInterval(loadGoldPrice, 5 * 60 * 1000);
+                    return () => clearInterval(interval);
+                }, [selectedCustomer]);
+
+                if (!selectedCustomer) {
+                    return (
+                        <div className="section-card">
+                            <h2>Altın Yönetimi</h2>
+                            <p>Lütfen önce bir müşteri seçin.</p>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="section-card">
+                        <div className="section-header">
+                            <h2>
+                                <i className="fas fa-coins" style={{ marginRight: '10px', color: '#FFD700' }}></i>
+                                Altın Yönetimi
+                            </h2>
+                            <button 
+                                className="add-btn"
+                                onClick={() => {
+                                    setEditingProduct(null);
+                                    setProductForm({
+                                        name: '',
+                                        weight_grams: '',
+                                        buy_millesimal: '',
+                                        sell_millesimal: '',
+                                        display_order: 0
+                                    });
+                                    setShowForm(true);
+                                }}
+                            >
+                                <i className="fas fa-plus"></i> Yeni Ürün Ekle
+                            </button>
+                        </div>
+
+                        {/* Gold Price Display */}
+                        {goldPrice && (
+                            <div style={{
+                                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                                color: '#000',
+                                padding: '20px',
+                                borderRadius: '12px',
+                                marginBottom: '30px',
+                                display: 'flex',
+                                justifyContent: 'space-around',
+                                boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)'
+                            }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', opacity: 0.8 }}>Ons Altın (USD)</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                                        ${goldPrice.ounce_price_usd?.toFixed(2) || '0.00'}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', opacity: 0.8 }}>Gram Altın (USD)</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                                        ${goldPrice.gram_price_usd?.toFixed(2) || '0.00'}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '14px', opacity: 0.8 }}>Kaynak</div>
+                                    <div style={{ fontSize: '18px' }}>
+                                        {goldPrice.source || 'API'}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Product Form */}
+                        {showForm && (
+                            <div style={{
+                                background: '#f8f9fa',
+                                padding: '25px',
+                                borderRadius: '12px',
+                                marginBottom: '30px',
+                                border: '2px solid #e9ecef'
+                            }}>
+                                <h3 style={{ marginBottom: '20px' }}>
+                                    {editingProduct ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
+                                </h3>
+                                <form onSubmit={handleSubmit}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Ürün Adı
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={productForm.name}
+                                                onChange={(e) => setProductForm({...productForm, name: e.target.value})}
+                                                placeholder="Örn: Gram Altın, Çeyrek Altın"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Gram Ağırlığı
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                value={productForm.weight_grams}
+                                                onChange={(e) => setProductForm({...productForm, weight_grams: e.target.value})}
+                                                placeholder="Örn: 1.0, 1.75, 3.5, 7.0"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Alış Milyemi
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                min="0.001"
+                                                value={productForm.buy_millesimal}
+                                                onChange={(e) => setProductForm({...productForm, buy_millesimal: e.target.value})}
+                                                placeholder="Örn: 0.990, 0.995"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                                                Satış Milyemi
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.001"
+                                                min="0.001"
+                                                value={productForm.sell_millesimal}
+                                                onChange={(e) => setProductForm({...productForm, sell_millesimal: e.target.value})}
+                                                placeholder="Örn: 0.999, 1.000"
+                                                required
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px',
+                                                    border: '2px solid #e9ecef',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                                        <button 
+                                            type="submit" 
+                                            className="save-btn"
+                                            disabled={loading}
+                                        >
+                                            <i className="fas fa-save"></i> {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                setShowForm(false);
+                                                setEditingProduct(null);
+                                            }}
+                                            style={{
+                                                padding: '12px 24px',
+                                                background: '#6c757d',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            İptal
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Products Table */}
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid #e9ecef' }}>
+                                        <th style={{ padding: '15px', textAlign: 'left' }}>Ürün Adı</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Gram</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Alış Milyemi</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Satış Milyemi</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Alış Fiyatı</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Satış Fiyatı</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>Durum</th>
+                                        <th style={{ padding: '15px', textAlign: 'center' }}>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {goldProducts.map((product) => {
+                                        const prices = calculatePrices(product);
+                                        return (
+                                            <tr key={product.id} style={{ borderBottom: '1px solid #e9ecef' }}>
+                                                <td style={{ padding: '15px' }}>
+                                                    <strong>{product.name}</strong>
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    {product.weight_grams}g
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    {product.buy_millesimal}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    {product.sell_millesimal}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center', color: '#dc3545' }}>
+                                                    ${prices.buy}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center', color: '#28a745' }}>
+                                                    ${prices.sell}
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => toggleActive(product)}
+                                                        style={{
+                                                            padding: '5px 15px',
+                                                            background: product.is_active ? '#28a745' : '#dc3545',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '20px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '12px'
+                                                        }}
+                                                    >
+                                                        {product.is_active ? 'Aktif' : 'Pasif'}
+                                                    </button>
+                                                </td>
+                                                <td style={{ padding: '15px', textAlign: 'center' }}>
+                                                    <button
+                                                        onClick={() => handleEdit(product)}
+                                                        style={{
+                                                            padding: '8px 12px',
+                                                            marginRight: '5px',
+                                                            background: '#007bff',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <i className="fas fa-edit"></i>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(product.id)}
+                                                        style={{
+                                                            padding: '8px 12px',
+                                                            background: '#dc3545',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '6px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {goldProducts.length === 0 && (
+                                        <tr>
+                                            <td colSpan="8" style={{ padding: '30px', textAlign: 'center', color: '#6c757d' }}>
+                                                Henüz altın ürünü eklenmemiş
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Gold Calculator Component
+            const GoldCalculator = () => {
+                const [gram, setGram] = useState('');
+                const [milyem, setMilyem] = useState('');
+                const [calculatedValue, setCalculatedValue] = useState(null);
+                const [currentGoldPrice, setCurrentGoldPrice] = useState(null);
+                const [loading, setLoading] = useState(false);
+
+                // Fetch current gold price on component mount
+                useEffect(() => {
+                    fetchCurrentGoldPrice();
+                }, []);
+
+                const fetchCurrentGoldPrice = async () => {
+                    try {
+                        const response = await fetch('/api/gold-price/current');
+                        const data = await response.json();
+                        if (data.success && data.data) {
+                            // Use gram price in USD
+                            setCurrentGoldPrice(data.data.gram_price_usd);
+                        } else if (data.fallback) {
+                            setCurrentGoldPrice(data.fallback.gram_price_usd);
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch gold price:', error);
+                        // Fallback price in case of error
+                        setCurrentGoldPrice(65); // Approximate USD per gram
+                    }
+                };
+
+                const handleCalculate = () => {
+                    if (!gram || !milyem) {
+                        alert('Lütfen gram ve milyem değerlerini giriniz');
+                        return;
+                    }
+
+                    if (!currentGoldPrice) {
+                        alert('Güncel altın fiyatı alınamadı');
+                        return;
+                    }
+
+                    const gramValue = parseFloat(gram);
+                    const milyemValue = parseFloat(milyem);
+
+                    if (isNaN(gramValue) || gramValue <= 0) {
+                        alert('Geçerli bir gram değeri giriniz');
+                        return;
+                    }
+
+                    if (isNaN(milyemValue) || milyemValue < 0.001 || milyemValue > 1) {
+                        alert('Milyem değeri 0.001-1.000 arasında olmalıdır');
+                        return;
+                    }
+
+                    // Calculate: Value = Gram × Milyem × Current Gold Price
+                    const value = gramValue * milyemValue * currentGoldPrice;
+                    
+                    setCalculatedValue(value);
+                };
+
+                const handleReset = () => {
+                    setGram('');
+                    setMilyem('');
+                    setCalculatedValue(null);
+                };
+
+                const formatCurrency = (value) => {
+                    return new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(value);
+                };
+
+                return (
+                    <div className="section-card">
+                        <div className="section-header">
+                            <h2><i className="fas fa-calculator"></i> Altın Değer Hesaplama</h2>
+                        </div>
+                        <div className="section-content">
+                            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                                {currentGoldPrice && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+                                        color: '#333',
+                                        padding: '15px',
+                                        borderRadius: '10px',
+                                        marginBottom: '30px',
+                                        textAlign: 'center',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        <i className="fas fa-coins"></i> Güncel 24 Ayar Altın Fiyatı: {formatCurrency(currentGoldPrice)}/gram
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label>Altın Ağırlığı (Gram)</label>
+                                        <input
+                                            type="number"
+                                            value={gram}
+                                            onChange={(e) => setGram(e.target.value)}
+                                            placeholder="Örn: 10"
+                                            step="0.01"
+                                            min="0"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #ddd',
+                                                borderRadius: '8px',
+                                                fontSize: '16px'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className="form-group" style={{ flex: 1 }}>
+                                        <label>Milyem (Has Değeri)</label>
+                                        <input
+                                            type="number"
+                                            value={milyem}
+                                            onChange={(e) => setMilyem(e.target.value)}
+                                            placeholder="Örn: 0.916"
+                                            step="0.001"
+                                            min="0.001"
+                                            max="1"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px',
+                                                border: '2px solid #ddd',
+                                                borderRadius: '8px',
+                                                fontSize: '16px'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={handleCalculate}
+                                        className="btn btn-primary"
+                                        style={{
+                                            padding: '12px 30px',
+                                            background: 'linear-gradient(135deg, #007bff, #0056b3)',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            height: 'fit-content',
+                                            marginTop: '10px'
+                                        }}
+                                    >
+                                        <i className="fas fa-calculator"></i> Hesapla
+                                    </button>
+                                </div>
+
+                                {calculatedValue !== null && (
+                                    <div style={{
+                                        marginTop: '30px',
+                                        padding: '20px',
+                                        background: 'linear-gradient(135deg, #28a745, #20c997)',
+                                        borderRadius: '12px',
+                                        textAlign: 'center',
+                                        color: 'white',
+                                        animation: 'fadeIn 0.5s'
+                                    }}>
+                                        <h3 style={{ margin: '0 0 10px 0', fontSize: '20px' }}>
+                                            <i className="fas fa-coins"></i> Hesaplanan Değer
+                                        </h3>
+                                        <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
+                                            {formatCurrency(calculatedValue)}
+                                        </div>
+                                        <div style={{ marginTop: '10px', fontSize: '14px', opacity: '0.9' }}>
+                                            {gram} gram × {milyem} milyem × {formatCurrency(currentGoldPrice)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            if (loading) {
+                return (
+                    <div className="loading">
+                        <i className="fas fa-spinner"></i>
+                        <div>Yükleniyor...</div>
+                    </div>
+                );
+            }
+
+            if (!isAuthenticated) {
+                return <LoginForm />;
+            }
+
+            return (
+                <div>
+                    <div className="sidebar">
+                        <div className="sidebar-header">
+                            <h1><span className="cosmos-text">COSMOS IT</span><span className="plus-text">+</span></h1>
+                            <p>Kuyumculuk Admin Paneli</p>
+                        </div>
+                        
+                        <ul className="nav-menu">
+                            <li><a href="#" className={activeTab === 'dashboard' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('dashboard')}>
+                                <i className="fas fa-home"></i> Anasayfa
+                            </a></li>
+                            <li><a href="#" className={activeTab === 'users' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('users')}>
+                                <i className="fas fa-users"></i> Kullanıcı Yönetimi
+                            </a></li>
+                            <li><a href="#" className={activeTab === 'features' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('features')}>
+                                <i className="fas fa-toggle-on"></i> Özellik Yönetimi
+                            </a></li>
+                            <li><a href="#" className={activeTab === 'theme' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('theme')}>
+                                <i className="fas fa-palette"></i> Marka Özelleştirme
+                            </a></li>
+                            <li><a href="#" className={activeTab === 'notifications' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('notifications')}>
+                                <i className="fas fa-bell"></i> Bildirim Yönetimi
+                            </a></li>
+                            <li><a href="#" className={activeTab === 'gold' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('gold')}>
+                                <i className="fas fa-coins"></i> Altın Yönetimi
+                            </a></li>
+                            <li><a href="#" className={activeTab === 'goldCalculator' ? 'active' : ''} 
+                                  onClick={() => setActiveTab('goldCalculator')}>
+                                <i className="fas fa-calculator"></i> Değer Hesaplama
+                            </a></li>
+                        </ul>
+                    </div>
+
+                    <div className="main-content">
+                        <div className="top-bar">
+                            <h1 className="page-title">
+                                {activeTab === 'dashboard' && 'Anasayfa'}
+                                {activeTab === 'users' && 'Kullanıcı Yönetimi'}
+                                {activeTab === 'features' && 'Özellik Yönetimi'}
+                                {activeTab === 'theme' && 'Marka Özelleştirme'}
+                                {activeTab === 'notifications' && 'Bildirim Yönetimi'}
+                                {activeTab === 'gold' && 'Altın Yönetimi'}
+                                {activeTab === 'goldCalculator' && 'Değer Hesaplama'}
+                            </h1>
+                            
+                            <div className="user-info">
+                                <span>Hoşgeldin, {currentUser?.username}</span>
+                                <button className="logout-btn" onClick={logout}>
+                                    <i className="fas fa-sign-out-alt"></i> Çıkış
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="content-area">
+                            {activeTab === 'dashboard' && <Dashboard />}
+                            {activeTab === 'users' && <Users />}
+                            {activeTab === 'features' && <Features />}
+                            {activeTab === 'theme' && <ThemeCustomization />}
+                            {activeTab === 'notifications' && <Notifications />}
+                            {activeTab === 'gold' && <GoldManagement />}
+                            {activeTab === 'goldCalculator' && <GoldCalculator />}
+                        </div>
+                    </div>
+
+                    {/* Real-time indicator */}
+                    <div className={`realtime-indicator ${realtimeStatus === 'connected' ? '' : 'disconnected'}`}>
+                        <div className="pulse"></div>
+                        {realtimeStatus === 'connected' ? 'Canlı Bağlantı Aktif' : 'Bağlantı Kopuk'}
+                    </div>
+
+                    {/* Notification */}
+                    {notification && (
+                        <div className={`notification ${notification.type} show`}>
+                            <i className={`fas ${notification.type === 'success' ? 'fa-check-circle' : notification.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}`}></i>
+                            {notification.message}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));

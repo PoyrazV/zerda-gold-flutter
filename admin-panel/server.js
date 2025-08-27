@@ -865,14 +865,23 @@ async function sendFCMNotification(customerId, notificationData) {
 
         const fcmTokens = tokens.map(t => t.fcm_token);
         console.log(`🔥 Sending FCM to ${fcmTokens.length} tokens for customer ${customerId}`);
+        console.log(`📋 Notification content:
+          Title: ${notificationData.title}
+          Message: ${notificationData.message}
+          Type: ${notificationData.type}
+          Target: ${notificationData.target}`);
 
         try {
-          // Prepare DATA-ONLY message to prevent duplicate notifications
-          // Flutter app will handle displaying the notification
+          // Prepare message with BOTH notification and data fields
+          // This ensures the notification works when app is killed
           const baseMessage = {
-            // NO notification field - this prevents Firebase from auto-displaying
+            // Include notification field for system to display when app is killed
+            notification: {
+              title: notificationData.title || 'Zerda Gold',
+              body: notificationData.message || '',
+            },
+            // Also include data for custom handling when app is in foreground
             data: {
-              // Move notification content to data payload
               title: notificationData.title || 'Zerda Gold',
               body: notificationData.message || '',
               type: notificationData.type || 'info',
@@ -882,15 +891,30 @@ async function sendFCMNotification(customerId, notificationData) {
             },
             android: {
               priority: 'high',
-              // Data-only message - no notification field here
+              notification: {
+                channelId: 'zerda_notifications',
+                priority: 'high',
+                defaultSound: true,
+                clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+              },
+              // Enable wake lock for background processing
+              ttl: 86400000, // 24 hours
             },
             apns: {
               payload: {
                 aps: {
-                  // Data-only for iOS too
+                  alert: {
+                    title: notificationData.title || 'Zerda Gold',
+                    body: notificationData.message || '',
+                  },
+                  badge: 1,
+                  sound: 'default',
                   contentAvailable: true,
-                  // No alert field to prevent auto-display
+                  mutableContent: true,
                 },
+              },
+              headers: {
+                'apns-priority': '10',
               },
             },
           };
@@ -898,9 +922,16 @@ async function sendFCMNotification(customerId, notificationData) {
           // Send to each token individually for better compatibility
           const sendPromises = fcmTokens.map(token => {
             const message = { ...baseMessage, token };
+            console.log(`📤 Sending FCM message to token: ${token.substring(0, 20)}...`);
             return admin.messaging().send(message)
-              .then(response => ({ success: true, response, token }))
-              .catch(error => ({ success: false, error, token }));
+              .then(response => {
+                console.log(`✅ FCM sent successfully to ${token.substring(0, 20)}... Response: ${response}`);
+                return { success: true, response, token };
+              })
+              .catch(error => {
+                console.error(`❌ FCM failed for ${token.substring(0, 20)}... Error: ${error.message}`);
+                return { success: false, error, token };
+              });
           });
 
           const results = await Promise.all(sendPromises);
@@ -1495,9 +1526,22 @@ app.post('/api/mobile/register-fcm-token', async (req, res) => {
 const API_NINJAS_KEY = 'qsHGB+VLocvWUHhJp1Hz2w==NMto19ZMjVwc7axC';
 const API_NINJAS_URL = 'https://api.api-ninjas.com/v1/commodityprice?name=gold';
 
-// Get current gold price from API Ninjas
+// Gold price cache - 1 minute cache to reduce API calls
+let goldPriceCache = null;
+let lastGoldPriceFetch = null;
+const GOLD_CACHE_DURATION = 60 * 1000; // 1 dakika
+
+// Get current gold price from API Ninjas with caching
 app.get('/api/gold-price/current', async (req, res) => {
   try {
+    // Check cache first
+    const now = Date.now();
+    if (goldPriceCache && lastGoldPriceFetch && (now - lastGoldPriceFetch) < GOLD_CACHE_DURATION) {
+      console.log('🔄 Returning cached gold price (saved ' + Math.round((now - lastGoldPriceFetch) / 1000) + ' seconds ago)');
+      return res.json(goldPriceCache);
+    }
+    
+    console.log('📡 Fetching fresh gold price from API Ninjas...');
     const fetch = (await import('node-fetch')).default;
     const response = await fetch(API_NINJAS_URL, {
       headers: {
@@ -1515,18 +1559,35 @@ app.get('/api/gold-price/current', async (req, res) => {
     const ouncePrice = data.price || 0;
     const gramPrice = ouncePrice / 31.1035; // 1 troy ounce = 31.1035 grams
     
-    res.json({
+    // Prepare response and cache it
+    const responseData = {
       success: true,
       data: {
         ounce_price_usd: ouncePrice,
         gram_price_usd: gramPrice,
         currency: 'USD',
         updated: data.updated || new Date().toISOString(),
-        source: 'API Ninjas'
+        source: 'API Ninjas',
+        cached_at: new Date().toISOString()
       }
-    });
+    };
+    
+    // Update cache
+    goldPriceCache = responseData;
+    lastGoldPriceFetch = now;
+    console.log('✅ Gold price fetched and cached successfully');
+    
+    res.json(responseData);
   } catch (error) {
     console.error('Gold price fetch error:', error);
+    
+    // If we have cached data, return it even if expired
+    if (goldPriceCache) {
+      console.log('⚠️ API failed, returning expired cache');
+      goldPriceCache.data.source = 'Expired Cache';
+      return res.json(goldPriceCache);
+    }
+    
     res.json({
       success: false,
       error: 'Altın fiyatı alınamadı',
@@ -1607,6 +1668,16 @@ app.post('/api/customers/:customerId/gold-products', (req, res) => {
             });
           }
           
+          // Emit WebSocket event for real-time update
+          io.emit('gold-products-updated', {
+            action: 'added',
+            customerId: customerId,
+            product: product,
+            timestamp: new Date().toISOString()
+          });
+          
+          console.log('📢 WebSocket event emitted: gold-products-updated (added)');
+          
           res.json({
             success: true,
             product: product
@@ -1686,6 +1757,16 @@ app.put('/api/customers/:customerId/gold-products/:productId', (req, res) => {
         'SELECT * FROM gold_products WHERE id = ?',
         [productId],
         (err, product) => {
+          // Emit WebSocket event for real-time update
+          io.emit('gold-products-updated', {
+            action: 'updated',
+            customerId: customerId,
+            product: product,
+            timestamp: new Date().toISOString()
+          });
+          
+          console.log('📢 WebSocket event emitted: gold-products-updated (updated)');
+          
           res.json({
             success: true,
             product: product
@@ -1718,6 +1799,16 @@ app.delete('/api/customers/:customerId/gold-products/:productId', (req, res) => 
           error: 'Ürün bulunamadı'
         });
       }
+      
+      // Emit WebSocket event for real-time update
+      io.emit('gold-products-updated', {
+        action: 'deleted',
+        customerId: customerId,
+        productId: productId,
+        timestamp: new Date().toISOString()
+      });
+      
+      console.log('📢 WebSocket event emitted: gold-products-updated (deleted)');
       
       res.json({
         success: true,

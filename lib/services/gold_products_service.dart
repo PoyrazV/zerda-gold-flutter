@@ -10,6 +10,8 @@ class GoldProductsService {
   static List<Map<String, dynamic>>? _cachedProducts;
   static DateTime? _lastFetchTime;
   static const Duration cacheDuration = Duration(seconds: 2);
+  static const String cachedProductsKey = 'cached_gold_products';
+  static const String cachedProductsTimeKey = 'cached_gold_products_time';
 
   // Get customer ID from preferences
   static Future<String> getCustomerId() async {
@@ -20,6 +22,36 @@ class GoldProductsService {
       print('Error getting customer ID: $e');
       return defaultCustomerId;
     }
+  }
+  
+  // Save products to persistent storage
+  static Future<void> _saveProductsToStorage(List<Map<String, dynamic>> products) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final productsJson = json.encode(products);
+      await prefs.setString(cachedProductsKey, productsJson);
+      await prefs.setString(cachedProductsTimeKey, DateTime.now().toIso8601String());
+      print('Products saved to persistent storage');
+    } catch (e) {
+      print('Error saving products to storage: $e');
+    }
+  }
+  
+  // Load products from persistent storage
+  static Future<List<Map<String, dynamic>>?> _loadProductsFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final productsJson = prefs.getString(cachedProductsKey);
+      
+      if (productsJson != null) {
+        final products = List<Map<String, dynamic>>.from(json.decode(productsJson));
+        print('Loaded ${products.length} products from persistent storage');
+        return products;
+      }
+    } catch (e) {
+      print('Error loading products from storage: $e');
+    }
+    return null;
   }
 
   // Fetch gold products from admin panel
@@ -61,6 +93,9 @@ class GoldProductsService {
           
           _cachedProducts = activeProducts;
           _lastFetchTime = DateTime.now();
+          
+          // Save to persistent storage
+          await _saveProductsToStorage(activeProducts);
           
           print('GoldProductsService: Loaded ${activeProducts.length} active products');
           return activeProducts;
@@ -154,17 +189,101 @@ class GoldProductsService {
   // Get all products with calculated prices
   static Future<List<Map<String, dynamic>>> getProductsWithPrices() async {
     try {
+      // First, try to load from persistent storage if cache is empty
+      if (_cachedProducts == null || _cachedProducts!.isEmpty) {
+        final storedProducts = await _loadProductsFromStorage();
+        if (storedProducts != null && storedProducts.isNotEmpty) {
+          _cachedProducts = storedProducts;
+          print('Using products from persistent storage for initial load');
+        }
+      }
+      
       final products = await getGoldProducts();
+      
+      // If no products, return cached or fallback
+      if (products.isEmpty) {
+        // Return cached products if available instead of empty array
+        if (_cachedProducts != null && _cachedProducts!.isNotEmpty) {
+          print('No products from API, returning cached products');
+          final goldPrice = await getCurrentGoldPrice();
+          final gramPrice = goldPrice['gram_price_usd'] ?? 108.73;
+          
+          final cachedWithPrices = <Map<String, dynamic>>[];
+          for (final product in _cachedProducts!) {
+            final weightGrams = (product['weight_grams'] ?? 0).toDouble();
+            final buyMillesimal = (product['buy_millesimal'] ?? 0).toDouble();
+            final sellMillesimal = (product['sell_millesimal'] ?? 0).toDouble();
+            
+            final buyPrice = gramPrice * weightGrams * buyMillesimal;
+            final sellPrice = gramPrice * weightGrams * sellMillesimal;
+            final change = (DateTime.now().millisecond % 100 - 50) * 0.01;
+            
+            cachedWithPrices.add({
+              'code': product['id'] ?? 'GOLD',
+              'name': product['name'] ?? 'Altın',
+              'buyPrice': buyPrice,
+              'sellPrice': sellPrice,
+              'change': change,
+              'isPositive': change > 0,
+              'weight_grams': weightGrams,
+              'buy_millesimal': buyMillesimal,
+              'sell_millesimal': sellMillesimal,
+              'timestamp': DateTime.now().toIso8601String(),
+            });
+          }
+          return cachedWithPrices;
+        }
+        return _getFallbackProducts();
+      }
+      
+      // Fetch gold price ONCE for all products
+      final goldPrice = await getCurrentGoldPrice();
+      final gramPrice = goldPrice['gram_price_usd'] ?? 108.73;
+      
       final productsWithPrices = <Map<String, dynamic>>[];
       
+      // Calculate prices for all products using the same gold price
       for (final product in products) {
-        final pricesData = await calculateProductPrices(product);
-        productsWithPrices.add(pricesData);
+        final weightGrams = (product['weight_grams'] ?? 0).toDouble();
+        final buyMillesimal = (product['buy_millesimal'] ?? 0).toDouble();
+        final sellMillesimal = (product['sell_millesimal'] ?? 0).toDouble();
+        
+        final buyPrice = gramPrice * weightGrams * buyMillesimal;
+        final sellPrice = gramPrice * weightGrams * sellMillesimal;
+        
+        // Mock change data for now
+        final change = (DateTime.now().millisecond % 100 - 50) * 0.01;
+        
+        productsWithPrices.add({
+          'code': product['id'] ?? 'GOLD',
+          'name': product['name'] ?? 'Altın',
+          'buyPrice': buyPrice,
+          'sellPrice': sellPrice,
+          'change': change,
+          'isPositive': change > 0,
+          'weight_grams': weightGrams,
+          'buy_millesimal': buyMillesimal,
+          'sell_millesimal': sellMillesimal,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
       }
       
       return productsWithPrices;
     } catch (e) {
       print('Error getting products with prices: $e');
+      // Return cached products if available
+      if (_cachedProducts != null && _cachedProducts!.isNotEmpty) {
+        print('Returning cached products due to error');
+        return _cachedProducts!.map((p) => {
+          'code': p['id'] ?? 'GOLD',
+          'name': p['name'] ?? 'Altın',
+          'buyPrice': 0.0,
+          'sellPrice': 0.0,
+          'change': 0.0,
+          'isPositive': false,
+          'timestamp': DateTime.now().toIso8601String(),
+        }).toList();
+      }
       return _getFallbackProducts();
     }
   }
@@ -172,6 +291,66 @@ class GoldProductsService {
   // Fallback products when API is unavailable
   static List<Map<String, dynamic>> _getFallbackProducts() {
     return [
+      {
+        'code': 'GRAM',
+        'name': 'Gram Altın',
+        'buyPrice': 2640.50,
+        'sellPrice': 2654.30,
+        'change': 0.65,
+        'isPositive': true,
+        'weight_grams': 1.0,
+        'buy_millesimal': 0.995,
+        'sell_millesimal': 1.000,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      {
+        'code': 'CEYREK',
+        'name': 'Çeyrek Altın',
+        'buyPrice': 4570.00,
+        'sellPrice': 4595.00,
+        'change': 0.85,
+        'isPositive': true,
+        'weight_grams': 1.75,
+        'buy_millesimal': 0.916,
+        'sell_millesimal': 0.916,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      {
+        'code': 'YARIM',
+        'name': 'Yarım Altın',
+        'buyPrice': 9140.00,
+        'sellPrice': 9190.00,
+        'change': 1.12,
+        'isPositive': true,
+        'weight_grams': 3.5,
+        'buy_millesimal': 0.916,
+        'sell_millesimal': 0.916,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      {
+        'code': 'TAM',
+        'name': 'Tam Altın',
+        'buyPrice': 18280.00,
+        'sellPrice': 18380.00,
+        'change': 0.95,
+        'isPositive': true,
+        'weight_grams': 7.0,
+        'buy_millesimal': 0.916,
+        'sell_millesimal': 0.916,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      {
+        'code': 'CUMHUR',
+        'name': 'Cumhuriyet Altını',
+        'buyPrice': 18500.00,
+        'sellPrice': 18600.00,
+        'change': 0.78,
+        'isPositive': true,
+        'weight_grams': 7.216,
+        'buy_millesimal': 0.917,
+        'sell_millesimal': 0.917,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
       {
         'code': 'ONSALTIN',
         'name': 'Ons Altın',

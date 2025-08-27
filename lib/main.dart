@@ -5,45 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
 import 'services/notification_service.dart';
 
-// Background message handler - MUST be top-level function
+// Background message handler - Forward to NotificationService handler
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Ensure Firebase is initialized
-  await Firebase.initializeApp();
-  
-  // Data-only messages: extract from data payload
-  final String title = message.data['title'] ?? 'Zerda Gold';
-  final String body = message.data['body'] ?? 'Yeni bildirim';
-  
-  print('🔔 Background message received (data-only): $title');
-  
-  // Firebase will NOT auto-display data-only messages
-  // Store notification data for later processing when app opens
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final notifications = prefs.getStringList('background_notifications') ?? [];
-    
-    final notificationData = {
-      'id': message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      'title': title,
-      'message': body,
-      'type': message.data['type'] ?? 'info',
-      'timestamp': DateTime.now().toIso8601String(),
-      'data': message.data,
-    };
-    
-    notifications.add(jsonEncode(notificationData));
-    await prefs.setStringList('background_notifications', notifications);
-    print('📬 Stored background notification for later processing');
-  } catch (e) {
-    print('❌ Failed to store background notification: $e');
-  }
+  // Forward to the actual handler in NotificationService
+  // This avoids duplication and ensures consistent handling
+  await NotificationService.handleBackgroundMessage(message);
 }
 
 void main() async {
@@ -74,7 +49,14 @@ void main() async {
   }
   
   // Run app immediately, initialize services in background
-  runApp(MyApp());
+  runApp(
+    kDebugMode
+        ? DevicePreview(
+            enabled: true,
+            builder: (context) => MyApp(),
+          )
+        : MyApp(),
+  );
   
   // Initialize services after app starts
   AuthService().initialize();
@@ -189,6 +171,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           return MaterialApp(
             navigatorKey: _navigatorKey,
             title: 'zerdagold',
+            locale: DevicePreview.locale(context), // Add DevicePreview locale support
             theme: _dynamicTheme ?? AppTheme.lightTheme,
             darkTheme: _dynamicTheme ?? AppTheme.darkTheme,
             themeMode: _dynamicTheme != null 
@@ -196,12 +179,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 : ThemeMode.light,
           // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
           builder: (context, child) {
-            return MediaQuery(
+            // Wrap with DevicePreview.appBuilder in debug mode
+            final mediaQueryChild = MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(1.0),
               ),
               child: child!,
             );
+            
+            return kDebugMode 
+                ? DevicePreview.appBuilder(context, mediaQueryChild)
+                : mediaQueryChild;
           },
           // 🚨 END CRITICAL SECTION
           debugShowCheckedModeBanner: false,

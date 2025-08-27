@@ -108,5 +108,3 @@ flutter build ios --release
 - Built with [Rocket.new](https://rocket.new)
 - Powered by [Flutter](https://flutter.dev) & [Dart](https://dart.dev)
 - Styled with Material Design
-
-Built with ❤️ on Rocket.new

@@ -112,6 +112,7 @@
             color: white;
             z-index: 1000;
             overflow-y: auto;
+            overflow-x: hidden;
             box-shadow: 4px 0 20px rgba(0,0,0,0.3);
         }
         
@@ -2670,7 +2671,6 @@
                                                 type="number"
                                                 step="0.001"
                                                 min="0.001"
-                                                max="1.000"
                                                 value={productForm.buy_millesimal}
                                                 onChange={(e) => setProductForm({...productForm, buy_millesimal: e.target.value})}
                                                 placeholder="Örn: 0.990, 0.995"
@@ -2692,7 +2692,6 @@
                                                 type="number"
                                                 step="0.001"
                                                 min="0.001"
-                                                max="1.000"
                                                 value={productForm.sell_millesimal}
                                                 onChange={(e) => setProductForm({...productForm, sell_millesimal: e.target.value})}
                                                 placeholder="Örn: 0.999, 1.000"

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
          In most cases you can leave this as-is, but you if you want to provide
@@ -60,11 +61,13 @@
         <!-- Firebase Cloud Messaging configuration -->
         <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"
-            android:exported="false">
+            android:exported="false"
+            android:directBootAware="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        
         
         <!-- Default notification channel metadata -->
         <meta-data
@@ -76,6 +79,22 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@android:color/holo_blue_bright" />
+        
+        <!-- High priority notifications metadata -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_priority"
+            android:value="high" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_sound"
+            android:value="default" />
+        
+        <!-- Auto initialization for FCM -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="true" />
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
     </application>
     <queries>
         <intent>

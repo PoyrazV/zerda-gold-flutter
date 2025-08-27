@@ -7,8 +7,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
-import '../../services/metals_api_service.dart';
 import '../../services/gold_products_service.dart';
+import '../../services/gold_websocket_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -28,6 +28,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
   Map<String, dynamic>? _goldData;
   bool _isLoading = true;
   Timer? _periodicRefreshTimer;
+  StreamSubscription? _goldUpdatesSubscription;
 
   // Featured gold items for the featured cards section
   final List<Map<String, dynamic>> _featuredGoldData = [
@@ -225,11 +226,37 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     // Listen to theme changes
     ThemeConfigService().addListener(_onThemeChanged);
     
-    // Fetch gold price on init
+    // Connect to WebSocket for real-time updates
+    GoldWebSocketService.instance.connect();
+    
+    // Listen to WebSocket updates
+    _goldUpdatesSubscription = GoldWebSocketService.instance.goldUpdates.listen((update) {
+      print('🔄 Real-time gold update received: ${update['action']}');
+      // Refresh data when products are added/updated/deleted
+      if (mounted) {
+        setState(() {
+          // Clear any loading state
+          _isLoading = false;
+        });
+        _fetchGoldPrice();
+      }
+    });
+    
+    // Load data immediately (will use persistent cache if available)
     _fetchGoldPrice();
     
-    // Start periodic refresh timer (every 5 seconds to match cache duration)
-    _startPeriodicRefresh();
+    // Add small delay for network initialization, then refresh with fresh data
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        // Clear cache to force fresh API call
+        GoldProductsService.clearCache();
+        // Fetch fresh data from API
+        _fetchGoldPrice();
+        
+        // Start periodic refresh timer
+        _startPeriodicRefresh();
+      }
+    });
   }
   
   Future<void> _fetchGoldPrice() async {
@@ -237,31 +264,19 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
       // Fetch products from admin panel
       final products = await GoldProductsService.getProductsWithPrices();
       
-      // If no products from admin panel, use API Ninjas for ounce gold
-      if (products.isEmpty) {
-        final data = await MetalsApiService.getGoldPrice();
+      // Use products from admin panel (no longer calling MetalsApiService)
+      if (products.isNotEmpty) {
         if (mounted) {
           setState(() {
-            _goldData = data;
-            _goldCoinData = [
-              {
-                'code': 'ONSALTIN',
-                'name': 'Ons Altın (USD)',
-                'buyPrice': data['buyPriceUSD'],
-                'sellPrice': data['sellPriceUSD'],
-                'change': data['change'],
-                'isPositive': data['isPositive'],
-                'timestamp': data['timestamp'],
-              },
-            ];
+            _goldCoinData = products;
             _isLoading = false;
           });
         }
       } else {
-        // Use products from admin panel
+        // No products available, show empty state
         if (mounted) {
           setState(() {
-            _goldCoinData = products;
+            _goldCoinData = [];
             _isLoading = false;
           });
         }
@@ -295,8 +310,9 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     // Cancel existing timer if any
     _periodicRefreshTimer?.cancel();
     
-    // Create new timer that refreshes every 2 seconds
-    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    // Create new timer that refreshes every 30 seconds (reduced from 3 seconds)
+    // WebSocket provides real-time updates, so periodic refresh is just backup
+    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       // Only refresh if the widget is still mounted
       if (mounted) {
         _silentRefresh();
@@ -306,37 +322,21 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
   
   // Silent refresh without loading indicators
   Future<void> _silentRefresh() async {
-    // Clear cache to force fresh data
-    GoldProductsService.clearCache();
-    
     try {
       // Fetch products from admin panel
       final products = await GoldProductsService.getProductsWithPrices();
       
-      if (products.isEmpty) {
-        // Fallback to API if no products
-        final data = await MetalsApiService.getGoldPrice();
-        if (mounted) {
-          setState(() {
-            _goldData = data;
-            _goldCoinData = [
-              {
-                'code': 'ONSALTIN',
-                'name': 'Ons Altın (USD)',
-                'buyPrice': data['buyPriceUSD'],
-                'sellPrice': data['sellPriceUSD'],
-                'change': data['change'],
-                'isPositive': data['isPositive'],
-                'timestamp': data['timestamp'],
-              },
-            ];
-          });
-        }
-      } else {
-        // Update with products from admin panel
+      if (products.isNotEmpty) {
         if (mounted) {
           setState(() {
             _goldCoinData = products;
+          });
+        }
+      } else {
+        // No products available, show empty state
+        if (mounted) {
+          setState(() {
+            _goldCoinData = [];
           });
         }
       }
@@ -349,10 +349,12 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
   @override
   void dispose() {
     _periodicRefreshTimer?.cancel();
+    _goldUpdatesSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     WatchlistService.removeListener(_updateTicker);
     ThemeConfigService().removeListener(_onThemeChanged);
     _refreshController.dispose();
+    GoldWebSocketService.instance.disconnect();
     super.dispose();
   }
   
@@ -391,14 +393,6 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
     });
 
     _refreshController.reverse();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Altın fiyatları güncellendi'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   void _openMenu() {
@@ -695,7 +689,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(top: 1.w, right: 0.5.w),
+                    padding: EdgeInsets.only(top: 1.w),
                     child: Text(
                       CurrencyFormatter.formatNumber(gold['sellPrice'] as double, decimalPlaces: 2),
                       textAlign: TextAlign.right,
@@ -709,13 +703,13 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                   ),
                   SizedBox(height: 1.5.w),
                   Padding(
-                    padding: EdgeInsets.only(top: 1.5.w, right: 3.w),
+                    padding: EdgeInsets.only(top: 1.5.w),
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
                       decoration: BoxDecoration(
                         color: isPositive 
-                            ? AppColors.positive.withOpacity(0.1) // Green background for increase
-                            : AppColors.negative.withOpacity(0.1), // Red background for decrease
+                            ? const Color(0xFFECFDF5) // Green background for increase
+                            : const Color(0xFFFEF2F2), // Red background for decrease
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
                           color: isPositive 
@@ -730,8 +724,8 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                           fontSize: 2.7.w,
                           fontWeight: FontWeight.w500, // Medium weight
                           color: isPositive 
-                              ? AppColors.positive // Green text
-                              : AppColors.negative, // Red text
+                              ? const Color(0xFF047857) // Green text
+                              : const Color(0xFFB91C1C), // Red text
                           height: 1.0,
                         ),
                       ),

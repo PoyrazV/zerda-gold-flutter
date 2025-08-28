@@ -30,6 +30,7 @@ class UserDataService extends ChangeNotifier {
   
   // Initialize service
   Future<void> initialize() async {
+    print('🔄 UserDataService: Initializing...');
     _dio = Dio(BaseOptions(
       baseUrl: _apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
@@ -38,20 +39,28 @@ class UserDataService extends ChangeNotifier {
     
     // Listen to auth changes
     _authService.addListener(_onAuthChanged);
+    print('🔄 UserDataService: Added auth listener');
     
     // Load data for current user if logged in
     if (_authService.isLoggedIn) {
+      print('✅ UserDataService: User is logged in, userId: ${_authService.userId}');
       await loadUserData(_authService.userId);
+    } else {
+      print('⚠️ UserDataService: User is not logged in at initialization');
     }
   }
   
   // Handle auth state changes
   void _onAuthChanged() async {
+    print('🔔 UserDataService: Auth state changed - isLoggedIn: ${_authService.isLoggedIn}, userId: ${_authService.userId}, currentUserId: $_currentUserId');
+    
     if (_authService.isLoggedIn && _authService.userId != _currentUserId) {
       // User logged in or switched
+      print('✅ UserDataService: User logged in or switched, loading data for userId: ${_authService.userId}');
       await loadUserData(_authService.userId);
     } else if (!_authService.isLoggedIn && _currentUserId != null) {
       // User logged out
+      print('👋 UserDataService: User logged out, clearing data');
       await clearCurrentUserData();
     }
   }
@@ -162,10 +171,26 @@ class UserDataService extends ChangeNotifier {
   
   // Add to watchlist
   Future<void> addToWatchlist(Map<String, dynamic> item) async {
-    if (_currentUserId == null) return;
+    print('📝 UserDataService: addToWatchlist called for ${item['code']}, currentUserId: $_currentUserId');
+    
+    // Try to get userId if null
+    if (_currentUserId == null) {
+      print('⚠️ UserDataService: currentUserId is null, trying to get from AuthService...');
+      if (_authService.isLoggedIn && _authService.userId != null) {
+        _currentUserId = _authService.userId;
+        print('✅ UserDataService: Retrieved userId from AuthService: $_currentUserId');
+      } else {
+        print('❌ UserDataService: Cannot add to watchlist - no user logged in');
+        return;
+      }
+    }
     
     _watchlist[item['code']] = item;
+    print('✅ UserDataService: Added ${item['code']} to in-memory watchlist');
+    
     await _saveWatchlistToStorage();
+    print('✅ UserDataService: Saved watchlist to storage');
+    
     notifyListeners();
     
     // Sync with backend
@@ -174,10 +199,26 @@ class UserDataService extends ChangeNotifier {
   
   // Remove from watchlist
   Future<void> removeFromWatchlist(String code) async {
-    if (_currentUserId == null) return;
+    print('🗑️ UserDataService: removeFromWatchlist called for $code, currentUserId: $_currentUserId');
+    
+    // Try to get userId if null
+    if (_currentUserId == null) {
+      print('⚠️ UserDataService: currentUserId is null, trying to get from AuthService...');
+      if (_authService.isLoggedIn && _authService.userId != null) {
+        _currentUserId = _authService.userId;
+        print('✅ UserDataService: Retrieved userId from AuthService: $_currentUserId');
+      } else {
+        print('❌ UserDataService: Cannot remove from watchlist - no user logged in');
+        return;
+      }
+    }
     
     _watchlist.remove(code);
+    print('✅ UserDataService: Removed $code from in-memory watchlist');
+    
     await _saveWatchlistToStorage();
+    print('✅ UserDataService: Saved watchlist to storage');
+    
     notifyListeners();
     
     // Sync with backend
@@ -271,14 +312,19 @@ class UserDataService extends ChangeNotifier {
   
   // Private helper to save watchlist to storage
   Future<void> _saveWatchlistToStorage() async {
-    if (_currentUserId == null) return;
+    if (_currentUserId == null) {
+      print('❌ UserDataService: Cannot save watchlist - currentUserId is null');
+      return;
+    }
     
     try {
       final prefs = await SharedPreferences.getInstance();
       final key = 'user_${_currentUserId}_watchlist';
-      await prefs.setString(key, jsonEncode(_watchlist));
+      final watchlistJson = jsonEncode(_watchlist);
+      await prefs.setString(key, watchlistJson);
+      print('💾 UserDataService: Saved watchlist to key: $key, items count: ${_watchlist.length}');
     } catch (e) {
-      print('UserDataService: Error saving watchlist to storage: $e');
+      print('❌ UserDataService: Error saving watchlist to storage: $e');
     }
   }
   

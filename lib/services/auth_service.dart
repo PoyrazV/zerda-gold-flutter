@@ -30,6 +30,8 @@ class AuthService extends ChangeNotifier {
 
   // Initialize auth state from SharedPreferences
   Future<void> initialize() async {
+    print('🔐 AuthService: Initializing...');
+    
     // Initialize Dio
     _dio = Dio(BaseOptions(
       baseUrl: _apiBaseUrl,
@@ -45,11 +47,15 @@ class AuthService extends ChangeNotifier {
     _userId = prefs.getString('userId');
     _authToken = prefs.getString('authToken');
     
+    print('🔐 AuthService: Loaded from storage - isLoggedIn: $_isLoggedIn, userId: $_userId, email: $_userEmail');
+    
     // Verify token if exists
     if (_authToken != null) {
+      print('🔐 AuthService: Verifying token...');
       await _verifyToken();
     }
     
+    print('🔐 AuthService: Initialization complete - isLoggedIn: $_isLoggedIn, userId: $_userId');
     notifyListeners();
   }
   
@@ -112,6 +118,8 @@ class AuthService extends ChangeNotifier {
         _userName = user['full_name'] ?? userName ?? email.split('@')[0];
         _userProfileImage = user['profile_image'] ?? profileImage;
         _isLoggedIn = true;
+        
+        print('🔐 AuthService: Login successful - userId: $_userId, email: $_userEmail');
         
         // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
@@ -276,6 +284,8 @@ class AuthService extends ChangeNotifier {
         _userName = user['full_name'];
         _userProfileImage = user['profile_image'];
         _isLoggedIn = true;
+        
+        print('🔐 AuthService: Register successful - userId: $_userId, email: $_userEmail');
         
         // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();

@@ -5,7 +5,8 @@ import 'user_data_service.dart';
 class WatchlistService {
   static final List<VoidCallback> _listeners = [];
   static final CurrencyApiService _currencyApiService = CurrencyApiService();
-  static final UserDataService _userDataService = UserDataService();
+  // Use singleton instance of UserDataService
+  static UserDataService get _userDataService => UserDataService();
 
   // Static method to get watchlist items for ticker
   static List<Map<String, dynamic>> getWatchlistItems() {

@@ -224,8 +224,8 @@ class _AddAssetScreenState extends State<AddAssetScreen>
     );
   }
 
-  void _addToWatchlist(Map<String, dynamic> asset) {
-    WatchlistService.addToWatchlist(asset);
+  Future<void> _addToWatchlist(Map<String, dynamic> asset) async {
+    await WatchlistService.addToWatchlist(asset);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

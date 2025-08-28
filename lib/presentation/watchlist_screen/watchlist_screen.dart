@@ -108,10 +108,9 @@ class _WatchlistScreenState extends State<WatchlistScreen>
             child: Text('İptal'),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                WatchlistService.removeFromWatchlist(item['code']);
-              });
+            onPressed: () async {
+              await WatchlistService.removeFromWatchlist(item['code']);
+              setState(() {});
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -286,9 +285,9 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                 action: SnackBarAction(
                   label: 'Geri Al',
                   textColor: Colors.white,
-                  onPressed: () {
+                  onPressed: () async {
                     // Re-add to watchlist
-                    WatchlistService.addToWatchlist(item);
+                    await WatchlistService.addToWatchlist(item);
                   },
                 ),
               ),

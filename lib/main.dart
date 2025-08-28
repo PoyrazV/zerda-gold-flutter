@@ -60,8 +60,17 @@ void main() async {
   );
   
   // Initialize services after app starts
-  AuthService().initialize();
-  UserDataService().initialize(); // Initialize user data service after auth
+  _initializeServices();
+}
+
+void _initializeServices() async {
+  // Initialize auth first and wait for it
+  await AuthService().initialize();
+  
+  // Then initialize user data service after auth is ready
+  await UserDataService().initialize();
+  
+  // Initialize other services
   GlobalTickerService().initialize();
   FeatureConfigService().initialize();
   ThemeConfigService().initialize();

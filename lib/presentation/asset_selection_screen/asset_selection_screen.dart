@@ -302,7 +302,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     });
   }
 
-  void _addToWatchlist(Map<String, dynamic> asset) {
+  Future<void> _addToWatchlist(Map<String, dynamic> asset) async {
     print('AssetSelection: Adding to watchlist: $asset');
     
     // Ensure the asset has all required fields for WatchlistService
@@ -318,7 +318,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     
     print('AssetSelection: Formatted watchlist asset: $watchlistAsset');
     
-    WatchlistService.addToWatchlist(watchlistAsset);
+    await WatchlistService.addToWatchlist(watchlistAsset);
     
     print('AssetSelection: Current watchlist items: ${WatchlistService.getWatchlistItems().length}');
     

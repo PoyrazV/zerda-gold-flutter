@@ -534,7 +534,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
             showBackButton: true,
             onBackPressed: () => Navigator.pop(context),
             rightWidget: IconButton(
-              onPressed: () {
+              onPressed: () async {
                 final symbol = assetData?['symbol'] ?? 'USD';
                 final name = assetData?['name'] ?? 'USD/EUR';
                 final currentPrice = double.tryParse(assetData?['currentPrice']?.toString().replaceAll(',', '.').replaceAll('€', '') ?? '1.0') ?? 1.0;
@@ -550,7 +550,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                 };
                 
                 if (WatchlistService.isInWatchlist(symbol)) {
-                  WatchlistService.removeFromWatchlist(symbol);
+                  await WatchlistService.removeFromWatchlist(symbol);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('$name takip listesinden çıkarıldı'),
@@ -559,7 +559,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                     ),
                   );
                 } else {
-                  WatchlistService.addToWatchlist(watchlistItem);
+                  await WatchlistService.addToWatchlist(watchlistItem);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('$name takip listesine eklendi'),
@@ -691,7 +691,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
 
               // Back button
               IconButton(
-                onPressed: () {
+                onPressed: () async {
                   final symbol = assetData?['symbol'] ?? 'USD/TRY';
                   final name = assetData?['name'] ?? 'Amerikan Doları';
                   final currentPrice = double.tryParse(assetData?['currentPrice']?.toString().replaceAll(',', '') ?? '34.5958') ?? 34.5958;
@@ -707,7 +707,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                   };
                   
                   if (WatchlistService.isInWatchlist(symbol)) {
-                    WatchlistService.removeFromWatchlist(symbol);
+                    await WatchlistService.removeFromWatchlist(symbol);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('$name takip listesinden çıkarıldı'),
@@ -716,7 +716,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                       ),
                     );
                   } else {
-                    WatchlistService.addToWatchlist(watchlistItem);
+                    await WatchlistService.addToWatchlist(watchlistItem);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('$name takip listesine eklendi'),

@@ -33,13 +33,13 @@ class WatchlistService {
   }
 
   // Static method to add item to watchlist
-  static void addToWatchlist(Map<String, dynamic> item) async {
+  static Future<void> addToWatchlist(Map<String, dynamic> item) async {
     await _userDataService.addToWatchlist(item);
     _notifyListeners();
   }
 
   // Static method to remove item from watchlist
-  static void removeFromWatchlist(String code) async {
+  static Future<void> removeFromWatchlist(String code) async {
     await _userDataService.removeFromWatchlist(code);
     _notifyListeners();
   }

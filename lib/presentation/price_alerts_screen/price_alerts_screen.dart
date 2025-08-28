@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/theme_config_service.dart';
+import '../../services/user_data_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -25,6 +26,7 @@ class PriceAlertsScreen extends StatefulWidget {
 }
 
 class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
+  final UserDataService _userDataService = UserDataService();
   List<Map<String, dynamic>> _activeAlerts = [];
   List<Map<String, dynamic>> _historyAlerts = [];
 
@@ -35,6 +37,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    
+    // Listen to user data changes
+    _userDataService.addListener(_onUserDataChanged);
   }
 
   void _updateTicker() {
@@ -46,43 +51,27 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    _userDataService.removeListener(_onUserDataChanged);
     super.dispose();
+  }
+  
+  void _onUserDataChanged() {
+    if (mounted) {
+      setState(() {
+        _activeAlerts = List.from(_userDataService.activeAlerts);
+        _historyAlerts = List.from(_userDataService.historyAlerts);
+      });
+    }
   }
 
   Future<void> _loadStoredData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Load active alerts
-      final activeAlertsString = prefs.getString('active_alerts');
-      if (activeAlertsString != null) {
-        final List<dynamic> activeAlertsJson = jsonDecode(activeAlertsString);
-        _activeAlerts = activeAlertsJson.map((alert) {
-          // Convert DateTime strings back to DateTime objects
-          final alertMap = Map<String, dynamic>.from(alert);
-          alertMap['createdAt'] = DateTime.parse(alertMap['createdAt']);
-          return alertMap;
-        }).toList();
-      }
-      
-      // Load history alerts
-      final historyAlertsString = prefs.getString('history_alerts');
-      if (historyAlertsString != null) {
-        final List<dynamic> historyAlertsJson = jsonDecode(historyAlertsString);
-        _historyAlerts = historyAlertsJson.map((alert) {
-          // Convert DateTime strings back to DateTime objects
-          final alertMap = Map<String, dynamic>.from(alert);
-          alertMap['createdAt'] = DateTime.parse(alertMap['createdAt']);
-          if (alertMap['triggeredAt'] != null) {
-            alertMap['triggeredAt'] = DateTime.parse(alertMap['triggeredAt']);
-          }
-          return alertMap;
-        }).toList();
-      }
-      
-      if (mounted) {
-        setState(() {});
-      }
+      // Load from user data service
+      setState(() {
+        _activeAlerts = List.from(_userDataService.activeAlerts);
+        _historyAlerts = List.from(_userDataService.historyAlerts);
+      });
+      print('Alerts: Loaded ${_activeAlerts.length} active and ${_historyAlerts.length} history alerts from user data');
     } catch (e) {
       print('Error loading stored alerts: $e');
       // Initialize empty lists on error
@@ -93,27 +82,12 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
 
   Future<void> _saveStoredData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Prepare active alerts for storage
-      final activeAlertsForStorage = _activeAlerts.map((alert) {
-        final alertCopy = Map<String, dynamic>.from(alert);
-        alertCopy['createdAt'] = alertCopy['createdAt'].toIso8601String();
-        return alertCopy;
-      }).toList();
-      
-      // Prepare history alerts for storage
-      final historyAlertsForStorage = _historyAlerts.map((alert) {
-        final alertCopy = Map<String, dynamic>.from(alert);
-        alertCopy['createdAt'] = alertCopy['createdAt'].toIso8601String();
-        if (alertCopy['triggeredAt'] != null) {
-          alertCopy['triggeredAt'] = alertCopy['triggeredAt'].toIso8601String();
-        }
-        return alertCopy;
-      }).toList();
-      
-      await prefs.setString('active_alerts', jsonEncode(activeAlertsForStorage));
-      await prefs.setString('history_alerts', jsonEncode(historyAlertsForStorage));
+      // Save through user data service
+      await _userDataService.saveAlerts(
+        activeAlerts: _activeAlerts,
+        historyAlerts: _historyAlerts,
+      );
+      print('Alerts: Saved ${_activeAlerts.length} active and ${_historyAlerts.length} history alerts to user data');
     } catch (e) {
       print('Error saving stored alerts: $e');
     }

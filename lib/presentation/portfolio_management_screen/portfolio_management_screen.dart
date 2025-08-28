@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/theme_config_service.dart';
+import '../../services/user_data_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -28,6 +29,7 @@ class PortfolioManagementScreen extends StatefulWidget {
 class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
+  final UserDataService _userDataService = UserDataService();
 
   List<Map<String, dynamic>> _positions = [];
 
@@ -37,6 +39,9 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
     
     // Listen to watchlist changes to update ticker
     WatchlistService.addListener(_updateTicker);
+    
+    // Listen to user data changes
+    _userDataService.addListener(_onUserDataChanged);
     
     // Load portfolio data from storage
     _loadPortfolioData();
@@ -51,34 +56,37 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   @override
   void dispose() {
     WatchlistService.removeListener(_updateTicker);
+    _userDataService.removeListener(_onUserDataChanged);
     super.dispose();
   }
+  
+  void _onUserDataChanged() {
+    if (mounted) {
+      setState(() {
+        _positions = List.from(_userDataService.portfolio);
+      });
+    }
+  }
 
-  // Load portfolio data from SharedPreferences
+  // Load portfolio data from UserDataService
   Future<void> _loadPortfolioData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? positionsJson = prefs.getString('portfolio_positions');
-      
-      if (positionsJson != null && positionsJson.isNotEmpty) {
-        final List<dynamic> decodedPositions = jsonDecode(positionsJson);
-        setState(() {
-          _positions = decodedPositions.map((e) => Map<String, dynamic>.from(e)).toList();
-        });
-        print('Portfolio: Loaded ${_positions.length} positions from storage');
-      }
+      // Load from user data service
+      setState(() {
+        _positions = List.from(_userDataService.portfolio);
+      });
+      print('Portfolio: Loaded ${_positions.length} positions from user data');
     } catch (e) {
       print('Portfolio: Error loading positions: $e');
     }
   }
 
-  // Save portfolio data to SharedPreferences
+  // Save portfolio data through UserDataService
   Future<void> _savePortfolioData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String positionsJson = jsonEncode(_positions);
-      await prefs.setString('portfolio_positions', positionsJson);
-      print('Portfolio: Saved ${_positions.length} positions to storage');
+      // Save through user data service
+      await _userDataService.savePortfolio(_positions);
+      print('Portfolio: Saved ${_positions.length} positions to user data');
     } catch (e) {
       print('Portfolio: Error saving positions: $e');
     }

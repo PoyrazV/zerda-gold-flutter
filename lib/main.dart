@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'core/app_export.dart';
 import 'widgets/custom_error_widget.dart';
 import 'services/notification_service.dart';
+import 'services/user_data_service.dart';
 
 // Background message handler - Forward to NotificationService handler
 @pragma('vm:entry-point')
@@ -60,6 +61,7 @@ void main() async {
   
   // Initialize services after app starts
   AuthService().initialize();
+  UserDataService().initialize(); // Initialize user data service after auth
   GlobalTickerService().initialize();
   FeatureConfigService().initialize();
   ThemeConfigService().initialize();

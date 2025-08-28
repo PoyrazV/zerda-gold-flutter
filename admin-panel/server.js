@@ -489,6 +489,269 @@ app.get('/api/mobile/auth/verify', (req, res) => {
   });
 });
 
+// ============= USER DATA ROUTES =============
+
+// Mobile auth middleware
+const authenticateMobileToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Token gerekli' });
+  }
+  
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ success: false, error: 'Geçersiz token' });
+    }
+    
+    if (decoded.type !== 'mobile') {
+      return res.status(403).json({ success: false, error: 'Yetkilendirme hatası' });
+    }
+    
+    req.userId = decoded.userId;
+    next();
+  });
+};
+
+// GET - Get all user data
+app.get('/api/mobile/user/data', authenticateMobileToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { v4: uuidv4 } = require('uuid');
+    
+    // Get watchlist
+    db.all(
+      'SELECT * FROM user_watchlist WHERE user_id = ?',
+      [userId],
+      (err, watchlistRows) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        // Convert watchlist to object format
+        const watchlist = {};
+        watchlistRows.forEach(row => {
+          watchlist[row.asset_code] = {
+            code: row.asset_code,
+            name: row.asset_name,
+            type: row.asset_type,
+            buyPrice: row.buy_price,
+            sellPrice: row.sell_price
+          };
+        });
+        
+        // Get portfolio
+        db.all(
+          'SELECT * FROM user_portfolio WHERE user_id = ?',
+          [userId],
+          (err, portfolio) => {
+            if (err) {
+              return res.status(500).json({ success: false, error: err.message });
+            }
+            
+            // Get alerts
+            db.all(
+              'SELECT * FROM user_alerts WHERE user_id = ? ORDER BY created_at DESC',
+              [userId],
+              (err, alerts) => {
+                if (err) {
+                  return res.status(500).json({ success: false, error: err.message });
+                }
+                
+                // Separate active and history alerts
+                const activeAlerts = alerts.filter(a => a.is_active);
+                const historyAlerts = alerts.filter(a => !a.is_active);
+                
+                res.json({
+                  success: true,
+                  data: {
+                    watchlist,
+                    portfolio,
+                    alerts: {
+                      active: activeAlerts,
+                      history: historyAlerts
+                    }
+                  }
+                });
+              }
+            );
+          }
+        );
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST - Save watchlist
+app.post('/api/mobile/user/watchlist', authenticateMobileToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { watchlist } = req.body;
+    const { v4: uuidv4 } = require('uuid');
+    
+    // Clear existing watchlist for user
+    db.run('DELETE FROM user_watchlist WHERE user_id = ?', [userId], (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      // Insert new watchlist items
+      const stmt = db.prepare(
+        `INSERT INTO user_watchlist 
+         (id, user_id, asset_code, asset_name, asset_type, buy_price, sell_price) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      );
+      
+      for (const code in watchlist) {
+        const item = watchlist[code];
+        stmt.run(
+          uuidv4(),
+          userId,
+          item.code,
+          item.name || item.code,
+          item.type || 'currency',
+          item.buyPrice,
+          item.sellPrice
+        );
+      }
+      
+      stmt.finalize((err) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        res.json({
+          success: true,
+          message: 'Watchlist saved successfully'
+        });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST - Save portfolio
+app.post('/api/mobile/user/portfolio', authenticateMobileToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { portfolio } = req.body;
+    const { v4: uuidv4 } = require('uuid');
+    
+    // Clear existing portfolio for user
+    db.run('DELETE FROM user_portfolio WHERE user_id = ?', [userId], (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      // Insert new portfolio items
+      const stmt = db.prepare(
+        `INSERT INTO user_portfolio 
+         (id, user_id, asset_code, asset_name, asset_type, quantity, purchase_price, purchase_date, notes) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      
+      portfolio.forEach(item => {
+        stmt.run(
+          item.id || uuidv4(),
+          userId,
+          item.assetCode,
+          item.assetName,
+          item.assetType || 'currency',
+          item.quantity,
+          item.purchasePrice,
+          item.purchaseDate || new Date().toISOString(),
+          item.notes || null
+        );
+      });
+      
+      stmt.finalize((err) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        res.json({
+          success: true,
+          message: 'Portfolio saved successfully'
+        });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST - Save alerts
+app.post('/api/mobile/user/alerts', authenticateMobileToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { activeAlerts, historyAlerts } = req.body;
+    const { v4: uuidv4 } = require('uuid');
+    
+    // Clear existing alerts for user
+    db.run('DELETE FROM user_alerts WHERE user_id = ?', [userId], (err) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+      
+      // Insert new alerts
+      const stmt = db.prepare(
+        `INSERT INTO user_alerts 
+         (id, user_id, asset_code, asset_name, alert_type, target_price, current_price, is_active, triggered_at, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      
+      // Insert active alerts
+      activeAlerts.forEach(alert => {
+        stmt.run(
+          alert.id || uuidv4(),
+          userId,
+          alert.assetCode,
+          alert.assetName,
+          alert.type || 'above',
+          alert.targetPrice,
+          alert.currentPrice || null,
+          1,
+          null,
+          alert.createdAt || new Date().toISOString()
+        );
+      });
+      
+      // Insert history alerts
+      historyAlerts.forEach(alert => {
+        stmt.run(
+          alert.id || uuidv4(),
+          userId,
+          alert.assetCode,
+          alert.assetName,
+          alert.type || 'above',
+          alert.targetPrice,
+          alert.currentPrice || null,
+          0,
+          alert.triggeredAt || new Date().toISOString(),
+          alert.createdAt || new Date().toISOString()
+        );
+      });
+      
+      stmt.finalize((err) => {
+        if (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+        
+        res.json({
+          success: true,
+          message: 'Alerts saved successfully'
+        });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ============= CUSTOMER MANAGEMENT ROUTES =============
 
 // GET - Tüm müşterileri listele

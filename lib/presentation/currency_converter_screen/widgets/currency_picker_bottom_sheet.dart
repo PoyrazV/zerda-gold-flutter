@@ -785,11 +785,16 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
           // Currency list
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 4.w),
+              padding: EdgeInsets.zero,
               itemCount: _filteredCurrencies.length,
               itemBuilder: (context, index) {
                 final currency = _filteredCurrencies[index];
                 final isSelected = currency['code'] == widget.selectedCurrency;
+                
+                // Alternating row colors
+                final Color backgroundColor = index.isEven 
+                    ? const Color(0xFFF0F0F0) // Light gray for even rows
+                    : const Color(0xFFFFFFFF); // White for odd rows
 
                 return GestureDetector(
                   onTap: () {
@@ -798,20 +803,11 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
                   },
                   child: Container(
                     padding: EdgeInsets.all(4.w),
-                    margin: EdgeInsets.only(bottom: 1.h),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppTheme.lightTheme.colorScheme.primary
                               .withValues(alpha: 0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppTheme.lightTheme.colorScheme.primary
-                                .withValues(alpha: 0.3)
-                            : Colors.transparent,
-                        width: 1,
-                      ),
+                          : backgroundColor,
                     ),
                     child: Row(
                       children: [

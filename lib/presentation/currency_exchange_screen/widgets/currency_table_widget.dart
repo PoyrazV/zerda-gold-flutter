@@ -73,6 +73,11 @@ class _CurrencyTableWidgetState extends State<CurrencyTableWidget>
         final currency = widget.currencyData[index];
         final code = currency['code'] as String;
         final animation = _colorAnimations[code];
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Light gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
         return AnimatedBuilder(
           animation:
@@ -80,13 +85,7 @@ class _CurrencyTableWidgetState extends State<CurrencyTableWidget>
           builder: (context, child) {
             return Container(
               decoration: BoxDecoration(
-                color: animation?.value ?? Colors.transparent,
-                border: Border(
-                  bottom: BorderSide(
-                    color: const Color(0xFF334155),
-                    width: 0.5,
-                  ),
-                ),
+                color: animation?.value ?? backgroundColor,
               ),
               child: _buildCurrencyRow(currency, index),
             );

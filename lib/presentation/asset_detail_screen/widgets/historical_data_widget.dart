@@ -264,19 +264,16 @@ class _HistoricalDataWidgetState extends State<HistoricalDataWidget> {
 
   Widget _buildDataRow(Map<String, dynamic> data, int index) {
     final bool isPositive = data["isPositive"] as bool;
+    
+    // Alternating row colors
+    final Color backgroundColor = index.isEven 
+        ? const Color(0xFFF0F0F0) // Light gray for even rows
+        : const Color(0xFFFFFFFF); // White for odd rows
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
       decoration: BoxDecoration(
-        color: index % 2 == 0
-            ? AppTheme.lightTheme.colorScheme.surface
-            : AppTheme.lightTheme.scaffoldBackgroundColor,
-        border: Border(
-          bottom: BorderSide(
-            color: AppTheme.dividerLight.withValues(alpha: 0.5),
-            width: 0.5,
-          ),
-        ),
+        color: backgroundColor,
       ),
       child: Row(
         children: [

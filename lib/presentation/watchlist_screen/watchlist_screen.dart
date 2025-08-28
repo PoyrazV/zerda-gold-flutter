@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
@@ -231,14 +232,18 @@ class _WatchlistScreenState extends State<WatchlistScreen>
   }
 
   Widget _buildWatchlistContent() {
-    return ListView.separated(
-      padding: EdgeInsets.all(4.w),
+    return ListView.builder(
+      padding: EdgeInsets.zero,
       itemCount: _watchlistItems.length,
-      separatorBuilder: (context, index) => SizedBox(height: 2.h),
       itemBuilder: (context, index) {
         final item = _watchlistItems[index];
         final isPositive = item['isPositive'] as bool;
         final changeColor = isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed;
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Light gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
         return Dismissible(
           key: Key(item['code'].toString()),
@@ -290,21 +295,9 @@ class _WatchlistScreenState extends State<WatchlistScreen>
             );
           },
           child: Container(
-            padding: EdgeInsets.all(4.w),
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
             decoration: BoxDecoration(
-              color: AppTheme.lightTheme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.shadowLight,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: backgroundColor,
             ),
           child: InkWell(
             onTap: () {
@@ -327,15 +320,21 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                     children: [
                       Text(
                         item['code'] as String,
-                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: GoogleFonts.inter(
+                          fontSize: 4.w,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1E2939),
+                          height: 1.4,
                         ),
                       ),
                       SizedBox(height: 0.5.h),
                       Text(
                         item['name'] as String,
-                        style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        style: GoogleFonts.inter(
+                          fontSize: 3.w,
+                          fontWeight: FontWeight.normal,
+                          color: const Color(0xFF6B7280),
+                          height: 1.2,
                         ),
                       ),
                     ],
@@ -349,29 +348,43 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        CurrencyFormatter.formatTRY(item['buyPrice'] as double, decimalPlaces: 4),
-                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        CurrencyFormatter.formatEUR(item['buyPrice'] as double, decimalPlaces: 4),
+                        style: GoogleFonts.inter(
+                          fontSize: 4.w,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E2939),
+                          height: 1.8,
                         ),
                       ),
-                      SizedBox(height: 0.5.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(
-                            isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                            color: changeColor,
-                            size: 16,
-                          ),
-                          SizedBox(width: 1.w),
-                          Text(
-                            CurrencyFormatter.formatPercentageChange(item['changePercent'] as double),
-                            style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                              color: changeColor,
-                              fontWeight: FontWeight.w600,
+                      SizedBox(height: 1.5.w),
+                      Padding(
+                        padding: EdgeInsets.only(top: 1.5.w),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
+                          decoration: BoxDecoration(
+                            color: isPositive 
+                                ? const Color(0xFFECFDF5) // Green background for increase
+                                : const Color(0xFFFEF2F2), // Red background for decrease
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: isPositive 
+                                  ? const Color(0x33059669) // Fixed green border with opacity
+                                  : const Color(0x1ADC2626), // Red border with opacity
+                              width: 1,
                             ),
                           ),
-                        ],
+                          child: Text(
+                            '%${(item['changePercent'] as double).abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                            style: GoogleFonts.inter(
+                              fontSize: 2.7.w,
+                              fontWeight: FontWeight.w500, // Medium weight
+                              color: isPositive 
+                                  ? const Color(0xFF047857) // Green text
+                                  : const Color(0xFFB91C1C), // Red text
+                              height: 1.0,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

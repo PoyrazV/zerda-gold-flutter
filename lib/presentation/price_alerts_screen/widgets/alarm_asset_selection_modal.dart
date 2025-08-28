@@ -628,18 +628,14 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
         }
 
         final currency = currencyData[index];
-        final isLastItem = index == currencyData.length - 1 && !hasMoreToLoad;
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Light gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
-          decoration: BoxDecoration(
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            ),
-          ),
+          color: backgroundColor,
           child: _buildAssetRow(currency),
         );
       },
@@ -722,18 +718,14 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
         }
 
         final gold = goldData[index];
-        final isLastItem = index == goldData.length - 1 && !hasMoreToLoad;
+        
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Light gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
-          decoration: BoxDecoration(
-            border: isLastItem ? null : Border(
-              bottom: BorderSide(
-                color: AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            ),
-          ),
+          color: backgroundColor,
           child: _buildAssetRow(gold),
         );
       },
@@ -748,7 +740,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
         _selectAssetForAlarm(asset);
       },
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 1.5.h),
+        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

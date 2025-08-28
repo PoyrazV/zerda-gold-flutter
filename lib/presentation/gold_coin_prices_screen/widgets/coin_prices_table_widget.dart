@@ -15,31 +15,26 @@ class CoinPricesTableWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-      ),
-      child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 4.w),
-        itemCount: goldCoinData.length,
-        itemBuilder: (context, index) {
-          final coin = goldCoinData[index];
-          final bool isPositive = coin['isPositive'] as bool;
-          final Color changeColor = isPositive
-              ? const Color(0xFF10B981) // Green for positive
-              : const Color(0xFFEF4444); // Red for negative
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: goldCoinData.length,
+      itemBuilder: (context, index) {
+        final coin = goldCoinData[index];
+        final bool isPositive = coin['isPositive'] as bool;
+        final Color changeColor = isPositive
+            ? const Color(0xFF10B981) // Green for positive
+            : const Color(0xFFEF4444); // Red for negative
+            
+        // Alternating row colors
+        final Color backgroundColor = index.isEven 
+            ? const Color(0xFFF0F0F0) // Light gray for even rows
+            : const Color(0xFFFFFFFF); // White for odd rows
 
-          return Container(
-            margin: EdgeInsets.only(bottom: 1.h),
-            padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF334155),
-                width: 1,
-              ),
-            ),
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+          ),
             child: Row(
               children: [
                 // Coin type (Unit)
@@ -51,7 +46,7 @@ class CoinPricesTableWidget extends StatelessWidget {
                       Text(
                         coin['type'] as String,
                         style: TextStyle(
-                          color: const Color(0xFFFFFFFF),
+                          color: const Color(0xFF1E2939),
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
                         ),
@@ -76,7 +71,7 @@ class CoinPricesTableWidget extends StatelessWidget {
                     CurrencyFormatter.formatTRY(coin['buyPrice'] as double),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: const Color(0xFFFFFFFF),
+                      color: const Color(0xFF1E2939),
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',
@@ -91,7 +86,7 @@ class CoinPricesTableWidget extends StatelessWidget {
                     CurrencyFormatter.formatTRY(coin['sellPrice'] as double),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: const Color(0xFFFFFFFF),
+                      color: const Color(0xFF1E2939),
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',

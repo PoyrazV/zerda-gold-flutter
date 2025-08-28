@@ -7,6 +7,8 @@ import './widgets/logout_button_widget.dart';
 import './widgets/profile_header_widget.dart';
 import './widgets/settings_section_widget.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_data_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({Key? key}) : super(key: key);
@@ -59,6 +61,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   SizedBox(height: 2.h),
                   LogoutButtonWidget(
                     onLogout: _handleLogout,
+                  ),
+                  SizedBox(height: 2.h),
+                  // Debug button to show user data
+                  ElevatedButton.icon(
+                    onPressed: _showUserData,
+                    icon: Icon(Icons.bug_report),
+                    label: Text('Kullanıcı Verilerini Göster'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                    ),
                   ),
                   SizedBox(height: 4.h),
                 ],
@@ -493,14 +507,125 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
 
+  void _showUserData() async {
+    try {
+      final authService = AuthService();
+      final userDataService = UserDataService();
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Get current user info
+      final userId = authService.userId;
+      final userEmail = authService.userEmail;
+      
+      // Get watchlist
+      final watchlist = userDataService.getWatchlistItems();
+      final watchlistString = watchlist.map((item) => '${item['code']} - ${item['name']}').join('\n');
+      
+      // Get portfolio
+      final portfolio = userDataService.portfolio;
+      final portfolioString = portfolio.map((item) => 
+        '${item['assetName'] ?? item['assetCode']} - Miktar: ${item['quantity']} - Fiyat: ${item['purchasePrice']}').join('\n');
+      
+      // Get alerts
+      final activeAlerts = userDataService.activeAlerts;
+      final alertsString = activeAlerts.map((alert) => 
+        '${alert['assetName'] ?? alert['assetCode']} - Hedef: ${alert['targetPrice']}').join('\n');
+      
+      // Also get raw from SharedPreferences
+      final watchlistKey = 'user_${userId}_watchlist';
+      final portfolioKey = 'user_${userId}_portfolio';
+      final alertsKey = 'user_${userId}_active_alerts';
+      
+      final rawWatchlist = prefs.getString(watchlistKey) ?? 'Veri yok';
+      final rawPortfolio = prefs.getString(portfolioKey) ?? 'Veri yok';
+      final rawAlerts = prefs.getString(alertsKey) ?? 'Veri yok';
+      
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Kullanıcı Verileri'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Kullanıcı: $userEmail', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('User ID: $userId\n'),
+                
+                Text('TAKİP LİSTESİ (${watchlist.length} varlık):', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(watchlistString.isEmpty ? 'Boş' : watchlistString),
+                Divider(),
+                
+                Text('PORTFÖY (${portfolio.length} pozisyon):', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(portfolioString.isEmpty ? 'Boş' : portfolioString),
+                Divider(),
+                
+                Text('ALARMLAR (${activeAlerts.length} aktif):', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(alertsString.isEmpty ? 'Boş' : alertsString),
+                Divider(),
+                
+                Text('SharedPreferences Keys:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Watchlist Key: $watchlistKey'),
+                Text('Portfolio Key: $portfolioKey'),
+                Text('Alerts Key: $alertsKey'),
+                Divider(),
+                
+                Text('Raw Data (ilk 200 karakter):', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Watchlist: ${rawWatchlist.length > 200 ? rawWatchlist.substring(0, 200) + '...' : rawWatchlist}'),
+                Text('Portfolio: ${rawPortfolio.length > 200 ? rawPortfolio.substring(0, 200) + '...' : rawPortfolio}'),
+                Text('Alerts: ${rawAlerts.length > 200 ? rawAlerts.substring(0, 200) + '...' : rawAlerts}'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Kapat'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('Error showing user data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Veri gösterilirken hata: $e')),
+        );
+      }
+    }
+  }
+
   void _handleLogout() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.logout();
-    
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login-screen',
-      (route) => false,
-    );
+    try {
+      print('🚪 UserProfile: Starting logout...');
+      
+      // Use singleton instance instead of Provider
+      final authService = AuthService();
+      await authService.logout();
+      
+      print('✅ UserProfile: Logout successful');
+      
+      // Check if widget is still mounted before navigation
+      if (!mounted) return;
+      
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login-screen',
+        (route) => false,
+      );
+    } catch (e) {
+      print('❌ UserProfile: Logout error: $e');
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Çıkış yapılırken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

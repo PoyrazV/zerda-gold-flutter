@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'notification_service.dart';
+import 'user_data_service.dart';
 
 class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
@@ -159,10 +160,15 @@ class AuthService extends ChangeNotifier {
       
       // Store previous user info for logging
       final previousUser = _userEmail;
+      final previousUserId = _userId;
       
       print('🔄 Starting logout process...');
-      print('   Previous user: $previousUser');
+      print('   Previous user: $previousUser (ID: $previousUserId)');
       print('   Device ID: $deviceId');
+      
+      // Clear UserDataService before clearing auth data
+      print('🧹 Clearing UserDataService data...');
+      await UserDataService().clearCurrentUserData();
       
       // Call backend logout API
       if (_authToken != null) {

@@ -468,7 +468,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
                                     angle: 1.5708, // 90 degrees in radians (π/2)
                                     child: CustomIconWidget(
                                       iconName: 'swap_vert',
-                                      color: const Color(0xFFE8D095),
+                                      color: ThemeConfigService().secondaryColor,
                                       size: 24,
                                     ),
                                   ),

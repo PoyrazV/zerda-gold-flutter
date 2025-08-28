@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
+import '../../services/theme_config_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/gold_bars_icon.dart';
 
@@ -389,7 +390,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     return Container(
       height: 12.h,
       decoration: BoxDecoration(
-        color: const Color(0xFF18214F),
+        color: ThemeConfigService().primaryColor,
       ),
       child: SafeArea(
         child: Padding(
@@ -498,12 +499,12 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
   Widget _buildTabBar() {
     return Container(
-      color: const Color(0xFF18214F),
+      color: ThemeConfigService().primaryColor,
       child: TabBar(
         controller: _tabController,
-        indicatorColor: const Color(0xFFE8D095), // Gold indicator
+        indicatorColor: ThemeConfigService().secondaryColor, // Dynamic secondary color
         indicatorWeight: 3,
-        labelColor: const Color(0xFFE8D095), // Gold for selected
+        labelColor: ThemeConfigService().secondaryColor, // Dynamic secondary color for selected
         unselectedLabelColor: Colors.grey, // Gray for unselected
         tabs: [
           Tab(
@@ -531,7 +532,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
               children: [
                 GoldBarsIcon(
                   size: 16,
-                  color: _tabController.index == 1 ? const Color(0xFFE8D095) : Colors.grey,
+                  color: _tabController.index == 1 ? ThemeConfigService().secondaryColor : Colors.grey,
                 ),
                 SizedBox(width: 1.w),
                 Text(

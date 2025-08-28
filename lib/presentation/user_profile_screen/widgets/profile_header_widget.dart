@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/theme_config_service.dart';
 
 class ProfileHeaderWidget extends StatelessWidget {
   final String userName;
@@ -24,7 +25,7 @@ class ProfileHeaderWidget extends StatelessWidget {
         maxHeight: 28.h,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF18214F),
+        color: ThemeConfigService().primaryColor,
       ),
       child: SafeArea(
         child: Stack(

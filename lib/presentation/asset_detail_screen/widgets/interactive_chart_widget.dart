@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/theme_config_service.dart';
 
 class InteractiveChartWidget extends StatefulWidget {
   final String assetSymbol;
@@ -126,7 +127,7 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF18214F)
+                      ? ThemeConfigService().primaryColor
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -135,7 +136,7 @@ class _InteractiveChartWidgetState extends State<InteractiveChartWidget> {
                     timeframe,
                     style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
                       color: isSelected
-                          ? const Color(0xFFE8D095)
+                          ? ThemeConfigService().secondaryColor
                           : AppTheme.lightTheme.colorScheme.onSurface,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,

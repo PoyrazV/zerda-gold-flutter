@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/theme_config_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -133,8 +134,8 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
 
           // Spacer between logo and ticker
           Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF18214F), // Dark navy background
+            decoration: BoxDecoration(
+              color: ThemeConfigService().primaryColor, // Dynamic primary color
             ),
           ),
 

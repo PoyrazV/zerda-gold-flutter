@@ -5,6 +5,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
 import '../../services/gold_products_service.dart';
+import '../../services/theme_config_service.dart';
 import '../../widgets/ticker_section.dart';
 import '../../widgets/dashboard_header.dart';
 import './widgets/interactive_chart_widget.dart';
@@ -583,8 +584,8 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
           // Price ticker with dark background extension
           Container(
             height: 29.w, // Fixed height for ticker container
-            decoration: const BoxDecoration(
-              color: Color(0xFF18214F), // Dark navy background
+            decoration: BoxDecoration(
+              color: ThemeConfigService().primaryColor, // Dynamic primary color from admin panel
             ),
             child: Column(
               children: [

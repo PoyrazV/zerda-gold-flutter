@@ -233,7 +233,7 @@ class ThemeConfigService {
     _themeConfig = {
       'theme_type': 'dark',
       'primary_color': '#18214F',
-      'secondary_color': '#D4B896',
+      'secondary_color': '#E8D095',
       'accent_color': '#FF6B6B',
       'background_color': '#FFFFFF',
       'text_color': '#000000',

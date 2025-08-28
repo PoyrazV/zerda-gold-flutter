@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/theme_config_service.dart';
 
 class QuickConverterWidget extends StatelessWidget {
   final String fromCurrency;
@@ -45,7 +46,7 @@ class QuickConverterWidget extends StatelessWidget {
             children: [
               CustomIconWidget(
                 iconName: 'flash_on',
-                color: const Color(0xFF18214F),
+                color: ThemeConfigService().primaryColor,
                 size: 24,
               ),
               SizedBox(width: 2.w),
@@ -101,7 +102,7 @@ class QuickConverterWidget extends StatelessWidget {
                               '${CurrencyFormatter.formatNumber(amount, decimalPlaces: 0)} $fromCurrency',
                               style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF18214F),
+                                color: ThemeConfigService().primaryColor,
                                 fontSize: 14.sp,
                               ),
                               textAlign: TextAlign.center,

@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/theme_config_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
@@ -130,7 +131,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF18214F),
+      backgroundColor: ThemeConfigService().primaryColor,
       drawer: const AppDrawer(),
       body: Column(
         children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_theme.dart';
+import '../../../services/theme_config_service.dart';
 
 class TimeframeFilterWidget extends StatelessWidget {
   final List<String> timeframes;
@@ -34,19 +35,19 @@ class TimeframeFilterWidget extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF18214F)
+                    ? ThemeConfigService().primaryColor
                     : AppTheme.lightTheme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF18214F)
+                      ? ThemeConfigService().primaryColor
                       : AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.3),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: isSelected 
-                        ? const Color(0xFF18214F).withValues(alpha: 0.3)
+                        ? ThemeConfigService().primaryColor.withValues(alpha: 0.3)
                         : Colors.black.withValues(alpha: 0.08),
                     blurRadius: isSelected ? 6 : 4,
                     offset: const Offset(0, 2),
@@ -58,7 +59,7 @@ class TimeframeFilterWidget extends StatelessWidget {
                   timeframe,
                   style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                     color: isSelected
-                        ? const Color(0xFFE8D095)
+                        ? ThemeConfigService().secondaryColor
                         : AppTheme.textSecondaryLight,
                     fontSize: 10.sp,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,

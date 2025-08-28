@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_theme.dart';
+import '../../../services/theme_config_service.dart';
 
 class SegmentedControlWidget extends StatelessWidget {
   final int selectedIndex;
@@ -44,11 +45,11 @@ class SegmentedControlWidget extends StatelessWidget {
                 margin: EdgeInsets.all(0.5.h),
                 decoration: BoxDecoration(
                   color:
-                      isSelected ? const Color(0xFF18214F) : Colors.transparent,
+                      isSelected ? ThemeConfigService().primaryColor : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: isSelected ? [
                     BoxShadow(
-                      color: const Color(0xFF18214F).withValues(alpha: 0.3),
+                      color: ThemeConfigService().primaryColor.withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -59,7 +60,7 @@ class SegmentedControlWidget extends StatelessWidget {
                     title,
                     style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
                       color: isSelected
-                          ? const Color(0xFFE8D095)
+                          ? ThemeConfigService().secondaryColor
                           : AppTheme.textSecondaryLight,
                       fontSize: 14.sp,
                       fontWeight:

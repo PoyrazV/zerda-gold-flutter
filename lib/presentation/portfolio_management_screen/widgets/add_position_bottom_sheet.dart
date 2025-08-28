@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
 import '../../../services/currency_api_service.dart';
+import '../../../services/theme_config_service.dart';
 import '../../../widgets/gold_bars_icon.dart';
 
 class AddPositionBottomSheet extends StatefulWidget {
@@ -365,7 +366,7 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
     return Container(
       height: 8.h,
       decoration: BoxDecoration(
-        color: const Color(0xFF18214F),
+        color: ThemeConfigService().primaryColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -475,11 +476,11 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
 
   Widget _buildTabBar() {
     return Container(
-      color: const Color(0xFF18214F),
+      color: ThemeConfigService().primaryColor,
       child: TabBar(
         controller: _tabController,
-        indicatorColor: const Color(0xFFE8D095),
-        labelColor: const Color(0xFFE8D095),
+        indicatorColor: ThemeConfigService().secondaryColor,
+        labelColor: ThemeConfigService().secondaryColor,
         unselectedLabelColor: Colors.white,
         tabs: [
           Tab(
@@ -487,7 +488,7 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
               animation: _tabController,
               builder: (context, child) {
                 final isSelected = _tabController.index == 0;
-                final color = isSelected ? const Color(0xFFE8D095) : Colors.white;
+                final color = isSelected ? ThemeConfigService().secondaryColor : Colors.white;
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -514,7 +515,7 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
               animation: _tabController,
               builder: (context, child) {
                 final isSelected = _tabController.index == 1;
-                final color = isSelected ? const Color(0xFFE8D095) : Colors.white;
+                final color = isSelected ? ThemeConfigService().secondaryColor : Colors.white;
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

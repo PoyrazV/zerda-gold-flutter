@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/theme_config_service.dart';
 
 class AlertCardWidget extends StatelessWidget {
   final Map<String, dynamic> alertData;
@@ -177,8 +178,8 @@ class AlertCardWidget extends StatelessWidget {
                   Switch(
                     value: isEnabled,
                     onChanged: (value) => onToggle?.call(),
-                    activeColor: const Color(0xFF18214F),
-                    activeTrackColor: const Color(0xFF18214F).withOpacity(0.5),
+                    activeColor: ThemeConfigService().primaryColor,
+                    activeTrackColor: ThemeConfigService().primaryColor.withOpacity(0.5),
                     inactiveThumbColor: Colors.grey[500],
                     inactiveTrackColor: Colors.grey[300],
                     trackOutlineColor: MaterialStateProperty.resolveWith((states) {

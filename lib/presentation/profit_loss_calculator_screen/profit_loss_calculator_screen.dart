@@ -4,6 +4,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
+import '../../services/theme_config_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/ticker_section.dart';
@@ -343,7 +344,7 @@ class _ProfitLossCalculatorScreenState
     return Container(
       height: 12.h,
       decoration: BoxDecoration(
-        color: const Color(0xFF18214F),
+        color: ThemeConfigService().primaryColor,
       ),
       child: SafeArea(
         child: Padding(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/theme_config_service.dart';
 
 class EmptyPortfolioState extends StatelessWidget {
   final VoidCallback onAddFirstPosition;
@@ -64,7 +65,7 @@ class EmptyPortfolioState extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF18214F),
+                  backgroundColor: ThemeConfigService().primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 2.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

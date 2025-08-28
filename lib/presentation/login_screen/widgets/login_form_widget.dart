@@ -5,11 +5,13 @@ import '../../../core/app_export.dart';
 
 class LoginFormWidget extends StatefulWidget {
   final Function(String email, String password) onLogin;
+  final VoidCallback? onGuestLogin;
   final bool isLoading;
 
   const LoginFormWidget({
     Key? key,
     required this.onLogin,
+    this.onGuestLogin,
     required this.isLoading,
   }) : super(key: key);
 
@@ -23,6 +25,7 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isFormValid = false;
+  bool _showGuestButton = true;
 
   @override
   void initState() {
@@ -42,10 +45,15 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
     final isValid = _emailController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty &&
         _isValidEmail(_emailController.text);
+    
+    // Show guest button only when both fields are empty
+    final shouldShowGuest = _emailController.text.isEmpty && 
+                           _passwordController.text.isEmpty;
 
-    if (_isFormValid != isValid) {
+    if (_isFormValid != isValid || _showGuestButton != shouldShowGuest) {
       setState(() {
         _isFormValid = isValid;
+        _showGuestButton = shouldShowGuest;
       });
     }
   }
@@ -195,39 +203,43 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
             ),
           ),
 
-          SizedBox(height: 1.h),
+          SizedBox(height: 3.h),
 
-          // Forgot Password Link
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: widget.isLoading
-                  ? null
-                  : () {
-                      // Handle forgot password
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Şifre sıfırlama özelliği yakında eklenecek'),
-                        ),
-                      );
-                    },
-              child: Text(
-                'Şifremi Unuttum?',
-                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+          // Guest Login Button (shown when fields are empty)
+          if (_showGuestButton && widget.onGuestLogin != null) ...[
+            SizedBox(
+              height: 6.h,
+              child: OutlinedButton.icon(
+                onPressed: !widget.isLoading ? widget.onGuestLogin : null,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    width: 2,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: Icon(
+                  Icons.person_outline,
                   color: AppTheme.lightTheme.colorScheme.primary,
-                  fontWeight: FontWeight.w500,
+                ),
+                label: Text(
+                  'Misafir Olarak Devam Et',
+                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
 
-          SizedBox(height: 3.h),
-
-          // Login Button
-          SizedBox(
-            height: 6.h,
-            child: ElevatedButton(
+          // Login Button (shown when fields have content)
+          if (!_showGuestButton) ...[
+            SizedBox(
+              height: 6.h,
+              child: ElevatedButton(
               onPressed:
                   _isFormValid && !widget.isLoading ? _handleLogin : null,
               style: ElevatedButton.styleFrom(
@@ -262,6 +274,34 @@ class _LoginFormWidgetState extends State<LoginFormWidget> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+            ),
+          ),
+          ],
+          
+          SizedBox(height: 1.h),
+
+          // Forgot Password Link
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: widget.isLoading
+                  ? null
+                  : () {
+                      // Handle forgot password
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Şifre sıfırlama özelliği yakında eklenecek'),
+                        ),
+                      );
+                    },
+              child: Text(
+                'Şifremi Unuttum?',
+                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.lightTheme.colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
         ],

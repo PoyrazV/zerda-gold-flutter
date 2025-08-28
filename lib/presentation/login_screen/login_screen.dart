@@ -43,18 +43,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-            child: Stack(
-              children: [
-                SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: MediaQuery.of(context).size.height -
-                          MediaQuery.of(context).padding.top -
-                          MediaQuery.of(context).padding.bottom,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 6.w),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           SizedBox(height: 8.h),
@@ -129,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Login Form
                       LoginFormWidget(
                         onLogin: _handleLogin,
+                        onGuestLogin: _handleGuestLogin,
                         isLoading: _isLoading,
                       ),
 
@@ -179,43 +178,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-                ),
-                ),
-                // Back Button
-                Positioned(
-                  top: 2.h,
-                  left: 4.w,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: AppTheme.lightTheme.colorScheme.onSurface,
-                        size: 24,
-                      ),
-                      padding: EdgeInsets.all(2.w),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleGuestLogin() {
+    // Guest login - navigate directly without authentication
+    HapticFeedback.lightImpact();
+    Navigator.pushReplacementNamed(context, '/dashboard-screen');
   }
 
   Future<void> _handleLogin(String email, String password) async {

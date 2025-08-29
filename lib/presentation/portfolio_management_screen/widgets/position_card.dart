@@ -67,11 +67,11 @@ class _PositionCardState extends State<PositionCard>
   @override
   Widget build(BuildContext context) {
     final double currentValue =
-        (widget.position['currentValue'] as num).toDouble();
+        (widget.position['currentValue'] as num?)?.toDouble() ?? 0.0;
     final double purchaseValue =
-        (widget.position['purchaseValue'] as num).toDouble();
+        (widget.position['purchaseValue'] as num?)?.toDouble() ?? 0.0;
     final double gainLoss = currentValue - purchaseValue;
-    final double gainLossPercentage = (gainLoss / purchaseValue) * 100;
+    final double gainLossPercentage = purchaseValue > 0 ? (gainLoss / purchaseValue) * 100 : 0.0;
     final bool isPositive = gainLoss >= 0;
 
     return GestureDetector(
@@ -106,8 +106,9 @@ class _PositionCardState extends State<PositionCard>
                     ),
                     child: Center(
                       child: Text(
-                        (widget.position['symbol'] as String)
-                            .substring(0, 2)
+                        ((widget.position['symbol'] as String?) ?? 'N/A')
+                            .split('/')[0]
+                            .substring(0, ((widget.position['symbol'] as String?) ?? 'N/A').split('/')[0].length.clamp(0, 3))
                             .toUpperCase(),
                         style: AppTheme.lightTheme.textTheme.titleSmall
                             ?.copyWith(
@@ -122,17 +123,44 @@ class _PositionCardState extends State<PositionCard>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.position['name'] as String,
-                          style: AppTheme.lightTheme.textTheme.titleMedium
-                              ?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                (widget.position['symbol'] as String?) ?? 'N/A',
+                                style: AppTheme.lightTheme.textTheme.titleMedium
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(width: 1.w),
+                            Text(
+                              '•',
+                              style: AppTheme.lightTheme.textTheme.bodySmall
+                                  ?.copyWith(
+                                color: AppTheme
+                                    .lightTheme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            SizedBox(width: 1.w),
+                            Flexible(
+                              child: Text(
+                                (widget.position['name'] as String?) ?? 'Unknown',
+                                style: AppTheme.lightTheme.textTheme.bodySmall
+                                    ?.copyWith(
+                                  color: AppTheme
+                                      .lightTheme.colorScheme.onSurfaceVariant,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                         SizedBox(height: 0.5.h),
                         Text(
-                          '${widget.position['quantity']} adet',
+                          '${(widget.position['quantity'] as num?)?.toDouble() ?? 0} adet',
                           style: AppTheme.lightTheme.textTheme.bodySmall
                               ?.copyWith(
                             color: AppTheme
@@ -210,12 +238,15 @@ class _PositionCardState extends State<PositionCard>
 
   Widget _buildExpandedContent(
       double gainLoss, double gainLossPercentage, bool isPositive) {
-    final List<FlSpot> chartData = (widget.position['priceHistory'] as List)
-        .asMap()
-        .entries
-        .map((entry) =>
-            FlSpot(entry.key.toDouble(), (entry.value as num).toDouble()))
-        .toList();
+    final priceHistoryRaw = widget.position['priceHistory'];
+    final List<FlSpot> chartData = priceHistoryRaw != null && priceHistoryRaw is List
+        ? (priceHistoryRaw as List)
+            .asMap()
+            .entries
+            .map((entry) =>
+                FlSpot(entry.key.toDouble(), (entry.value as num).toDouble()))
+            .toList()
+        : [FlSpot(0, (widget.position['currentPrice'] as num?)?.toDouble() ?? 0.0)];
 
     return Container(
       padding: EdgeInsets.all(4.w),
@@ -263,7 +294,7 @@ class _PositionCardState extends State<PositionCard>
               Expanded(
                 child: _buildMetricItem(
                   'Ortalama Maliyet',
-                  CurrencyFormatter.formatEUR((widget.position['averageCost'] as num).toDouble(), decimalPlaces: 2),
+                  CurrencyFormatter.formatEUR(((widget.position['averageCost'] as num?) ?? (widget.position['purchasePrice'] as num?))?.toDouble() ?? 0.0, decimalPlaces: 2),
                 ),
               ),
               Expanded(
@@ -283,7 +314,7 @@ class _PositionCardState extends State<PositionCard>
               Expanded(
                 child: _buildMetricItem(
                   'Güncel Fiyat',
-                  CurrencyFormatter.formatEUR((widget.position['currentPrice'] as num).toDouble(), decimalPlaces: 2),
+                  CurrencyFormatter.formatEUR((widget.position['currentPrice'] as num?)?.toDouble() ?? 0.0, decimalPlaces: 2),
                 ),
               ),
               Expanded(

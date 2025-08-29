@@ -70,8 +70,13 @@ void _initializeServices() async {
   // Then initialize user data service after auth is ready
   await UserDataService().initialize();
   
+  // Initialize watchlist service after user data is ready
+  await WatchlistService.initialize();
+  
+  // Initialize ticker service after watchlist is ready
+  await GlobalTickerService().initialize();
+  
   // Initialize other services
-  GlobalTickerService().initialize();
   FeatureConfigService().initialize();
   ThemeConfigService().initialize();
   NotificationService().initialize();

@@ -545,23 +545,61 @@ app.get('/api/mobile/user/data', authenticateMobileToken, async (req, res) => {
         db.all(
           'SELECT * FROM user_portfolio WHERE user_id = ?',
           [userId],
-          (err, portfolio) => {
+          (err, portfolioRows) => {
             if (err) {
               return res.status(500).json({ success: false, error: err.message });
             }
+            
+            // Map portfolio data to frontend expected format
+            const portfolio = portfolioRows.map(row => ({
+              id: row.id,
+              symbol: row.asset_code,  // Frontend expects 'symbol'
+              name: row.asset_name,
+              assetCode: row.asset_code,  // Also keep backend field for compatibility
+              assetName: row.asset_name,
+              quantity: row.quantity,
+              purchasePrice: row.purchase_price,
+              averageCost: row.purchase_price,  // Frontend might expect this
+              currentPrice: row.current_price || row.purchase_price,
+              purchaseValue: row.quantity * row.purchase_price,
+              currentValue: row.quantity * (row.current_price || row.purchase_price),
+              purchaseDate: row.purchase_date,
+              notes: row.notes,
+              assetType: row.asset_type
+            }));
             
             // Get alerts
             db.all(
               'SELECT * FROM user_alerts WHERE user_id = ? ORDER BY created_at DESC',
               [userId],
-              (err, alerts) => {
+              (err, alertRows) => {
                 if (err) {
                   return res.status(500).json({ success: false, error: err.message });
                 }
                 
-                // Separate active and history alerts
-                const activeAlerts = alerts.filter(a => a.is_active);
-                const historyAlerts = alerts.filter(a => !a.is_active);
+                // Map alert data to frontend expected format
+                const activeAlerts = alertRows.filter(a => a.is_active).map(alert => ({
+                  id: alert.id,
+                  assetCode: alert.asset_code,
+                  assetName: alert.asset_name,
+                  targetPrice: alert.target_price,
+                  currentPrice: alert.current_price,
+                  status: alert.status || 'active',
+                  createdAt: alert.created_at,
+                  alertType: alert.alert_type
+                }));
+                
+                const historyAlerts = alertRows.filter(a => !a.is_active).map(alert => ({
+                  id: alert.id,
+                  assetCode: alert.asset_code,
+                  assetName: alert.asset_name,
+                  targetPrice: alert.target_price,
+                  currentPrice: alert.current_price,
+                  status: alert.status || 'triggered',
+                  createdAt: alert.created_at,
+                  triggeredAt: alert.triggered_at,
+                  alertType: alert.alert_type
+                }));
                 
                 res.json({
                   success: true,
@@ -655,14 +693,26 @@ app.post('/api/mobile/user/portfolio', authenticateMobileToken, async (req, res)
       );
       
       portfolio.forEach(item => {
+        // Handle different field naming conventions
+        const assetCode = item.assetCode || item.code || item.symbol;
+        const assetName = item.assetName || item.name;
+        const quantity = item.quantity || item.amount || 0;
+        const purchasePrice = item.purchasePrice || item.buyPrice || 0;
+        
+        // Skip if no asset code
+        if (!assetCode) {
+          console.log('Warning: Skipping portfolio item without asset code:', item);
+          return;
+        }
+        
         stmt.run(
           item.id || uuidv4(),
           userId,
-          item.assetCode,
-          item.assetName,
-          item.assetType || 'currency',
-          item.quantity,
-          item.purchasePrice,
+          assetCode,
+          assetName || assetCode,
+          item.assetType || item.type || 'currency',
+          quantity,
+          purchasePrice,
           item.purchaseDate || new Date().toISOString(),
           item.notes || null
         );
@@ -700,37 +750,47 @@ app.post('/api/mobile/user/alerts', authenticateMobileToken, async (req, res) =>
       // Insert new alerts
       const stmt = db.prepare(
         `INSERT INTO user_alerts 
-         (id, user_id, asset_code, asset_name, alert_type, target_price, current_price, is_active, triggered_at, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, user_id, asset_code, asset_name, alert_type, target_price, current_price, is_active, status, triggered_at, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       );
       
       // Insert active alerts
       activeAlerts.forEach(alert => {
+        // Ensure we have the required fields
+        const assetCode = alert.assetCode || alert.code || alert.symbol;
+        const assetName = alert.assetName || alert.name || assetCode;
+        
         stmt.run(
           alert.id || uuidv4(),
           userId,
-          alert.assetCode,
-          alert.assetName,
-          alert.type || 'above',
-          alert.targetPrice,
-          alert.currentPrice || null,
-          1,
-          null,
+          assetCode,
+          assetName,
+          alert.alertType || alert.type || 'above',
+          alert.targetPrice || 0,
+          alert.currentPrice || 0,
+          1,  // is_active
+          alert.status || 'active',
+          null,  // triggered_at
           alert.createdAt || new Date().toISOString()
         );
       });
       
       // Insert history alerts
       historyAlerts.forEach(alert => {
+        // Ensure we have the required fields
+        const assetCode = alert.assetCode || alert.code || alert.symbol;
+        const assetName = alert.assetName || alert.name || assetCode;
+        
         stmt.run(
           alert.id || uuidv4(),
           userId,
-          alert.assetCode,
-          alert.assetName,
-          alert.type || 'above',
-          alert.targetPrice,
-          alert.currentPrice || null,
-          0,
+          assetCode,
+          assetName,
+          alert.alertType || alert.type || 'above',
+          alert.targetPrice || 0,
+          alert.currentPrice || 0,
+          0,  // is_active = false for history
+          alert.status || 'triggered',
           alert.triggeredAt || new Date().toISOString(),
           alert.createdAt || new Date().toISOString()
         );

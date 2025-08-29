@@ -350,7 +350,28 @@ class UserDataService extends ChangeNotifier {
         }
         
         if (data['portfolio'] != null) {
-          _portfolio = List<Map<String, dynamic>>.from(data['portfolio']);
+          // Map backend fields to frontend expected fields
+          _portfolio = (data['portfolio'] as List).map((item) {
+            final position = Map<String, dynamic>.from(item);
+            
+            // Ensure frontend expected fields are present
+            position['symbol'] = position['assetCode'] ?? position['symbol'] ?? position['code'];
+            position['name'] = position['assetName'] ?? position['name'];
+            position['quantity'] = position['quantity'] ?? 0;
+            position['purchasePrice'] = position['purchasePrice'] ?? position['averageCost'] ?? 0;
+            position['averageCost'] = position['purchasePrice'] ?? position['averageCost'] ?? 0;
+            position['currentPrice'] = position['currentPrice'] ?? position['purchasePrice'] ?? 0;
+            position['currentValue'] = (position['quantity'] ?? 0) * (position['currentPrice'] ?? 0);
+            position['purchaseValue'] = (position['quantity'] ?? 0) * (position['purchasePrice'] ?? 0);
+            
+            // Add price history if missing
+            if (position['priceHistory'] == null) {
+              position['priceHistory'] = List.generate(30, (index) => 
+                (position['currentPrice'] ?? 0) * (0.95 + (0.1 * (index / 30))));
+            }
+            
+            return position;
+          }).toList();
         }
         
         if (data['alerts'] != null) {
@@ -454,14 +475,28 @@ class UserDataService extends ChangeNotifier {
     if (_currentUserId == null || _authService.authToken == null) return;
     
     try {
+      // Ensure portfolio data has correct field names for backend
+      final portfolioForBackend = _portfolio.map((position) {
+        final posCopy = Map<String, dynamic>.from(position);
+        
+        // Map frontend fields to backend expected fields
+        posCopy['assetCode'] = posCopy['symbol'] ?? posCopy['assetCode'] ?? posCopy['code'];
+        posCopy['assetName'] = posCopy['name'] ?? posCopy['assetName'];
+        posCopy['quantity'] = posCopy['quantity'] ?? 0;
+        posCopy['purchasePrice'] = posCopy['purchasePrice'] ?? posCopy['averageCost'] ?? 0;
+        posCopy['purchaseDate'] = posCopy['purchaseDate'] ?? DateTime.now().toIso8601String();
+        
+        return posCopy;
+      }).toList();
+      
       await _dio.post(
         '/user/portfolio',
-        data: {'portfolio': _portfolio},
+        data: {'portfolio': portfolioForBackend},
         options: Options(
           headers: {'Authorization': 'Bearer ${_authService.authToken}'},
         ),
       );
-      print('UserDataService: Portfolio synced to backend');
+      print('UserDataService: Portfolio synced to backend with ${portfolioForBackend.length} positions');
     } catch (e) {
       print('UserDataService: Failed to sync portfolio to backend: $e');
     }
@@ -474,6 +509,15 @@ class UserDataService extends ChangeNotifier {
     try {
       final activeForSync = _activeAlerts.map((alert) {
         final alertCopy = Map<String, dynamic>.from(alert);
+        
+        // Ensure correct field names for backend
+        // Handle both old and new field names
+        if (alertCopy['assetCode'] == null && alertCopy['assetName'] != null) {
+          // Old format: assetName contains the code
+          alertCopy['assetCode'] = alertCopy['assetName'];
+          alertCopy['assetName'] = alertCopy['assetFullName'] ?? alertCopy['assetName'];
+        }
+        
         if (alertCopy['createdAt'] is DateTime) {
           alertCopy['createdAt'] = (alertCopy['createdAt'] as DateTime).toIso8601String();
         }
@@ -482,6 +526,13 @@ class UserDataService extends ChangeNotifier {
       
       final historyForSync = _historyAlerts.map((alert) {
         final alertCopy = Map<String, dynamic>.from(alert);
+        
+        // Ensure correct field names for backend
+        if (alertCopy['assetCode'] == null && alertCopy['assetName'] != null) {
+          alertCopy['assetCode'] = alertCopy['assetName'];
+          alertCopy['assetName'] = alertCopy['assetFullName'] ?? alertCopy['assetName'];
+        }
+        
         if (alertCopy['createdAt'] is DateTime) {
           alertCopy['createdAt'] = (alertCopy['createdAt'] as DateTime).toIso8601String();
         }

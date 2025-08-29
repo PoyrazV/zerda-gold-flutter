@@ -7,6 +7,15 @@ class WatchlistService {
   static final CurrencyApiService _currencyApiService = CurrencyApiService();
   // Use singleton instance of UserDataService
   static UserDataService get _userDataService => UserDataService();
+  
+  // Initialize the service
+  static Future<void> initialize() async {
+    print('🔄 WatchlistService: Initializing...');
+    // The UserDataService should already be initialized with watchlist data
+    // Just notify listeners that we're ready
+    _notifyListeners();
+    print('✅ WatchlistService: Initialized with ${getWatchlistItems().length} items');
+  }
 
   // Static method to get watchlist items for ticker
   static List<Map<String, dynamic>> getWatchlistItems() {

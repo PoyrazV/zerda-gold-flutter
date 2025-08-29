@@ -24,20 +24,24 @@ class AlertCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String status = alertData['status'] as String;
-    final String assetName = _formatAssetName(alertData['assetName'] as String);
-    final double targetPrice = (alertData['targetPrice'] as num).toDouble();
-    final double currentPrice = (alertData['currentPrice'] as num).toDouble();
-    final String alertType = alertData['alertType'] as String;
-    final bool isEnabled = alertData['isEnabled'] as bool;
+    // Null safety ile sadece gerekli alanları al
+    final String status = (alertData['status'] as String?) ?? 'active';
+    final String assetCode = alertData['assetCode'] ?? alertData['assetName'] ?? '';
+    final String assetName = _formatAssetName(assetCode);
+    final double targetPrice = (alertData['targetPrice'] as num?)?.toDouble() ?? 0.0;
+    final double currentPrice = (alertData['currentPrice'] as num?)?.toDouble() ?? 0.0;
+    
+    // Status'a göre aktif/pasif durumu belirle
+    final bool isActive = status == 'active';
 
     Color statusColor = _getStatusColor(status);
     Color priceChangeColor = currentPrice >= targetPrice
         ? AppTheme.positiveGreen
         : AppTheme.negativeRed;
 
-    double proximityPercentage =
-        ((currentPrice - targetPrice).abs() / targetPrice * 100);
+    double proximityPercentage = targetPrice > 0 
+        ? ((currentPrice - targetPrice).abs() / targetPrice * 100)
+        : 0.0;
 
     return Dismissible(
       key: Key(alertData['id'].toString()),
@@ -164,7 +168,7 @@ class AlertCardWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 0.3.h),
                         Text(
-                          _formatDate(alertData['createdAt'] as DateTime),
+                          _formatDate(_parseDate(alertData['createdAt'])),
                           style:
                               AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondaryLight,
@@ -176,7 +180,7 @@ class AlertCardWidget extends StatelessWidget {
                     ),
                   ),
                   Switch(
-                    value: isEnabled,
+                    value: isActive,
                     onChanged: (value) => onToggle?.call(),
                     activeColor: ThemeConfigService().primaryColor,
                     activeTrackColor: ThemeConfigService().primaryColor.withOpacity(0.5),
@@ -299,6 +303,23 @@ class AlertCardWidget extends StatelessWidget {
       default:
         return 'Bilinmiyor';
     }
+  }
+
+  DateTime _parseDate(dynamic dateValue) {
+    if (dateValue == null) {
+      return DateTime.now();
+    }
+    if (dateValue is DateTime) {
+      return dateValue;
+    }
+    if (dateValue is String) {
+      try {
+        return DateTime.parse(dateValue);
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+    return DateTime.now();
   }
 
   String _formatDate(DateTime date) {

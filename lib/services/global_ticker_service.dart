@@ -24,11 +24,19 @@ class GlobalTickerService extends ChangeNotifier {
   Future<void> initialize() async {
     if (_hasInitialData) return; // Already initialized
     
+    print('🔄 GlobalTickerService: Initializing...');
+    
     // Listen to watchlist changes
     WatchlistService.addListener(_onWatchlistChanged);
     
+    // Add a small delay to ensure UserDataService has loaded watchlist
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    print('🔄 GlobalTickerService: Fetching initial ticker data...');
     await _fetchTickerData();
     _startPeriodicRefresh();
+    
+    print('✅ GlobalTickerService: Initialized successfully');
   }
 
   // Handle watchlist changes

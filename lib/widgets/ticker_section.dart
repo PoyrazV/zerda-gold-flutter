@@ -176,8 +176,8 @@ class _TickerSectionState extends State<TickerSection> {
   }
 
   Widget _buildTickerCard(Map<String, dynamic> currency) {
-    final bool isPositive = currency['isPositive'] as bool;
-    final double change = currency['change'] as double;
+    final bool isPositive = (currency['isPositive'] as bool?) ?? false;
+    final double change = (currency['change'] as num?)?.toDouble() ?? 0.0;
     
     return GestureDetector(
       onTap: () {
@@ -213,7 +213,7 @@ class _TickerSectionState extends State<TickerSection> {
             children: [
               // Product name
               Text(
-                currency['name'] as String,
+                (currency['name'] as String?) ?? 'Unknown',
                 style: GoogleFonts.inter(fontWeight: FontWeight.w700,
                   fontSize: 3.3.w, // Increased font size for better readability
                   color: const Color(0xFF4B5563), // Original gray text
@@ -228,7 +228,7 @@ class _TickerSectionState extends State<TickerSection> {
               
               // Price
               Text(
-                CurrencyFormatter.formatSmartPrice(currency['buyPrice'] as double),
+                CurrencyFormatter.formatSmartPrice((currency['buyPrice'] as num?)?.toDouble() ?? 0.0),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w900,
                   fontSize: 3.5.w, // Increased font size for better readability
                   color: const Color(0xFF4B5563), // Darker gray for better visibility

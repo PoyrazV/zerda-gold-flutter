@@ -235,9 +235,10 @@ class _WatchlistScreenState extends State<WatchlistScreen>
       padding: EdgeInsets.zero,
       itemCount: _watchlistItems.length,
       itemBuilder: (context, index) {
-        final item = _watchlistItems[index];
-        final isPositive = item['isPositive'] as bool;
-        final changeColor = isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed;
+        try {
+          final item = _watchlistItems[index];
+          final isPositive = (item['isPositive'] as bool?) ?? false;
+          final changeColor = isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed;
         
         // Alternating row colors
         final Color backgroundColor = index.isEven 
@@ -318,7 +319,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item['code'] as String,
+                        (item['code'] as String?) ?? 'N/A',
                         style: GoogleFonts.inter(
                           fontSize: 4.w,
                           fontWeight: FontWeight.w800,
@@ -328,7 +329,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                       ),
                       SizedBox(height: 0.5.h),
                       Text(
-                        item['name'] as String,
+                        (item['name'] as String?) ?? 'Unknown',
                         style: GoogleFonts.inter(
                           fontSize: 3.w,
                           fontWeight: FontWeight.normal,
@@ -347,7 +348,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        CurrencyFormatter.formatEUR(item['buyPrice'] as double, decimalPlaces: 4),
+                        CurrencyFormatter.formatEUR((item['buyPrice'] as num?)?.toDouble() ?? 0.0, decimalPlaces: 4),
                         style: GoogleFonts.inter(
                           fontSize: 4.w,
                           fontWeight: FontWeight.w700,
@@ -373,7 +374,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                             ),
                           ),
                           child: Text(
-                            '%${(item['changePercent'] as double).abs().toStringAsFixed(2).replaceAll('.', ',')}',
+                            '%${((item['changePercent'] as num?)?.toDouble() ?? 0.0).abs().toStringAsFixed(2).replaceAll('.', ',')}',
                             style: GoogleFonts.inter(
                               fontSize: 2.7.w,
                               fontWeight: FontWeight.w500, // Medium weight
@@ -394,6 +395,17 @@ class _WatchlistScreenState extends State<WatchlistScreen>
           ),
           ),
         );
+        } catch (e) {
+          print('Error rendering watchlist item at index $index: $e');
+          // Return a simple error placeholder
+          return Container(
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+            child: Text(
+              'Error loading item',
+              style: TextStyle(color: Colors.red),
+            ),
+          );
+        }
       },
     );
   }

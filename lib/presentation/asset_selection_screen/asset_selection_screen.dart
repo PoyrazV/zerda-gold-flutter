@@ -7,6 +7,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
 import '../../services/theme_config_service.dart';
+import '../../services/financial_data_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/gold_bars_icon.dart';
 
@@ -45,91 +46,6 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   bool _isSearching = false;
   bool _showSearchBar = false;
 
-  // Gold data - keeping static since API might not have gold prices
-  final List<Map<String, dynamic>> _staticGoldData = [
-    {
-      'code': 'GRAM',
-      'name': 'Gram Altın',
-      'buyPrice': 2640.50,
-      'sellPrice': 2654.30,
-      'change': 0.65,
-      'changePercent': 0.025,
-      'isPositive': true,
-    },
-    {
-      'code': 'YÇEYREK',
-      'name': 'Yeni Çeyrek Altın',
-      'buyPrice': 2876.50,
-      'sellPrice': 2891.75,
-      'change': 0.85,
-      'changePercent': 0.030,
-      'isPositive': true,
-    },
-    {
-      'code': 'EÇEYREK',
-      'name': 'Eski Çeyrek Altın',
-      'buyPrice': 2845.25,
-      'sellPrice': 2860.40,
-      'change': -0.45,
-      'changePercent': -0.016,
-      'isPositive': false,
-    },
-    {
-      'code': 'YYARIM',
-      'name': 'Yeni Yarım Altın',
-      'buyPrice': 5753.00,
-      'sellPrice': 5783.50,
-      'change': 1.12,
-      'changePercent': 0.019,
-      'isPositive': true,
-    },
-    {
-      'code': 'EYARIM',
-      'name': 'Eski Yarım Altın',
-      'buyPrice': 5690.75,
-      'sellPrice': 5720.80,
-      'change': -0.28,
-      'changePercent': -0.005,
-      'isPositive': false,
-    },
-    {
-      'code': 'YTAM',
-      'name': 'Yeni Tam Altın',
-      'buyPrice': 11506.00,
-      'sellPrice': 11567.00,
-      'change': 0.95,
-      'changePercent': 0.008,
-      'isPositive': true,
-    },
-    {
-      'code': 'ETAM',
-      'name': 'Eski Tam Altın',
-      'buyPrice': 11381.50,
-      'sellPrice': 11441.60,
-      'change': -0.62,
-      'changePercent': -0.005,
-      'isPositive': false,
-    },
-    {
-      'code': 'CUMHUR',
-      'name': 'Cumhuriyet Altını',
-      'buyPrice': 11548.90,
-      'sellPrice': 11610.30,
-      'change': 0.78,
-      'changePercent': 0.007,
-      'isPositive': true,
-    },
-    {
-      'code': 'GUMUS',
-      'name': 'Gümüş (Gram)',
-      'buyPrice': 33.45,
-      'sellPrice': 34.25,
-      'change': -0.45,
-      'changePercent': -0.013,
-      'isPositive': false,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -141,7 +57,17 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _allGoldData = List.from(_staticGoldData);
+    // Load gold data from FinancialDataService
+    _allGoldData = FinancialDataService.getGoldData().map((gold) {
+      // Add changePercent field if not present
+      final data = Map<String, dynamic>.from(gold);
+      if (!data.containsKey('changePercent')) {
+        final buyPrice = (data['buyPrice'] as num).toDouble();
+        final change = (data['change'] as num?)?.toDouble() ?? 0.0;
+        data['changePercent'] = buyPrice > 0 ? (change / buyPrice) : 0.0;
+      }
+      return data;
+    }).toList();
     _filteredGoldData = List.from(_allGoldData);
     _searchController.addListener(_onSearchChanged);
     _fetchCurrencyData();

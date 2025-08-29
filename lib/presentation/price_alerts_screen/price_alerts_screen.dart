@@ -225,15 +225,29 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
         padding: EdgeInsets.only(top: 1.h, bottom: 1.h),
         itemCount: _activeAlerts.length,
         itemBuilder: (context, index) {
-          final alert = _activeAlerts[index];
-          return AlertCardWidget(
-            alertData: alert,
-            onEdit: () => _editAlert(alert),
-            onDuplicate: () => _duplicateAlert(alert),
-            onDelete: () => _deleteAlert(alert['id'] as int),
-            onToggle: () => _toggleAlert(alert['id'] as int),
-            onTap: () => _showAlertDetail(alert),
-          );
+          try {
+            final alert = _activeAlerts[index];
+            // Ensure required fields have default values
+            final alertId = alert['id'] ?? DateTime.now().millisecondsSinceEpoch;
+            
+            return AlertCardWidget(
+              alertData: alert,
+              onEdit: () => _editAlert(alert),
+              onDuplicate: () => _duplicateAlert(alert),
+              onDelete: () => _deleteAlert(alertId as int),
+              onToggle: () => _toggleAlert(alertId as int),
+              onTap: () => _showAlertDetail(alert),
+            );
+          } catch (e) {
+            print('Error rendering alert at index $index: $e');
+            return Container(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+              child: Text(
+                'Error loading alert',
+                style: TextStyle(color: Colors.red),
+              ),
+            );
+          }
         },
       ),
     );
@@ -301,16 +315,12 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
   void _createAlarmWithPrice(Map<String, dynamic> selectedAsset, double targetPrice) {
     final alertData = {
       'id': DateTime.now().millisecondsSinceEpoch,
-      'assetName': selectedAsset['code'],
-      'assetFullName': selectedAsset['name'],
+      'assetCode': selectedAsset['code'],
+      'assetName': selectedAsset['name'], 
       'targetPrice': targetPrice,
-      'currentPrice': selectedAsset['currentPrice'],
-      'alertType': 'above',
-      'status': 'active',
-      'isEnabled': true,
-      'enableNotification': true,
-      'soundType': 'default',
-      'createdAt': DateTime.now(),
+      'currentPrice': selectedAsset['currentPrice'] ?? 0.0,
+      'status': 'active',  // active veya disabled olacak
+      'createdAt': DateTime.now().toIso8601String(),  // Convert to string for storage
     };
 
     _createAlert(alertData);
@@ -335,10 +345,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
   void _editAlert(Map<String, dynamic> alert) {
     // Format alert data for asset detail modal
     final selectedAsset = {
-      'code': alert['assetName'],
-      'name': alert['assetFullName'],
-      'currentPrice': alert['currentPrice'],
-      'changePercent': 0.0, // We don't have change percent in alert data
+      'code': alert['assetCode'] ?? alert['assetName'] ?? '',
+      'name': alert['assetName'] ?? '',
+      'currentPrice': alert['currentPrice'] ?? 0.0,
     };
 
     // Show asset detail modal for editing
@@ -375,9 +384,16 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
   }
 
   void _duplicateAlert(Map<String, dynamic> alert) {
-    final duplicatedAlert = Map<String, dynamic>.from(alert);
-    duplicatedAlert['id'] = DateTime.now().millisecondsSinceEpoch;
-    duplicatedAlert['createdAt'] = DateTime.now();
+    // Sadece gerekli alanları kopyala
+    final duplicatedAlert = {
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'assetCode': alert['assetCode'] ?? alert['assetName'] ?? '',
+      'assetName': alert['assetName'] ?? '',
+      'targetPrice': alert['targetPrice'] ?? 0.0,
+      'currentPrice': alert['currentPrice'] ?? 0.0,
+      'status': 'active',  // Yeni kopyalar aktif olarak başlar
+      'createdAt': DateTime.now().toIso8601String(),  // Convert to string for storage
+    };
 
     setState(() {
       _activeAlerts.insert(0, duplicatedAlert);
@@ -445,12 +461,10 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       final alertIndex =
           _activeAlerts.indexWhere((alert) => alert['id'] == alertId);
       if (alertIndex != -1) {
-        _activeAlerts[alertIndex]['isEnabled'] =
-            !(_activeAlerts[alertIndex]['isEnabled'] as bool);
-        _activeAlerts[alertIndex]['status'] =
-            (_activeAlerts[alertIndex]['isEnabled'] as bool)
-                ? 'active'
-                : 'disabled';
+        // Sadece status'u değiştir (active <-> disabled)
+        final currentStatus = _activeAlerts[alertIndex]['status'] ?? 'active';
+        _activeAlerts[alertIndex]['status'] = 
+            currentStatus == 'active' ? 'disabled' : 'active';
       }
     });
     

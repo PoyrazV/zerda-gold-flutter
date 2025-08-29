@@ -4,11 +4,14 @@ import 'package:sizer/sizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
+import 'dart:async';
 
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/theme_config_service.dart';
 import '../../services/user_data_service.dart';
+import '../../services/financial_data_service.dart';
+import '../../services/currency_api_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -30,6 +33,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
   final UserDataService _userDataService = UserDataService();
+  Timer? _refreshTimer;
 
   List<Map<String, dynamic>> _positions = [];
 
@@ -45,6 +49,20 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
     
     // Load portfolio data from storage
     _loadPortfolioData();
+    
+    // Set up automatic refresh every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted && _positions.isNotEmpty) {
+        _refreshPortfolio();
+      }
+    });
+    
+    // Initial refresh after load
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && _positions.isNotEmpty) {
+        _refreshPortfolio();
+      }
+    });
   }
 
   void _updateTicker() {
@@ -55,6 +73,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     WatchlistService.removeListener(_updateTicker);
     _userDataService.removeListener(_onUserDataChanged);
     super.dispose();
@@ -94,12 +113,12 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
 
   double get _totalPortfolioValue {
     return _positions.fold(0.0,
-        (sum, position) => sum + (position['currentValue'] as num).toDouble());
+        (sum, position) => sum + ((position['currentValue'] as num?)?.toDouble() ?? 0.0));
   }
 
   double get _totalPurchaseValue {
     return _positions.fold(0.0,
-        (sum, position) => sum + (position['purchaseValue'] as num).toDouble());
+        (sum, position) => sum + ((position['purchaseValue'] as num?)?.toDouble() ?? 0.0));
   }
 
   double get _totalGainLoss {
@@ -114,7 +133,7 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   double get _dailyChange {
     // Simulated daily change calculation
     return _positions.fold(0.0, (sum, position) {
-      final currentValue = (position['currentValue'] as num).toDouble();
+      final currentValue = (position['currentValue'] as num?)?.toDouble() ?? 0.0;
       final dailyChangePercent = (DateTime.now().millisecond % 10 - 5) / 100;
       return sum + (currentValue * dailyChangePercent);
     });
@@ -223,8 +242,9 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                final position = _positions[index];
-                return Dismissible(
+                try {
+                  final position = _positions[index];
+                  return Dismissible(
                   key: Key(position['id'].toString()),
                   direction: DismissDirection.horizontal,
                   background: Container(
@@ -307,6 +327,16 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
                     onPriceAlert: () => _createPriceAlert(position),
                   ),
                 );
+                } catch (e) {
+                  print('Error rendering position at index $index: $e');
+                  return Container(
+                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                    child: Text(
+                      'Error loading position',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
               },
               childCount: _positions.length,
             ),
@@ -569,35 +599,122 @@ class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
   Widget _buildBottomNavigation() {
     return CustomBottomNavigationBar(currentRoute: '/portfolio-management-screen');
   }
+  
+  // Helper method to get current price for a symbol
+  double? _getCurrentPriceForSymbol(String symbol) {
+    // Remove any extra spaces
+    symbol = symbol.trim().toUpperCase();
+    
+    // Check if it's a gold position
+    final goldData = FinancialDataService.getGoldData();
+    for (var gold in goldData) {
+      final goldCode = gold['code'] as String;
+      if (symbol == goldCode || symbol.contains(goldCode)) {
+        return (gold['buyPrice'] as num).toDouble();
+      }
+    }
+    
+    // Check special gold mappings
+    if (symbol == 'ÇEYREK' || symbol == 'YÇEYREK' || symbol == 'YENI ÇEYREK') {
+      final ceyrek = goldData.firstWhere((g) => g['code'] == 'YÇEYREK', orElse: () => {});
+      if (ceyrek.isNotEmpty) return (ceyrek['buyPrice'] as num).toDouble();
+    }
+    if (symbol == 'YARIM' || symbol == 'YYARIM' || symbol == 'YENI YARIM') {
+      final yarim = goldData.firstWhere((g) => g['code'] == 'YYARIM', orElse: () => {});
+      if (yarim.isNotEmpty) return (yarim['buyPrice'] as num).toDouble();
+    }
+    if (symbol == 'TAM' || symbol == 'CUMHURIYET') {
+      final tam = goldData.firstWhere((g) => g['code'] == 'CUM', orElse: () => {});
+      if (tam.isNotEmpty) return (tam['buyPrice'] as num).toDouble();
+    }
+    
+    // Check if it's a currency position
+    final currencyData = FinancialDataService.getCurrencies();
+    
+    // For EUR-based pairs (USD/EUR, GBP/EUR etc.)
+    if (symbol.contains('/EUR')) {
+      final currencyCode = symbol.split('/')[0];
+      for (var currency in currencyData) {
+        final code = currency['code'] as String;
+        // Convert old TRY pairs to match
+        if (code.startsWith(currencyCode)) {
+          return (currency['buyPrice'] as num).toDouble();
+        }
+      }
+    }
+    
+    // Direct currency code match (USD, EUR, GBP etc.)
+    for (var currency in currencyData) {
+      final code = currency['code'] as String;
+      if (code.startsWith(symbol) || symbol == code.split('TRY')[0]) {
+        return (currency['buyPrice'] as num).toDouble();
+      }
+    }
+    
+    return null;
+  }
 
   Future<void> _refreshPortfolio() async {
-    await Future.delayed(const Duration(seconds: 2));
-
-    setState(() {
-      // Simulate price updates
-      for (var position in _positions) {
-        final currentPrice = (position['currentPrice'] as num).toDouble();
-        final priceChange = (DateTime.now().millisecond % 20 - 10) / 100;
-        final newPrice = currentPrice * (1 + priceChange);
-
-        position['currentPrice'] = newPrice;
-        position['currentValue'] =
-            (position['quantity'] as num).toDouble() * newPrice;
-
-        // Update price history
-        final priceHistory = position['priceHistory'] as List;
-        priceHistory.removeAt(0);
-        priceHistory.add(newPrice);
-      }
-    });
-
-    Fluttertoast.showToast(
-      msg: "Portföy güncellendi",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: AppTheme.positiveGreen,
-      textColor: Colors.white,
-    );
+    // Try to get real-time data from API
+    try {
+      final financialService = FinancialDataService();
+      final currencyService = CurrencyApiService();
+      
+      // Fetch latest currency data
+      await financialService.refreshCurrencyData();
+      
+      // Also refresh gold data timestamps
+      FinancialDataService.refreshGoldData();
+      
+      setState(() {
+        // Update prices for each position using real data
+        for (var position in _positions) {
+          final symbol = position['symbol'] as String? ?? '';
+          final newPrice = _getCurrentPriceForSymbol(symbol);
+          
+          if (newPrice != null) {
+            // Use real price from API/service
+            position['currentPrice'] = newPrice;
+            position['currentValue'] = 
+                (position['quantity'] as num).toDouble() * newPrice;
+            
+            // Update price history
+            if (position['priceHistory'] != null && position['priceHistory'] is List) {
+              final priceHistory = position['priceHistory'] as List;
+              if (priceHistory.isNotEmpty) {
+                priceHistory.removeAt(0);
+                priceHistory.add(newPrice);
+              }
+            } else {
+              position['priceHistory'] = [newPrice];
+            }
+          } else {
+            // Fallback: keep current price if symbol not found
+            print('Warning: Could not find price for symbol: $symbol');
+          }
+        }
+      });
+      
+      // Save updated portfolio with new prices
+      await _savePortfolioData();
+      
+      Fluttertoast.showToast(
+        msg: "Portföy güncellendi",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: AppTheme.positiveGreen,
+        textColor: Colors.white,
+      );
+    } catch (e) {
+      print('Portfolio refresh error: $e');
+      Fluttertoast.showToast(
+        msg: "Güncelleme başarısız",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: AppTheme.negativeRed,
+        textColor: Colors.white,
+      );
+    }
   }
 
   void _showAddPositionBottomSheet() {

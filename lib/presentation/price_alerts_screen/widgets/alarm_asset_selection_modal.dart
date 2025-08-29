@@ -720,6 +720,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
+                      color: _themeConfigService.listNameText,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -740,6 +741,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
+                      color: _themeConfigService.listPriceText,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,

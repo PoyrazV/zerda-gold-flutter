@@ -286,7 +286,7 @@ class _TickerSectionState extends State<TickerSection> {
                       fontWeight: FontWeight.w500, // Medium weight to match list
                       color: isPositive 
                           ? _themeConfigService.listPrimaryText
-                          : _themeConfigService.listSecondaryText
+                          : _themeConfigService.listSecondaryText,
                       height: 1.2,
                     ),
                     textAlign: TextAlign.center, // Center align text

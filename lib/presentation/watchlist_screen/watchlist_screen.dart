@@ -381,7 +381,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                               fontWeight: FontWeight.w500, // Medium weight
                               color: isPositive 
                                   ? _themeConfigService.listPrimaryText
-                                  : _themeConfigService.listSecondaryText
+                                  : _themeConfigService.listSecondaryText,
                               height: 1.0,
                             ),
                           ),

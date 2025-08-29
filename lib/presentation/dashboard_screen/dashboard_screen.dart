@@ -423,7 +423,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       fontWeight: FontWeight.w500, // Medium weight instead of extra bold
                       color: isPositive 
                           ? _themeConfigService.listPrimaryText
-                          : _themeConfigService.listSecondaryText
+                          : _themeConfigService.listSecondaryText,
                       height: 1.0, // Line height 0.625rem
                     ),
                     ),

@@ -15,7 +15,10 @@ class ThemeConfigService {
   late Dio _dio;
   
   // Admin panel API URL'i
-  static const String _apiBaseUrl = 'http://10.0.2.2:3009/api';
+  // Emulator: 10.0.2.2, Physical device: use your computer's IP
+  // To find your IP: ipconfig (Windows) or ifconfig (Mac/Linux)
+  static const String _apiBaseUrl = 'http://10.0.2.2:3009/api'; // Android emulator
+  // static const String _apiBaseUrl = 'http://192.168.1.X:3009/api'; // Physical device (replace X with your IP)
   
   // Customer ID (FeatureConfigService ile sync)
   String _customerId = 'default';
@@ -41,7 +44,7 @@ class ThemeConfigService {
       await _loadThemeConfiguration();
       _isInitialized = true;
       
-      // Periodic sync başlat (3 saniyede bir - test için hızlandırıldı)
+      // Periodic sync başlat (5 saniyede bir - hızlı güncelleme için)
       _startPeriodicSync();
       
       print('✅ ThemeConfigService initialized successfully');
@@ -104,7 +107,11 @@ class ThemeConfigService {
           await _cacheThemeConfiguration();
           
           print('✅ Theme loaded from Multi-tenant API (Customer: $_customerId)');
-          print('🎨 Theme Config: $_themeConfig');
+          print('🎨 Listing Colors Loaded:');
+          print('  Primary: ${_themeConfig['list_primary_color']}');
+          print('  Secondary: ${_themeConfig['list_secondary_color']}');
+          print('  Row Even: ${_themeConfig['list_row_even']}');
+          print('  Row Odd: ${_themeConfig['list_row_odd']}');
           
           // Eğer değişiklik varsa listeners'ları bildir
           if (hasChanges) {
@@ -168,9 +175,10 @@ class ThemeConfigService {
   // Periodic sync başlat
   void _startPeriodicSync() {
     _syncTimer?.cancel();
-    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) { // 30 saniyede bir sync
+    _syncTimer = Timer.periodic(const Duration(seconds: 5), (_) { // 5 saniyede bir sync - daha hızlı güncelleme
       _syncWithAdminPanel().catchError((error) {
         // Hataları sessizce yoksay
+        print('⚠️ Theme sync error silently caught');
       });
     });
   }
@@ -191,6 +199,12 @@ class ThemeConfigService {
           
           // Değişiklik var mı kontrol et
           if (!_compareMaps(_themeConfig, newThemeConfig)) {
+            print('🔄 Theme change detected! Old vs New:');
+            print('  List Primary: ${_themeConfig['list_primary_color']} -> ${newThemeConfig['list_primary_color']}');
+            print('  List Secondary: ${_themeConfig['list_secondary_color']} -> ${newThemeConfig['list_secondary_color']}');
+            print('  Row Even: ${_themeConfig['list_row_even']} -> ${newThemeConfig['list_row_even']}');
+            print('  Row Odd: ${_themeConfig['list_row_odd']} -> ${newThemeConfig['list_row_odd']}');
+            
             _themeConfig = newThemeConfig;
             await _cacheThemeConfiguration();
             
@@ -198,6 +212,8 @@ class ThemeConfigService {
             
             // UI'a notification gönderilebilir
             _notifyThemeChanges();
+          } else {
+            print('✅ Theme sync completed - no changes detected');
           }
         }
         

@@ -38,6 +38,20 @@ class GlobalTickerService extends ChangeNotifier {
     
     print('✅ GlobalTickerService: Initialized successfully');
   }
+  
+  // Force reinitialize ticker data (useful after login)
+  Future<void> reinitialize() async {
+    print('🔄 GlobalTickerService: Force reinitializing...');
+    
+    // Reset state
+    _tickerData = [];
+    _hasInitialData = false;
+    
+    // Fetch fresh data
+    await _fetchTickerData();
+    
+    print('✅ GlobalTickerService: Reinitialized successfully');
+  }
 
   // Handle watchlist changes
   void _onWatchlistChanged() {

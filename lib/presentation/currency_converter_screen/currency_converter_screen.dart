@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
+import '../../services/gold_products_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -89,6 +90,23 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
     }
   }
 
+  Future<void> _fetchGoldPrices() async {
+    try {
+      print('CurrencyConverter: Fetching gold prices from database...');
+      final goldProducts = await GoldProductsService.getProductsWithPrices();
+      print('CurrencyConverter: Received ${goldProducts.length} gold products');
+      
+      setState(() {
+        _goldPrices = goldProducts;
+      });
+    } catch (e) {
+      print('CurrencyConverter: Error fetching gold prices: $e');
+      setState(() {
+        _goldPrices = [];
+      });
+    }
+  }
+
   Future<void> _loadApiData() async {
     setState(() {
       _isLoadingRates = true;
@@ -103,8 +121,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
         _currencyRates['TRY'] = 1.0;
       }
 
-      // Gold prices artık kullanılmıyor - sadece currency API kullanıyoruz
-      _goldPrices = [];
+      // Fetch gold prices from database
+      _fetchGoldPrices();
 
     } catch (e) {
       print('Error loading API data: $e');
@@ -287,13 +305,13 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen>
   }
 
   double _getGoldPrice(String goldCode) {
-    // Map converter gold codes to API codes
+    // Map converter gold codes to API codes (3-character codes from GoldProductsService)
     final goldMapping = {
-      'GRAM': 'ALTIN',
-      'ÇEYREK': 'CEYREK_YENI',
-      'YARIM': 'YARIM_YENI',
-      'TAM': 'TAM_YENI',
-      'ONS': 'PLATIN', // Using platinum as ounce reference
+      'GRAM': 'GRM',      // Gram Altın
+      'ÇEYREK': 'CYR',    // Çeyrek Altın
+      'YARIM': 'YRM',     // Yarım Altın
+      'TAM': 'TAM',       // Tam Altın
+      'ONS': 'ONS',       // Ons Altın
     };
 
     final apiCode = goldMapping[goldCode];

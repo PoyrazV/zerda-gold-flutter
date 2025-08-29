@@ -139,6 +139,12 @@ class AuthService extends ChangeNotifier {
         // Force WebSocket reconnection with auth info
         _forceWebSocketReconnection();
         
+        // Wait for UserDataService to load user data
+        print('🔄 AuthService: Waiting for UserDataService to load user data...');
+        final userDataService = UserDataService();
+        await userDataService.loadUserData(_userId);
+        print('✅ AuthService: UserDataService data loaded successfully');
+        
         notifyListeners();
         return true;
       }
@@ -240,10 +246,21 @@ class AuthService extends ChangeNotifier {
       print('❌ Logout process error: $e');
     }
     
-    // Clear local data
+    // Clear ONLY auth-related data (preserve user data like alarms, watchlist, etc.)
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-
+    
+    // Remove only authentication keys
+    await prefs.remove('isLoggedIn');
+    await prefs.remove('authToken');
+    await prefs.remove('userId');
+    await prefs.remove('userEmail');
+    await prefs.remove('userName');
+    await prefs.remove('userProfileImage');
+    // Note: device_id is preserved for notifications continuity
+    // Note: user data (alarms, watchlist, portfolio) is preserved for multi-user support
+    
+    print('✅ Auth data cleared (user data preserved)');
+    
     _isLoggedIn = false;
     _userEmail = null;
     _userName = null;

@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
+import '../../services/global_ticker_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/dashboard_header.dart';
@@ -45,6 +46,15 @@ class _DashboardScreenState extends State<DashboardScreen>
     ThemeConfigService().addListener(_onThemeChanged);
     // Load currency data from API
     _loadCurrencyData();
+    // Reinitialize GlobalTickerService to ensure fresh data after login
+    _reinitializeGlobalTicker();
+  }
+  
+  Future<void> _reinitializeGlobalTicker() async {
+    print('🔄 Dashboard: Reinitializing GlobalTickerService...');
+    final globalTicker = GlobalTickerService();
+    await globalTicker.reinitialize();
+    print('✅ Dashboard: GlobalTickerService reinitialized');
   }
   
   void _onThemeChanged() {

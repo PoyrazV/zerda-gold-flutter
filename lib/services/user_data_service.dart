@@ -22,6 +22,10 @@ class UserDataService extends ChangeNotifier {
   List<Map<String, dynamic>> _activeAlerts = [];
   List<Map<String, dynamic>> _historyAlerts = [];
   
+  // Track deleted items to prevent backend sync from restoring them
+  Set<int> _deletedAlertIds = {};
+  DateTime? _lastLocalAlertsUpdate;
+  
   // Getters
   Map<String, dynamic> get watchlist => Map.from(_watchlist);
   List<Map<String, dynamic>> get portfolio => List.from(_portfolio);
@@ -105,6 +109,19 @@ class UserDataService extends ChangeNotifier {
         }).toList();
       }
       
+      // Load deleted alert IDs
+      final deletedAlertsJson = prefs.getString('user_${userId}_deleted_alerts');
+      if (deletedAlertsJson != null) {
+        final List<dynamic> deletedList = jsonDecode(deletedAlertsJson);
+        _deletedAlertIds = deletedList.cast<int>().toSet();
+      }
+      
+      // Load last update time
+      final lastUpdateStr = prefs.getString('user_${userId}_alerts_last_update');
+      if (lastUpdateStr != null) {
+        _lastLocalAlertsUpdate = DateTime.parse(lastUpdateStr);
+      }
+      
       // Load history alerts
       final historyAlertsKey = 'user_${userId}_history_alerts';
       final historyAlertsJson = prefs.getString(historyAlertsKey);
@@ -141,6 +158,8 @@ class UserDataService extends ChangeNotifier {
     _portfolio = [];
     _activeAlerts = [];
     _historyAlerts = [];
+    _deletedAlertIds = {};
+    _lastLocalAlertsUpdate = null;
     
     notifyListeners();
   }
@@ -259,14 +278,31 @@ class UserDataService extends ChangeNotifier {
     List<Map<String, dynamic>>? activeAlerts,
     List<Map<String, dynamic>>? historyAlerts,
   }) async {
-    if (_currentUserId == null) return;
+    // Try to get userId if null
+    if (_currentUserId == null) {
+      print('⚠️ UserDataService: currentUserId is null in saveAlerts, trying to get from AuthService...');
+      if (_authService.isLoggedIn && _authService.userId != null) {
+        _currentUserId = _authService.userId;
+        print('✅ UserDataService: Retrieved userId from AuthService: $_currentUserId');
+      } else {
+        print('❌ UserDataService: Cannot save alerts - no user logged in');
+        return;
+      }
+    }
     
     try {
       final prefs = await SharedPreferences.getInstance();
       
       // Save active alerts
       if (activeAlerts != null) {
+        // Track deleted alerts
+        final oldAlertIds = _activeAlerts.map((a) => a['id'] as int?).where((id) => id != null).toSet();
+        final newAlertIds = activeAlerts.map((a) => a['id'] as int?).where((id) => id != null).toSet();
+        final deletedIds = oldAlertIds.difference(newAlertIds);
+        _deletedAlertIds.addAll(deletedIds.cast<int>());
+        
         _activeAlerts = List.from(activeAlerts);
+        _lastLocalAlertsUpdate = DateTime.now();
         final activeKey = 'user_${_currentUserId}_active_alerts';
         
         // Convert DateTime to string for storage
@@ -279,6 +315,13 @@ class UserDataService extends ChangeNotifier {
         }).toList();
         
         await prefs.setString(activeKey, jsonEncode(activeForStorage));
+        
+        // Save deleted alert IDs
+        await prefs.setString('user_${_currentUserId}_deleted_alerts', jsonEncode(_deletedAlertIds.toList()));
+        await prefs.setString('user_${_currentUserId}_alerts_last_update', _lastLocalAlertsUpdate!.toIso8601String());
+        
+        print('✅ UserDataService: Saved ${_activeAlerts.length} active alerts to storage');
+        print('🗑️ UserDataService: Tracking ${_deletedAlertIds.length} deleted alert IDs');
       }
       
       // Save history alerts
@@ -299,6 +342,7 @@ class UserDataService extends ChangeNotifier {
         }).toList();
         
         await prefs.setString(historyKey, jsonEncode(historyForStorage));
+        print('✅ UserDataService: Saved ${_historyAlerts.length} history alerts to storage');
       }
       
       notifyListeners();
@@ -307,6 +351,7 @@ class UserDataService extends ChangeNotifier {
       _syncAlertsToBackend();
     } catch (e) {
       print('UserDataService: Error saving alerts: $e');
+      rethrow; // Rethrow to let the caller handle the error
     }
   }
   
@@ -375,15 +420,34 @@ class UserDataService extends ChangeNotifier {
         }
         
         if (data['alerts'] != null) {
-          // Process alerts
+          // Process alerts - but don't restore deleted ones
           if (data['alerts']['active'] != null) {
-            _activeAlerts = (data['alerts']['active'] as List).map((alert) {
+            final backendAlerts = (data['alerts']['active'] as List).map((alert) {
               final alertMap = Map<String, dynamic>.from(alert);
               if (alertMap['createdAt'] is String) {
                 alertMap['createdAt'] = DateTime.parse(alertMap['createdAt']);
               }
               return alertMap;
             }).toList();
+            
+            // Filter out deleted alerts
+            final filteredAlerts = backendAlerts.where((alert) {
+              final alertId = alert['id'] as int?;
+              if (alertId != null && _deletedAlertIds.contains(alertId)) {
+                print('🚫 UserDataService: Skipping deleted alert ID $alertId from backend sync');
+                return false;
+              }
+              return true;
+            }).toList();
+            
+            // Only update if backend has newer data or we have no local update timestamp
+            if (_lastLocalAlertsUpdate == null || 
+                (data['lastUpdated'] != null && 
+                 DateTime.parse(data['lastUpdated']).isAfter(_lastLocalAlertsUpdate!))) {
+              _activeAlerts = filteredAlerts;
+            } else {
+              print('🔒 UserDataService: Keeping local alerts (local update is newer)');
+            }
           }
           
           if (data['alerts']['history'] != null) {
@@ -559,6 +623,7 @@ class UserDataService extends ChangeNotifier {
   }
   
   // Clean up
+  @override
   void dispose() {
     _authService.removeListener(_onAuthChanged);
     super.dispose();

@@ -19,15 +19,7 @@ class TickerSection extends StatefulWidget {
 class _TickerSectionState extends State<TickerSection> {
   final CurrencyApiService _currencyApiService = CurrencyApiService();
   List<Map<String, dynamic>> _tickerData = [];
-  
-  // Default popular currency pairs when watchlist is empty
-  final List<Map<String, dynamic>> _defaultCurrencies = [
-    {'code': 'USD/EUR', 'name': 'USD/EUR', 'buyPrice': 0.92, 'sellPrice': 0.93, 'change': 0.45, 'isPositive': true},
-    {'code': 'GBP/EUR', 'name': 'GBP/EUR', 'buyPrice': 1.17, 'sellPrice': 1.18, 'change': -0.23, 'isPositive': false},
-    {'code': 'CHF/EUR', 'name': 'CHF/EUR', 'buyPrice': 1.04, 'sellPrice': 1.05, 'change': 0.12, 'isPositive': true},
-    {'code': 'AUD/EUR', 'name': 'AUD/EUR', 'buyPrice': 0.60, 'sellPrice': 0.61, 'change': -0.38, 'isPositive': false},
-    {'code': 'JPY/EUR', 'name': 'JPY/EUR', 'buyPrice': 0.0062, 'sellPrice': 0.0063, 'change': 0.67, 'isPositive': true},
-  ];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -60,40 +52,51 @@ class _TickerSectionState extends State<TickerSection> {
   }
 
   Future<void> _loadTickerData() async {
+    // Set loading state
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+    
+    // Small delay to ensure UserDataService has loaded
+    await Future.delayed(const Duration(milliseconds: 100));
+    
     // Get watchlist items
     final watchlistItems = WatchlistService.getWatchlistItems();
+    print('🎯 TickerSection: Loading ticker data, watchlist items: ${watchlistItems.length}');
     
     if (watchlistItems.isNotEmpty) {
       // Use watchlist items for ticker
-      setState(() {
-        _tickerData = watchlistItems.take(10).toList(); // Limit to 10 items
-      });
+      if (mounted) {
+        setState(() {
+          _tickerData = watchlistItems.take(10).toList(); // Limit to 10 items
+          _isLoading = false;
+        });
+      }
+      print('✅ TickerSection: Loaded ${_tickerData.length} items from watchlist');
     } else {
-      // Use default popular currencies when watchlist is empty
+      // When watchlist is empty, try to get data from API
       try {
-        // Try to get real data from API for popular pairs
+        // Get real data from API
         final currencies = await _currencyApiService.getFormattedCurrencyData();
         if (mounted) {
           setState(() {
-            // Try to find the default pairs in API data
-            final List<Map<String, dynamic>> apiTickerData = [];
-            for (var defaultPair in _defaultCurrencies) {
-              final apiData = currencies.firstWhere(
-                (c) => c['code'] == defaultPair['code'],
-                orElse: () => defaultPair, // Use default if not found
-              );
-              apiTickerData.add(apiData);
-            }
-            _tickerData = apiTickerData.isNotEmpty ? apiTickerData : _defaultCurrencies;
+            // Show first few currencies from API if available
+            _tickerData = currencies.take(5).toList();
+            _isLoading = false;
           });
         }
+        print('✅ TickerSection: Loaded ${_tickerData.length} items from API (watchlist empty)');
       } catch (e) {
-        // Fall back to default data on error
+        // On error, show empty state
         if (mounted) {
           setState(() {
-            _tickerData = _defaultCurrencies;
+            _tickerData = [];
+            _isLoading = false;
           });
         }
+        print('❌ TickerSection: Error loading ticker data: $e');
       }
     }
   }
@@ -106,7 +109,7 @@ class _TickerSectionState extends State<TickerSection> {
         color: AppColors.tickerBackground,
       ),
       padding: EdgeInsets.only(bottom: widget.reduceBottomPadding ? 0.5.w : 2.w), // Conditional bottom padding
-      child: _tickerData.isEmpty
+      child: _tickerData.isEmpty && _isLoading
           ? Center(
               child: SizedBox(
                 width: 5.w,
@@ -114,6 +117,17 @@ class _TickerSectionState extends State<TickerSection> {
                 child: CircularProgressIndicator(
                   color: AppColors.gold,
                   strokeWidth: 2,
+                ),
+              ),
+            )
+          : _tickerData.isEmpty
+          ? Center(
+              child: Text(
+                'Takip listesi boş',
+                style: GoogleFonts.inter(
+                  fontSize: 3.5.w,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.gold.withValues(alpha: 0.7),
                 ),
               ),
             )
@@ -181,12 +195,17 @@ class _TickerSectionState extends State<TickerSection> {
     
     return GestureDetector(
       onTap: () {
-        // Navigate to asset detail screen with the currency code
+        // Navigate to asset detail screen with complete currency data
         Navigator.pushNamed(
           context,
           '/asset-detail-screen',
           arguments: {
             'code': currency['code'] as String,
+            'name': currency['name'] as String?,
+            'buyPrice': currency['buyPrice'],
+            'sellPrice': currency['sellPrice'],
+            'change': currency['change'],
+            'isPositive': currency['isPositive'],
           },
         );
       },
@@ -228,7 +247,7 @@ class _TickerSectionState extends State<TickerSection> {
               
               // Price
               Text(
-                CurrencyFormatter.formatSmartPrice((currency['buyPrice'] as num?)?.toDouble() ?? 0.0),
+                CurrencyFormatter.formatSmartPrice((currency['sellPrice'] as num?)?.toDouble() ?? 0.0),
                 style: GoogleFonts.inter(fontWeight: FontWeight.w900,
                   fontSize: 3.5.w, // Increased font size for better readability
                   color: const Color(0xFF4B5563), // Darker gray for better visibility

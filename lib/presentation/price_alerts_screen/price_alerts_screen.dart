@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'dart:convert';
 
 import '../../core/app_export.dart';
-import '../../services/watchlist_service.dart';
-import '../../services/theme_config_service.dart';
 import '../../services/user_data_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/app_drawer.dart';
@@ -90,6 +85,16 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       print('Alerts: Saved ${_activeAlerts.length} active and ${_historyAlerts.length} history alerts to user data');
     } catch (e) {
       print('Error saving stored alerts: $e');
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Alarm kaydedilemedi. Lütfen tekrar deneyin.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -234,7 +239,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
               alertData: alert,
               onEdit: () => _editAlert(alert),
               onDuplicate: () => _duplicateAlert(alert),
-              onDelete: () => _deleteAlert(alertId as int),
+              onDelete: () async => await _deleteAlert(alertId as int),
               onToggle: () => _toggleAlert(alertId as int),
               onTap: () => _showAlertDetail(alert),
             );
@@ -264,7 +269,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
             height: 60.h,
             child: AlertHistoryWidget(
               historyAlerts: _historyAlerts,
-              onDelete: _deleteHistoryAlert,
+              onDelete: (alert) async => await _deleteHistoryAlert(alert),
             ),
           ),
         ),
@@ -278,7 +283,7 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
         padding: EdgeInsets.only(top: 1.h, bottom: 0.5.h),
         child: AlertHistoryWidget(
           historyAlerts: _historyAlerts,
-          onDelete: _deleteHistoryAlert,
+          onDelete: (alert) async => await _deleteHistoryAlert(alert),
         ),
       ),
     );
@@ -331,8 +336,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       _activeAlerts.insert(0, alertData);
     });
     
+    // Save to persistent storage
     _saveStoredData();
-
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm başarıyla oluşturuldu'),
@@ -372,8 +378,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       }
     });
     
+    // Save to persistent storage
     _saveStoredData();
-
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm başarıyla güncellendi'),
@@ -399,8 +406,9 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
       _activeAlerts.insert(0, duplicatedAlert);
     });
     
+    // Save to persistent storage
     _saveStoredData();
-
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Alarm kopyalandı'),
@@ -410,64 +418,115 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> {
     );
   }
 
-  void _deleteHistoryAlert(Map<String, dynamic> alert) {
+  Future<void> _deleteHistoryAlert(Map<String, dynamic> alert) async {
+    // Store for potential restoration
+    final deletedIndex = _historyAlerts.indexWhere((item) => item['id'] == alert['id']);
+    if (deletedIndex == -1) return;
+    
+    final deletedAlert = Map<String, dynamic>.from(_historyAlerts[deletedIndex]);
+    
     setState(() {
       _historyAlerts.removeWhere((item) => item['id'] == alert['id']);
     });
     
-    _saveStoredData();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Geçmiş alarm silindi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      await _saveStoredData();
+      print('✅ History alert deleted successfully: ID ${alert['id']}');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Geçmiş alarm silindi'),
+            backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error deleting history alert: $e');
+      // Restore if save failed
+      if (mounted) {
+        setState(() {
+          _historyAlerts.insert(deletedIndex, deletedAlert);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Geçmiş alarm silinemedi. Lütfen tekrar deneyin.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
-  void _deleteAlert(int alertId) {
+  Future<void> _deleteAlert(int alertId) async {
     // Store the deleted alert for undo functionality
-    final deletedAlert = _activeAlerts.firstWhere((alert) => alert['id'] == alertId);
     final deletedIndex = _activeAlerts.indexWhere((alert) => alert['id'] == alertId);
+    if (deletedIndex == -1) return;
     
+    final deletedAlert = Map<String, dynamic>.from(_activeAlerts[deletedIndex]);
+    
+    // Remove from state immediately for responsive UI
     setState(() {
       _activeAlerts.removeWhere((alert) => alert['id'] == alertId);
     });
     
-    _saveStoredData();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Alarm silindi'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'Geri Al',
-          textColor: Colors.white,
-          onPressed: () {
-            setState(() {
-              _activeAlerts.insert(deletedIndex, deletedAlert);
-            });
-            _saveStoredData();
-          },
-        ),
-      ),
-    );
+    // Save to persistent storage and wait for completion
+    try {
+      await _saveStoredData();
+      print('✅ Alert deleted successfully: ID $alertId');
+      
+      // Show success message only after successful save
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Alarm silindi'),
+            backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Geri Al',
+              textColor: Colors.white,
+              onPressed: () async {
+                setState(() {
+                  _activeAlerts.insert(deletedIndex, deletedAlert);
+                });
+                // Also await the undo save operation
+                await _saveStoredData();
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error deleting alert: $e');
+      // Restore the alert if save failed
+      if (mounted) {
+        setState(() {
+          _activeAlerts.insert(deletedIndex, deletedAlert);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Alarm silinemedi. Lütfen tekrar deneyin.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _toggleAlert(int alertId) {
     setState(() {
-      final alertIndex =
-          _activeAlerts.indexWhere((alert) => alert['id'] == alertId);
+      final alertIndex = _activeAlerts.indexWhere((alert) => alert['id'] == alertId);
       if (alertIndex != -1) {
-        // Sadece status'u değiştir (active <-> disabled)
         final currentStatus = _activeAlerts[alertIndex]['status'] ?? 'active';
         _activeAlerts[alertIndex]['status'] = 
             currentStatus == 'active' ? 'disabled' : 'active';
       }
     });
     
+    // Save to persistent storage
     _saveStoredData();
   }
 

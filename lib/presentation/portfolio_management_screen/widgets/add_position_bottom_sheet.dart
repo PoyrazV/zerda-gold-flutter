@@ -5,7 +5,7 @@ import 'package:sizer/sizer.dart';
 import '../../../core/app_export.dart';
 import '../../../services/currency_api_service.dart';
 import '../../../services/theme_config_service.dart';
-import '../../../services/financial_data_service.dart';
+import '../../../services/gold_products_service.dart';
 import '../../../widgets/gold_bars_icon.dart';
 
 class AddPositionBottomSheet extends StatefulWidget {
@@ -56,21 +56,45 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    // Load gold data from FinancialDataService
-    _allGoldData = FinancialDataService.getGoldData().map((gold) {
-      // Add changePercent field if not present
-      final data = Map<String, dynamic>.from(gold);
-      if (!data.containsKey('changePercent')) {
-        final buyPrice = (data['buyPrice'] as num).toDouble();
-        final change = (data['change'] as num?)?.toDouble() ?? 0.0;
-        data['changePercent'] = buyPrice > 0 ? (change / buyPrice) : 0.0;
-      }
-      return data;
-    }).toList();
-    _filteredGoldData = List.from(_allGoldData);
-    print('AddPositionBottomSheet: Gold data initialized with ${_allGoldData.length} items from FinancialDataService');
     _searchController.addListener(_onSearchChanged);
-    _fetchCurrencyData();
+    _fetchInitialData();
+  }
+
+  Future<void> _fetchInitialData() async {
+    // Fetch both currency and gold data
+    await Future.wait([
+      _fetchCurrencyData(),
+      _fetchGoldData(),
+    ]);
+  }
+
+  Future<void> _fetchGoldData() async {
+    try {
+      print('AddPositionBottomSheet: Fetching gold data from database...');
+      final goldProducts = await GoldProductsService.getProductsWithPrices();
+      print('AddPositionBottomSheet: Received ${goldProducts.length} gold products from database');
+      
+      setState(() {
+        _allGoldData = goldProducts.map((gold) {
+          // Ensure changePercent field exists
+          final data = Map<String, dynamic>.from(gold);
+          if (!data.containsKey('changePercent')) {
+            final buyPrice = (data['buyPrice'] as num?)?.toDouble() ?? 0.0;
+            final change = (data['change'] as num?)?.toDouble() ?? 0.0;
+            data['changePercent'] = buyPrice > 0 ? (change / buyPrice) * 100 : 0.0;
+          }
+          return data;
+        }).toList();
+        _displayedGoldCount = 20; // Reset pagination
+        print('AddPositionBottomSheet: Successfully loaded ${_allGoldData.length} gold products');
+      });
+    } catch (e) {
+      print('AddPositionBottomSheet: Error fetching gold data: $e');
+      // Keep empty list on error
+      setState(() {
+        _allGoldData = [];
+      });
+    }
   }
 
   @override
@@ -147,8 +171,11 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    // Fetch fresh data from API
-    await _fetchCurrencyData();
+    // Fetch fresh data from both APIs
+    await Future.wait([
+      _fetchCurrencyData(),
+      _fetchGoldData(),
+    ]);
 
     setState(() {
       _isRefreshing = false;
@@ -673,24 +700,13 @@ class _AddPositionBottomSheetState extends State<AddPositionBottomSheet>
               flex: 4,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    asset['code'] as String? ?? '',
+                    asset['name'] as String? ?? '',
                     style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  SizedBox(height: 0.2.h),
-                  Text(
-                    asset['name'] as String? ?? '',
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondaryLight,
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w400,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,

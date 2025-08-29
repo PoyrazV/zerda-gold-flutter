@@ -13,6 +13,29 @@ class GoldProductsService {
   static const String cachedProductsKey = 'cached_gold_products';
   static const String cachedProductsTimeKey = 'cached_gold_products_time';
 
+  // Generate 3-character code from gold name
+  static String _generateGoldCode(String name) {
+    final nameLower = name.toLowerCase();
+    
+    // Special mappings for common gold types
+    if (nameLower.contains('gram')) return 'GRM';
+    if (nameLower.contains('çeyrek')) return 'CYR';
+    if (nameLower.contains('yarım')) return 'YRM';
+    if (nameLower.contains('tam') && !nameLower.contains('ata')) return 'TAM';
+    if (nameLower.contains('cumhuriyet')) return 'CMH';
+    if (nameLower.contains('ata')) return 'ATA';
+    if (nameLower.contains('ons')) return 'ONS';
+    if (nameLower.contains('gümüş')) return 'GMS';
+    if (nameLower.contains('gremese')) return 'GRS';
+    if (nameLower.contains('beşli')) return 'BSL';
+    if (nameLower.contains('reşat')) return 'RST';
+    if (nameLower.contains('hamit')) return 'HMT';
+    
+    // Default: Take first 3 chars of the name
+    final cleanName = name.replaceAll(RegExp(r'[^a-zA-ZğüşıöçĞÜŞİÖÇ]'), '').toUpperCase();
+    return cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padRight(3, 'X');
+  }
+
   // Get customer ID from preferences
   static Future<String> getCustomerId() async {
     try {
@@ -219,7 +242,7 @@ class GoldProductsService {
             final change = (DateTime.now().millisecond % 100 - 50) * 0.01;
             
             cachedWithPrices.add({
-              'code': product['id'] ?? 'GOLD',
+              'code': _generateGoldCode(product['name'] ?? 'Altın'),
               'name': product['name'] ?? 'Altın',
               'buyPrice': buyPrice,
               'sellPrice': sellPrice,
@@ -255,7 +278,7 @@ class GoldProductsService {
         final change = (DateTime.now().millisecond % 100 - 50) * 0.01;
         
         productsWithPrices.add({
-          'code': product['id'] ?? 'GOLD',
+          'code': _generateGoldCode(product['name'] ?? 'Altın'),
           'name': product['name'] ?? 'Altın',
           'buyPrice': buyPrice,
           'sellPrice': sellPrice,
@@ -275,7 +298,7 @@ class GoldProductsService {
       if (_cachedProducts != null && _cachedProducts!.isNotEmpty) {
         print('Returning cached products due to error');
         return _cachedProducts!.map((p) => {
-          'code': p['id'] ?? 'GOLD',
+          'code': _generateGoldCode(p['name'] ?? 'Altın'),
           'name': p['name'] ?? 'Altın',
           'buyPrice': 0.0,
           'sellPrice': 0.0,
@@ -292,7 +315,7 @@ class GoldProductsService {
   static List<Map<String, dynamic>> _getFallbackProducts() {
     return [
       {
-        'code': 'GRAM',
+        'code': 'GRM',
         'name': 'Gram Altın',
         'buyPrice': 2640.50,
         'sellPrice': 2654.30,
@@ -304,7 +327,7 @@ class GoldProductsService {
         'timestamp': DateTime.now().toIso8601String(),
       },
       {
-        'code': 'CEYREK',
+        'code': 'CYR',
         'name': 'Çeyrek Altın',
         'buyPrice': 4570.00,
         'sellPrice': 4595.00,
@@ -316,7 +339,7 @@ class GoldProductsService {
         'timestamp': DateTime.now().toIso8601String(),
       },
       {
-        'code': 'YARIM',
+        'code': 'YRM',
         'name': 'Yarım Altın',
         'buyPrice': 9140.00,
         'sellPrice': 9190.00,
@@ -340,7 +363,7 @@ class GoldProductsService {
         'timestamp': DateTime.now().toIso8601String(),
       },
       {
-        'code': 'CUMHUR',
+        'code': 'CMH',
         'name': 'Cumhuriyet Altını',
         'buyPrice': 18500.00,
         'sellPrice': 18600.00,
@@ -352,7 +375,7 @@ class GoldProductsService {
         'timestamp': DateTime.now().toIso8601String(),
       },
       {
-        'code': 'ONSALTIN',
+        'code': 'ONS',
         'name': 'Ons Altın',
         'buyPrice': 3365.29,
         'sellPrice': 3381.60,

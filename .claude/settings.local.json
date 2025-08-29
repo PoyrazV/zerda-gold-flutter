@@ -55,7 +55,8 @@
       "Bash(start http://localhost:3009)",
       "Bash(echo:*)",
       "Bash(del C:UserspoyraOneDriveDesktopzerda_yeni_tasarimlibconfigapi_config.dart)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(dart analyze:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/gold_products_service.dart';
 import '../../../widgets/gold_bars_icon.dart';
 
 class CurrencyPickerBottomSheet extends StatefulWidget {
@@ -23,6 +24,8 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredCurrencies = [];
   bool _showingCurrencies = true; // true for currencies, false for gold
+  List<Map<String, dynamic>> _goldList = []; // Will be loaded from database
+  bool _isLoadingGold = false;
 
   final List<Map<String, dynamic>> _currencyList = [
     {
@@ -531,39 +534,6 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     },
   ];
 
-  final List<Map<String, dynamic>> _goldList = [
-    {
-      "code": "GRAM",
-      "name": "Gram Altın",
-      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
-      "symbol": "gr"
-    },
-    {
-      "code": "ÇEYREK",
-      "name": "Çeyrek Altın",
-      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
-      "symbol": "çyr"
-    },
-    {
-      "code": "YARIM",
-      "name": "Yarım Altın",
-      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
-      "symbol": "1/2"
-    },
-    {
-      "code": "TAM",
-      "name": "Tam Altın",
-      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
-      "symbol": "tam"
-    },
-    {
-      "code": "ONS",
-      "name": "Ons Altın",
-      "flag": "https://cdn-icons-png.flaticon.com/512/2583/2583788.png",
-      "symbol": "oz"
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -572,11 +542,82 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
     _showingCurrencies = !_isGoldCurrency(selectedCode);
     _searchController.addListener(_filterCurrencies);
     
-    // Initialize with hardcoded data immediately - no API loading
+    // Initialize with currency data immediately
     if (_showingCurrencies) {
       _filteredCurrencies = _currencyList;
     } else {
-      _filteredCurrencies = _goldList;
+      _filteredCurrencies = [];
+    }
+    
+    // Load gold data from database
+    _loadGoldData();
+  }
+
+  Future<void> _loadGoldData() async {
+    setState(() {
+      _isLoadingGold = true;
+    });
+    
+    try {
+      final goldProducts = await GoldProductsService.getProductsWithPrices();
+      
+      setState(() {
+        _goldList = goldProducts.map((gold) => {
+          'code': gold['code'] ?? 'GLD',
+          'name': gold['name'] ?? 'Altın',
+          'flag': 'https://cdn-icons-png.flaticon.com/512/2583/2583788.png',
+          'symbol': (gold['code'] ?? 'GLD').toLowerCase(),
+        }).toList();
+        
+        // Update filtered list if currently showing gold
+        if (!_showingCurrencies) {
+          _filteredCurrencies = _goldList;
+        }
+        
+        _isLoadingGold = false;
+      });
+    } catch (e) {
+      print('Error loading gold data: $e');
+      setState(() {
+        _isLoadingGold = false;
+        // Use fallback data if loading fails
+        _goldList = [
+          {
+            'code': 'GRM',
+            'name': 'Gram Altın',
+            'flag': 'https://cdn-icons-png.flaticon.com/512/2583/2583788.png',
+            'symbol': 'gr'
+          },
+          {
+            'code': 'CYR',
+            'name': 'Çeyrek Altın',
+            'flag': 'https://cdn-icons-png.flaticon.com/512/2583/2583788.png',
+            'symbol': 'çyr'
+          },
+          {
+            'code': 'YRM',
+            'name': 'Yarım Altın',
+            'flag': 'https://cdn-icons-png.flaticon.com/512/2583/2583788.png',
+            'symbol': 'yrm'
+          },
+          {
+            'code': 'TAM',
+            'name': 'Tam Altın',
+            'flag': 'https://cdn-icons-png.flaticon.com/512/2583/2583788.png',
+            'symbol': 'tam'
+          },
+          {
+            'code': 'ONS',
+            'name': 'Ons Altın',
+            'flag': 'https://cdn-icons-png.flaticon.com/512/2583/2583788.png',
+            'symbol': 'oz'
+          },
+        ];
+        
+        if (!_showingCurrencies) {
+          _filteredCurrencies = _goldList;
+        }
+      });
     }
   }
 
@@ -622,7 +663,9 @@ class _CurrencyPickerBottomSheetState extends State<CurrencyPickerBottomSheet> {
   }
 
   bool _isGoldCurrency(String code) {
-    return ['GRAM', 'ÇEYREK', 'YARIM', 'TAM', 'ONS'].contains(code);
+    // Check both converter codes and actual 3-character codes from GoldProductsService
+    return ['GRAM', 'ÇEYREK', 'YARIM', 'TAM', 'ONS', // Converter codes (used in UI)
+            'GRM', 'CYR', 'YRM', 'TAM', 'CMH', 'ATA', 'GMS', 'GRS', 'BSL', 'RST', 'HMT', 'ONS'].contains(code);
   }
 
   @override

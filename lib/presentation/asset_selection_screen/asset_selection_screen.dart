@@ -730,7 +730,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                 style: GoogleFonts.inter(
                   fontSize: 4.w,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1E2939),
+                  color: _themeConfigService.listNameText,
                   height: 1.4,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -750,7 +750,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                     style: GoogleFonts.inter(
                       fontSize: 4.w,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E2939),
+                      color: _themeConfigService.listPriceText,
                       height: 1.4,
                     ),
                     overflow: TextOverflow.ellipsis,

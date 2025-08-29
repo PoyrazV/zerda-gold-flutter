@@ -317,6 +317,11 @@ class ThemeConfigService {
   Color get listSecondaryText => Color(int.parse(_themeConfig['list_secondary_text']?.replaceAll('#', '0xFF') ?? '0xFFB91C1C'));
   Color get listRowEven => Color(int.parse(_themeConfig['list_row_even']?.replaceAll('#', '0xFF') ?? '0xFFF0F0F0'));
   Color get listRowOdd => Color(int.parse(_themeConfig['list_row_odd']?.replaceAll('#', '0xFF') ?? '0xFFFFFFFF'));
+  
+  // Text colors for listings
+  Color get listNameText => Color(int.parse(_themeConfig['list_name_text']?.replaceAll('#', '0xFF') ?? '0xFF1E2939'));
+  Color get listPriceText => Color(int.parse(_themeConfig['list_price_text']?.replaceAll('#', '0xFF') ?? '0xFF1E2939'));
+  Color get listTimeText => Color(int.parse(_themeConfig['list_time_text']?.replaceAll('#', '0xFF') ?? '0xFF6B7280'));
 
   // Theme type
   bool get isDarkTheme => _themeConfig['theme_type'] == 'dark';

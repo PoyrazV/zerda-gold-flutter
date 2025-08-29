@@ -353,7 +353,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                         style: GoogleFonts.inter(
                           fontSize: 4.w,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E2939),
+                          color: _themeConfigService.listPriceText,
                           height: 1.8,
                         ),
                       ),

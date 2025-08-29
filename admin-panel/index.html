@@ -1290,7 +1290,11 @@
                         list_secondary_border: '#DC2626',
                         list_secondary_text: '#B91C1C',
                         list_row_even: '#F0F0F0',
-                        list_row_odd: '#FFFFFF'
+                        list_row_odd: '#FFFFFF',
+                        // Metin renkleri
+                        list_name_text: '#1E2939',
+                        list_price_text: '#1E2939',
+                        list_time_text: '#6B7280'
                     };
                     setLocalTheme(defaultTheme);
                     setPreviewColors({});
@@ -1429,6 +1433,13 @@
                                                 <ColorInput label="Arka Plan" property="list_secondary_color" icon="fas fa-fill-drip" />
                                                 <ColorInput label="Kenarlık" property="list_secondary_border" icon="fas fa-border-style" />
                                                 <ColorInput label="Metin" property="list_secondary_text" icon="fas fa-font" />
+                                            </div>
+
+                                            <div className="color-group">
+                                                <h4>Metin Renkleri</h4>
+                                                <ColorInput label="Varlık Adı" property="list_name_text" icon="fas fa-heading" />
+                                                <ColorInput label="Fiyat" property="list_price_text" icon="fas fa-dollar-sign" />
+                                                <ColorInput label="Açıklama" property="list_time_text" icon="fas fa-clock" />
                                             </div>
                                         </div>
                                     </div>

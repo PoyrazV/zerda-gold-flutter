@@ -539,7 +539,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.text,
+                        color: _themeConfigService.listNameText,
                         height: 1.4,
                       ),
                       maxLines: 1,
@@ -563,7 +563,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.text,
+                        color: _themeConfigService.listPriceText,
                         height: 1.8,
                       ),
                     ),
@@ -590,7 +590,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.text,
+                        color: _themeConfigService.listPriceText,
                         height: 1.8,
                       ),
                     ),

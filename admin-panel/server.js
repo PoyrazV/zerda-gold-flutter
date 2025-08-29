@@ -997,7 +997,9 @@ app.post('/api/customers/:id/theme', authenticateToken, (req, res) => {
            font_family = ?, font_size_scale = ?,
            list_primary_color = ?, list_primary_border = ?, list_primary_text = ?,
            list_secondary_color = ?, list_secondary_border = ?, list_secondary_text = ?,
-           list_row_even = ?, list_row_odd = ?, updated_at = CURRENT_TIMESTAMP
+           list_row_even = ?, list_row_odd = ?,
+           list_name_text = ?, list_price_text = ?, list_time_text = ?,
+           updated_at = CURRENT_TIMESTAMP
            WHERE customer_id = ?`,
           [
             themeData.theme_type, themeData.primary_color, themeData.secondary_color,
@@ -1012,6 +1014,9 @@ app.post('/api/customers/:id/theme', authenticateToken, (req, res) => {
             themeData.list_secondary_text,
             themeData.list_row_even,
             themeData.list_row_odd,
+            themeData.list_name_text || '#1E2939',
+            themeData.list_price_text || '#1E2939',
+            themeData.list_time_text || '#6B7280',
             customerId
           ],
           (err) => {
@@ -1041,8 +1046,8 @@ app.post('/api/customers/:id/theme', authenticateToken, (req, res) => {
             error_color, warning_color, font_family, font_size_scale,
             list_primary_color, list_primary_border, list_primary_text,
             list_secondary_color, list_secondary_border, list_secondary_text,
-            list_row_even, list_row_odd) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            list_row_even, list_row_odd, list_name_text, list_price_text, list_time_text) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             themeId, customerId, themeData.theme_type, themeData.primary_color,
             themeData.secondary_color, themeData.accent_color, themeData.background_color,
@@ -1055,7 +1060,10 @@ app.post('/api/customers/:id/theme', authenticateToken, (req, res) => {
             themeData.list_secondary_border,
             themeData.list_secondary_text,
             themeData.list_row_even,
-            themeData.list_row_odd
+            themeData.list_row_odd,
+            themeData.list_name_text || '#1E2939',
+            themeData.list_price_text || '#1E2939',
+            themeData.list_time_text || '#6B7280'
           ],
           (err) => {
             if (err) {

@@ -80,7 +80,7 @@ class _FinancialInstrumentsListWidgetState extends State<FinancialInstrumentsLis
                       style: GoogleFonts.inter(
                         fontSize: 4.w,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1E2939),
+                        color: _themeConfigService.listNameText,
                         height: 1.4,
                       ),
                       maxLines: 1,
@@ -93,7 +93,7 @@ class _FinancialInstrumentsListWidgetState extends State<FinancialInstrumentsLis
                         style: GoogleFonts.inter(
                           fontSize: 3.w,
                           fontWeight: FontWeight.normal,
-                          color: const Color(0xFF6B7280),
+                          color: _themeConfigService.listTimeText,
                           height: 1.2,
                         ),
                         maxLines: 1,

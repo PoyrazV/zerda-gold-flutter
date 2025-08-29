@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/app_export.dart';
+import '../../../services/theme_config_service.dart';
 
-class CoinPricesTableWidget extends StatelessWidget {
+class CoinPricesTableWidget extends StatefulWidget {
   final List<Map<String, dynamic>> goldCoinData;
   final VoidCallback onRefresh;
 
@@ -14,28 +16,53 @@ class CoinPricesTableWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<CoinPricesTableWidget> createState() => _CoinPricesTableWidgetState();
+}
+
+class _CoinPricesTableWidgetState extends State<CoinPricesTableWidget> {
+  final ThemeConfigService _themeConfigService = ThemeConfigService();
+  
+  @override
+  void initState() {
+    super.initState();
+    _themeConfigService.addListener(_onThemeChanged);
+  }
+  
+  @override
+  void dispose() {
+    _themeConfigService.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+  
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: goldCoinData.length,
+      itemCount: widget.goldCoinData.length,
       itemBuilder: (context, index) {
-        final coin = goldCoinData[index];
+        final coin = widget.goldCoinData[index];
         final bool isPositive = coin['isPositive'] as bool;
         final Color changeColor = isPositive
             ? const Color(0xFF10B981) // Green for positive
             : const Color(0xFFEF4444); // Red for negative
             
-        // Alternating row colors
+        // Alternating row colors from theme
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Light gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
 
         return Container(
           padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
           decoration: BoxDecoration(
             color: backgroundColor,
           ),
-            child: Row(
+          child: Row(
               children: [
                 // Coin type (Unit)
                 Expanded(
@@ -46,7 +73,7 @@ class CoinPricesTableWidget extends StatelessWidget {
                       Text(
                         coin['type'] as String,
                         style: TextStyle(
-                          color: const Color(0xFF1E2939),
+                          color: _themeConfigService.listNameText,
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
                         ),
@@ -71,7 +98,7 @@ class CoinPricesTableWidget extends StatelessWidget {
                     CurrencyFormatter.formatTRY(coin['buyPrice'] as double),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: const Color(0xFF1E2939),
+                      color: _themeConfigService.listPriceText,
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',
@@ -86,7 +113,7 @@ class CoinPricesTableWidget extends StatelessWidget {
                     CurrencyFormatter.formatTRY(coin['sellPrice'] as double),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: const Color(0xFF1E2939),
+                      color: _themeConfigService.listPriceText,
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'monospace',

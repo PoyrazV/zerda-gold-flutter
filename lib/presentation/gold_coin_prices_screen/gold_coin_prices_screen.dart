@@ -674,7 +674,7 @@ class _GoldCoinPricesScreenState extends State<GoldCoinPricesScreen>
                   style: GoogleFonts.inter(
                     fontSize: 4.w,
                     fontWeight: FontWeight.w600, // Semi-bold weight
-                    color: const Color(0xFF1E2939),
+                    color: _themeConfigService.listNameText,
                     height: 1.8,
                   ),
                 ),

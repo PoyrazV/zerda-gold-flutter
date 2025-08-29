@@ -349,7 +349,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     style: GoogleFonts.inter(
                       fontSize: 3.w, // Smaller font size for time
                       fontWeight: FontWeight.normal, // Regular weight
-                      color: const Color(0xFF6B7280), // Lighter gray color
+                      color: _themeConfigService.listTimeText,
                       height: 1.2,
                     ),
                   ),

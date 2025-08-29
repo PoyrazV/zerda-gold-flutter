@@ -26,6 +26,7 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
   String _selectedType = 'DOVIZ'; // DOVIZ or ALTIN
   String _selectedDate = '31.07.2025';
   final CurrencyApiService _currencyApiService = CurrencyApiService();
+  final ThemeConfigService _themeConfigService = ThemeConfigService();
   List<Map<String, dynamic>> _allCurrencyData = [];
   bool _isLoading = true;
 
@@ -510,10 +511,10 @@ class _GecmisKurlarScreenState extends State<GecmisKurlarScreen>
         Map<String, dynamic> item = entry.value;
         final currentDisplayPrice = _selectedType == 'DOVIZ' ? 4 : 2;
         
-        // Alternating row colors
+        // Alternating row colors from theme
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Darker gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
         
         return Container(
           height: 8.h,

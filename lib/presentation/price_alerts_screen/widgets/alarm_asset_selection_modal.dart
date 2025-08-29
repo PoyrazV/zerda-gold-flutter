@@ -27,6 +27,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
   bool _isRefreshing = false;
   
   final CurrencyApiService _currencyApiService = CurrencyApiService();
+  final ThemeConfigService _themeConfigService = ThemeConfigService();
   
   // All data from API
   List<Map<String, dynamic>> _allCurrencyData = [];
@@ -57,7 +58,16 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
       vsync: this,
     );
     _searchController.addListener(_onSearchChanged);
+    _themeConfigService.addListener(_onThemeChanged);
     _fetchInitialData();
+  }
+
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
   }
 
   Future<void> _fetchInitialData() async {
@@ -103,6 +113,7 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
     _refreshController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _themeConfigService.removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -582,10 +593,10 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
 
         final currency = currencyData[index];
         
-        // Alternating row colors
+        // Alternating row colors from theme
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Light gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
 
         return Container(
           color: backgroundColor,
@@ -672,10 +683,10 @@ class _AlarmAssetSelectionModalState extends State<AlarmAssetSelectionModal>
 
         final gold = goldData[index];
         
-        // Alternating row colors
+        // Alternating row colors from theme
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Light gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
 
         return Container(
           color: backgroundColor,

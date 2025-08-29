@@ -25,6 +25,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
   bool _isRefreshing = false;
   
   final CurrencyApiService _currencyApiService = CurrencyApiService();
+  final ThemeConfigService _themeConfigService = ThemeConfigService();
   
   // All data from API
   List<Map<String, dynamic>> _allCurrencyData = [];
@@ -58,7 +59,16 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       vsync: this,
     );
     _searchController.addListener(_onSearchChanged);
+    _themeConfigService.addListener(_onThemeChanged);
     _fetchInitialData();
+  }
+
+  void _onThemeChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild with new theme colors
+      });
+    }
   }
 
   Future<void> _fetchInitialData() async {
@@ -104,6 +114,7 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     _refreshController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _themeConfigService.removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -580,10 +591,10 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
         final currency = currencyData[index];
         
-        // Alternating row colors like Dashboard
+        // Alternating row colors from theme
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Darker gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
 
         return Container(
           height: 8.h,
@@ -675,10 +686,10 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
 
         final gold = goldData[index];
         
-        // Alternating row colors like Dashboard
+        // Alternating row colors from theme
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Darker gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
 
         return Container(
           height: 8.h,
@@ -750,13 +761,13 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                     padding: EdgeInsets.symmetric(horizontal: 1.5.w, vertical: 0.2.h),
                     decoration: BoxDecoration(
                       color: isPositive 
-                          ? const Color(0xFFECFDF5) // Green background for increase
-                          : const Color(0xFFFEF2F2), // Red background for decrease
+                          ? _themeConfigService.listPrimaryColor
+                          : _themeConfigService.listSecondaryColor,
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
                         color: isPositive 
-                            ? const Color(0x33059669) // Green border with opacity
-                            : const Color(0x1ADC2626), // Red border with opacity
+                            ? _themeConfigService.listPrimaryBorder.withOpacity(0.2)
+                            : _themeConfigService.listSecondaryBorder.withOpacity(0.1),
                         width: 1,
                       ),
                     ),
@@ -766,8 +777,8 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
                         fontSize: 2.8.w,
                         fontWeight: FontWeight.w600,
                         color: isPositive 
-                            ? const Color(0xFF059669) // Green text
-                            : const Color(0xFFDC2626), // Red text
+                            ? _themeConfigService.listPrimaryText
+                            : _themeConfigService.listSecondaryText,
                         height: 1.2,
                       ),
                     ),

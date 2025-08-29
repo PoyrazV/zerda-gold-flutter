@@ -7,7 +7,7 @@ import '../../core/app_export.dart';
 import '../../services/watchlist_service.dart';
 import '../../services/currency_api_service.dart';
 import '../../services/theme_config_service.dart';
-import '../../services/financial_data_service.dart';
+import '../../services/gold_products_service.dart';
 import '../../widgets/bottom_navigation_bar.dart';
 import '../../widgets/gold_bars_icon.dart';
 
@@ -57,20 +57,45 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    // Load gold data from FinancialDataService
-    _allGoldData = FinancialDataService.getGoldData().map((gold) {
-      // Add changePercent field if not present
-      final data = Map<String, dynamic>.from(gold);
-      if (!data.containsKey('changePercent')) {
-        final buyPrice = (data['buyPrice'] as num).toDouble();
-        final change = (data['change'] as num?)?.toDouble() ?? 0.0;
-        data['changePercent'] = buyPrice > 0 ? (change / buyPrice) : 0.0;
-      }
-      return data;
-    }).toList();
-    _filteredGoldData = List.from(_allGoldData);
     _searchController.addListener(_onSearchChanged);
-    _fetchCurrencyData();
+    _fetchInitialData();
+  }
+
+  Future<void> _fetchInitialData() async {
+    // Fetch both currency and gold data
+    await Future.wait([
+      _fetchCurrencyData(),
+      _fetchGoldData(),
+    ]);
+  }
+
+  Future<void> _fetchGoldData() async {
+    try {
+      print('AssetSelection: Fetching gold data from database...');
+      final goldProducts = await GoldProductsService.getProductsWithPrices();
+      print('AssetSelection: Received ${goldProducts.length} gold products from database');
+      
+      setState(() {
+        _allGoldData = goldProducts.map((gold) {
+          // Ensure changePercent field exists
+          final data = Map<String, dynamic>.from(gold);
+          if (!data.containsKey('changePercent')) {
+            final buyPrice = (data['buyPrice'] as num?)?.toDouble() ?? 0.0;
+            final change = (data['change'] as num?)?.toDouble() ?? 0.0;
+            data['changePercent'] = buyPrice > 0 ? (change / buyPrice) * 100 : 0.0;
+          }
+          return data;
+        }).toList();
+        _displayedGoldCount = 20; // Reset pagination
+        print('AssetSelection: Successfully loaded ${_allGoldData.length} gold products');
+      });
+    } catch (e) {
+      print('AssetSelection: Error fetching gold data: $e');
+      // Keep empty list on error
+      setState(() {
+        _allGoldData = [];
+      });
+    }
   }
 
   @override
@@ -153,8 +178,11 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     HapticFeedback.lightImpact();
     _refreshController.forward();
 
-    // Fetch fresh data from API
-    await _fetchCurrencyData();
+    // Fetch fresh data from both APIs
+    await Future.wait([
+      _fetchCurrencyData(),
+      _fetchGoldData(),
+    ]);
 
     setState(() {
       _isRefreshing = false;
@@ -247,23 +275,6 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     await WatchlistService.addToWatchlist(watchlistAsset);
     
     print('AssetSelection: Current watchlist items: ${WatchlistService.getWatchlistItems().length}');
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${asset['name']} eklendi',
-          style: TextStyle(fontSize: 12.sp),
-        ),
-        backgroundColor: AppTheme.positiveGreen,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 1),
-        margin: EdgeInsets.only(
-          bottom: 12.h,
-          left: 4.w,
-          right: 4.w,
-        ),
-      ),
-    );
     
     // Trigger rebuild to update the UI
     setState(() {});
@@ -686,26 +697,13 @@ class _AssetSelectionScreenState extends State<AssetSelectionScreen>
     final double changePercent = asset['changePercent'] as double? ?? 0.0;
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         if (!isInWatchlist) {
           _addToWatchlist(asset);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Zaten eklendi',
-                style: TextStyle(fontSize: 12.sp),
-              ),
-              backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 1),
-              margin: EdgeInsets.only(
-                bottom: 12.h,
-                left: 4.w,
-                right: 4.w,
-              ),
-            ),
-          );
+          // Remove from watchlist
+          await WatchlistService.removeFromWatchlist(asset['code'] as String);
+          setState(() {});
         }
       },
       child: Container(

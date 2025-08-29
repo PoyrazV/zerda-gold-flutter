@@ -1415,6 +1415,32 @@
                                         </div>
                                     </div>
 
+                                    {/* Listeleme Renkleri */}
+                                    <div className="theme-section">
+                                        <h3><i className="fas fa-list"></i> Listeleme Renkleri</h3>
+                                        <div className="color-groups">
+                                            <div className="color-group">
+                                                <h4>Pozitif Değişim (Kazançlar)</h4>
+                                                <ColorInput label="Arka Plan" property="list_primary_color" icon="fas fa-fill-drip" />
+                                                <ColorInput label="Kenarlık" property="list_primary_border" icon="fas fa-border-style" />
+                                                <ColorInput label="Metin" property="list_primary_text" icon="fas fa-font" />
+                                            </div>
+
+                                            <div className="color-group">
+                                                <h4>Negatif Değişim (Kayıplar)</h4>
+                                                <ColorInput label="Arka Plan" property="list_secondary_color" icon="fas fa-fill-drip" />
+                                                <ColorInput label="Kenarlık" property="list_secondary_border" icon="fas fa-border-style" />
+                                                <ColorInput label="Metin" property="list_secondary_text" icon="fas fa-font" />
+                                            </div>
+
+                                            <div className="color-group">
+                                                <h4>Satır Renkleri</h4>
+                                                <ColorInput label="Çift Satır" property="list_row_even" icon="fas fa-grip-lines" />
+                                                <ColorInput label="Tek Satır" property="list_row_odd" icon="fas fa-grip-lines" />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* Asset Yükleme */}
                                     <div className="theme-section">
                                         <h3><i className="fas fa-images"></i> Görsel Varlıklar</h3>
@@ -1449,32 +1475,6 @@
                                                     icon="fas fa-bookmark"
                                                     accept=".ico,image/png,image/jpg"
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Listeleme Renkleri */}
-                                    <div className="theme-section">
-                                        <h3><i className="fas fa-list"></i> Listeleme Renkleri</h3>
-                                        <div className="color-groups">
-                                            <div className="color-group">
-                                                <h4>Pozitif Değişim (Kazançlar)</h4>
-                                                <ColorInput label="Arka Plan" property="list_primary_color" icon="fas fa-fill-drip" />
-                                                <ColorInput label="Kenarlık" property="list_primary_border" icon="fas fa-border-style" />
-                                                <ColorInput label="Metin" property="list_primary_text" icon="fas fa-font" />
-                                            </div>
-
-                                            <div className="color-group">
-                                                <h4>Negatif Değişim (Kayıplar)</h4>
-                                                <ColorInput label="Arka Plan" property="list_secondary_color" icon="fas fa-fill-drip" />
-                                                <ColorInput label="Kenarlık" property="list_secondary_border" icon="fas fa-border-style" />
-                                                <ColorInput label="Metin" property="list_secondary_text" icon="fas fa-font" />
-                                            </div>
-
-                                            <div className="color-group">
-                                                <h4>Satır Renkleri</h4>
-                                                <ColorInput label="Çift Satır" property="list_row_even" icon="fas fa-grip-lines" />
-                                                <ColorInput label="Tek Satır" property="list_row_odd" icon="fas fa-grip-lines" />
                                             </div>
                                         </div>
                                     </div>

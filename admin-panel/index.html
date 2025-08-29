@@ -1294,7 +1294,9 @@
                         // Metin renkleri
                         list_name_text: '#1E2939',
                         list_price_text: '#1E2939',
-                        list_time_text: '#6B7280'
+                        list_time_text: '#6B7280',
+                        // Ticker renkleri
+                        ticker_card_background: '#F9FAFB'
                     };
                     setLocalTheme(defaultTheme);
                     setPreviewColors({});
@@ -1441,43 +1443,10 @@
                                                 <ColorInput label="Fiyat" property="list_price_text" icon="fas fa-dollar-sign" />
                                                 <ColorInput label="Açıklama" property="list_time_text" icon="fas fa-clock" />
                                             </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Asset Yükleme */}
-                                    <div className="theme-section">
-                                        <h3><i className="fas fa-images"></i> Görsel Varlıklar</h3>
-                                        <div className="asset-groups">
-                                            <div className="asset-group">
-                                                <h4>Uygulama İkonları</h4>
-                                                <AssetUpload 
-                                                    label="Ana İkon" 
-                                                    assetType="app_icon" 
-                                                    icon="fas fa-mobile-alt"
-                                                    accept="image/png,image/jpg,image/jpeg"
-                                                />
-                                                <AssetUpload 
-                                                    label="Splash Logo" 
-                                                    assetType="splash_logo" 
-                                                    icon="fas fa-image"
-                                                    accept="image/png,image/jpg,image/jpeg,image/svg+xml"
-                                                />
-                                            </div>
-
-                                            <div className="asset-group">
-                                                <h4>Markalar</h4>
-                                                <AssetUpload 
-                                                    label="Logo" 
-                                                    assetType="brand_logo" 
-                                                    icon="fas fa-copyright"
-                                                    accept="image/*"
-                                                />
-                                                <AssetUpload 
-                                                    label="Favicon" 
-                                                    assetType="favicon" 
-                                                    icon="fas fa-bookmark"
-                                                    accept=".ico,image/png,image/jpg"
-                                                />
+                                            <div className="color-group">
+                                                <h4>Ticker Renkleri</h4>
+                                                <ColorInput label="Ticker Kart Arkaplanı" property="ticker_card_background" icon="fas fa-square" />
                                             </div>
                                         </div>
                                     </div>

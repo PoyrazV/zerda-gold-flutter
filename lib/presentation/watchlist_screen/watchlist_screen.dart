@@ -22,6 +22,7 @@ class _WatchlistScreenState extends State<WatchlistScreen>
     with TickerProviderStateMixin {
   late AnimationController _refreshController;
   bool _isRefreshing = false;
+  final ThemeConfigService _themeConfigService = ThemeConfigService();
 
   // Get watchlist data from service
   List<Map<String, dynamic>> get _watchlistItems => WatchlistService.getWatchlistItems();
@@ -240,10 +241,10 @@ class _WatchlistScreenState extends State<WatchlistScreen>
           final isPositive = (item['isPositive'] as bool?) ?? false;
           final changeColor = isPositive ? AppTheme.positiveGreen : AppTheme.negativeRed;
         
-        // Alternating row colors
+        // Alternating row colors from theme config
         final Color backgroundColor = index.isEven 
-            ? const Color(0xFFF0F0F0) // Light gray for even rows
-            : const Color(0xFFFFFFFF); // White for odd rows
+            ? _themeConfigService.listRowEven
+            : _themeConfigService.listRowOdd;
 
         return Dismissible(
           key: Key(item['code'].toString()),
@@ -363,13 +364,13 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                           padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.5.w),
                           decoration: BoxDecoration(
                             color: isPositive 
-                                ? const Color(0xFFECFDF5) // Green background for increase
-                                : const Color(0xFFFEF2F2), // Red background for decrease
+                                ? _themeConfigService.listPrimaryColor
+                                : _themeConfigService.listSecondaryColor,
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
                               color: isPositive 
-                                  ? const Color(0x33059669) // Fixed green border with opacity
-                                  : const Color(0x1ADC2626), // Red border with opacity
+                                  ? _themeConfigService.listPrimaryBorder.withOpacity(0.2)
+                                  : _themeConfigService.listSecondaryBorder.withOpacity(0.1),
                               width: 1,
                             ),
                           ),
@@ -379,8 +380,8 @@ class _WatchlistScreenState extends State<WatchlistScreen>
                               fontSize: 2.7.w,
                               fontWeight: FontWeight.w500, // Medium weight
                               color: isPositive 
-                                  ? const Color(0xFF047857) // Green text
-                                  : const Color(0xFFB91C1C), // Red text
+                                  ? _themeConfigService.listPrimaryText
+                                  : _themeConfigService.listSecondaryText
                               height: 1.0,
                             ),
                           ),

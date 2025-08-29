@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/app_export.dart';
 import '../services/currency_api_service.dart';
 import '../services/watchlist_service.dart';
+import '../services/theme_config_service.dart';
 
 class TickerSection extends StatefulWidget {
   final bool reduceBottomPadding;
@@ -18,6 +19,7 @@ class TickerSection extends StatefulWidget {
 
 class _TickerSectionState extends State<TickerSection> {
   final CurrencyApiService _currencyApiService = CurrencyApiService();
+  final ThemeConfigService _themeConfigService = ThemeConfigService();
   List<Map<String, dynamic>> _tickerData = [];
   bool _isLoading = false;
 
@@ -265,13 +267,13 @@ class _TickerSectionState extends State<TickerSection> {
                 padding: EdgeInsets.symmetric(horizontal: 0.5.w, vertical: 0.3.w),
                 decoration: BoxDecoration(
                   color: isPositive 
-                      ? const Color(0xFFECFDF5) // Green background for increase
-                      : const Color(0xFFFEF2F2), // Red background for decrease
+                      ? _themeConfigService.listPrimaryColor
+                      : _themeConfigService.listSecondaryColor,
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
                     color: isPositive 
-                        ? const Color(0x33059669) // Fixed green border with opacity
-                        : const Color(0x1ADC2626), // Red border with opacity
+                        ? _themeConfigService.listPrimaryBorder.withOpacity(0.2)
+                        : _themeConfigService.listSecondaryBorder.withOpacity(0.1),
                     width: 1,
                   ),
                 ),
@@ -283,8 +285,8 @@ class _TickerSectionState extends State<TickerSection> {
                       fontSize: 2.7.w, // Increased font size to match list
                       fontWeight: FontWeight.w500, // Medium weight to match list
                       color: isPositive 
-                          ? const Color(0xFF047857) // Green text
-                          : const Color(0xFFB91C1C), // Red text
+                          ? _themeConfigService.listPrimaryText
+                          : _themeConfigService.listSecondaryText
                       height: 1.2,
                     ),
                     textAlign: TextAlign.center, // Center align text

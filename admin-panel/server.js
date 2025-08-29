@@ -947,7 +947,16 @@ app.get('/api/customers/:id/theme', (req, res) => {
           error_color: '#F44336',
           warning_color: '#FF9800',
           font_family: 'Inter',
-          font_size_scale: 1.0
+          font_size_scale: 1.0,
+          // Listeleme renkleri
+          list_primary_color: '#ECFDF5',
+          list_primary_border: '#059669',
+          list_primary_text: '#047857',
+          list_secondary_color: '#FEF2F2',
+          list_secondary_border: '#DC2626',
+          list_secondary_text: '#B91C1C',
+          list_row_even: '#F0F0F0',
+          list_row_odd: '#FFFFFF'
         };
         
         return res.json({
@@ -985,13 +994,25 @@ app.post('/api/customers/:id/theme', authenticateToken, (req, res) => {
            theme_type = ?, primary_color = ?, secondary_color = ?, 
            accent_color = ?, background_color = ?, text_color = ?,
            success_color = ?, error_color = ?, warning_color = ?,
-           font_family = ?, font_size_scale = ?, updated_at = CURRENT_TIMESTAMP
+           font_family = ?, font_size_scale = ?,
+           list_primary_color = ?, list_primary_border = ?, list_primary_text = ?,
+           list_secondary_color = ?, list_secondary_border = ?, list_secondary_text = ?,
+           list_row_even = ?, list_row_odd = ?, updated_at = CURRENT_TIMESTAMP
            WHERE customer_id = ?`,
           [
             themeData.theme_type, themeData.primary_color, themeData.secondary_color,
             themeData.accent_color, themeData.background_color, themeData.text_color,
             themeData.success_color, themeData.error_color, themeData.warning_color,
-            themeData.font_family, themeData.font_size_scale, customerId
+            themeData.font_family, themeData.font_size_scale,
+            themeData.list_primary_color || '#ECFDF5',
+            themeData.list_primary_border || '#059669',
+            themeData.list_primary_text || '#047857',
+            themeData.list_secondary_color || '#FEF2F2',
+            themeData.list_secondary_border || '#DC2626',
+            themeData.list_secondary_text || '#B91C1C',
+            themeData.list_row_even || '#F0F0F0',
+            themeData.list_row_odd || '#FFFFFF',
+            customerId
           ],
           (err) => {
             if (err) {
@@ -1017,13 +1038,24 @@ app.post('/api/customers/:id/theme', authenticateToken, (req, res) => {
           `INSERT INTO theme_configs 
            (id, customer_id, theme_type, primary_color, secondary_color, 
             accent_color, background_color, text_color, success_color, 
-            error_color, warning_color, font_family, font_size_scale) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            error_color, warning_color, font_family, font_size_scale,
+            list_primary_color, list_primary_border, list_primary_text,
+            list_secondary_color, list_secondary_border, list_secondary_text,
+            list_row_even, list_row_odd) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             themeId, customerId, themeData.theme_type, themeData.primary_color,
             themeData.secondary_color, themeData.accent_color, themeData.background_color,
             themeData.text_color, themeData.success_color, themeData.error_color,
-            themeData.warning_color, themeData.font_family, themeData.font_size_scale
+            themeData.warning_color, themeData.font_family, themeData.font_size_scale,
+            themeData.list_primary_color || '#ECFDF5',
+            themeData.list_primary_border || '#059669',
+            themeData.list_primary_text || '#047857',
+            themeData.list_secondary_color || '#FEF2F2',
+            themeData.list_secondary_border || '#DC2626',
+            themeData.list_secondary_text || '#B91C1C',
+            themeData.list_row_even || '#F0F0F0',
+            themeData.list_row_odd || '#FFFFFF'
           ],
           (err) => {
             if (err) {

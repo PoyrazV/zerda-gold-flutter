@@ -242,6 +242,15 @@ class ThemeConfigService {
       'warning_color': '#FF9800',
       'font_family': 'Inter',
       'font_size_scale': 1.0,
+      // Listeleme renkleri
+      'list_primary_color': '#ECFDF5',
+      'list_primary_border': '#059669',
+      'list_primary_text': '#047857',
+      'list_secondary_color': '#FEF2F2',
+      'list_secondary_border': '#DC2626',
+      'list_secondary_text': '#B91C1C',
+      'list_row_even': '#F0F0F0',
+      'list_row_odd': '#FFFFFF',
     };
     print('Using default theme configuration');
   }
@@ -282,6 +291,16 @@ class ThemeConfigService {
   Color get successColor => Color(int.parse(_themeConfig['success_color']?.replaceAll('#', '0xFF') ?? '0xFF4CAF50'));
   Color get errorColor => Color(int.parse(_themeConfig['error_color']?.replaceAll('#', '0xFF') ?? '0xFFF44336'));
   Color get warningColor => Color(int.parse(_themeConfig['warning_color']?.replaceAll('#', '0xFF') ?? '0xFFFF9800'));
+  
+  // Listeleme renkleri getters
+  Color get listPrimaryColor => Color(int.parse(_themeConfig['list_primary_color']?.replaceAll('#', '0xFF') ?? '0xFFECFDF5'));
+  Color get listPrimaryBorder => Color(int.parse(_themeConfig['list_primary_border']?.replaceAll('#', '0xFF') ?? '0xFF059669'));
+  Color get listPrimaryText => Color(int.parse(_themeConfig['list_primary_text']?.replaceAll('#', '0xFF') ?? '0xFF047857'));
+  Color get listSecondaryColor => Color(int.parse(_themeConfig['list_secondary_color']?.replaceAll('#', '0xFF') ?? '0xFFFEF2F2'));
+  Color get listSecondaryBorder => Color(int.parse(_themeConfig['list_secondary_border']?.replaceAll('#', '0xFF') ?? '0xFFDC2626'));
+  Color get listSecondaryText => Color(int.parse(_themeConfig['list_secondary_text']?.replaceAll('#', '0xFF') ?? '0xFFB91C1C'));
+  Color get listRowEven => Color(int.parse(_themeConfig['list_row_even']?.replaceAll('#', '0xFF') ?? '0xFFF0F0F0'));
+  Color get listRowOdd => Color(int.parse(_themeConfig['list_row_odd']?.replaceAll('#', '0xFF') ?? '0xFFFFFFFF'));
 
   // Theme type
   bool get isDarkTheme => _themeConfig['theme_type'] == 'dark';
